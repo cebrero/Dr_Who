@@ -8,7 +8,7 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.5.1
+## Stand 0.6.0
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
@@ -18,6 +18,10 @@ folgen noch; Doctor, Dalek und Engel besitzen realistische KI-generierte Offline
 Starttexte wurden vereinfacht („Dr WHO“ am Portal, „Dr. Who“ bei Spielern, „Portalcode“).
 Spieler sehen schon vor dem Beitritt die aktuelle Belegung. Das App-Icon ist eine blaue TARDIS.
 Die Steckbriefe lassen sich als Karten seitlich durchwischen; die Sichtkanten blenden weich aus.
+Im Spiel stehen oben **Spiel / Steckbrief / Was passiert ist** zur Wahl; der Verlauf ist
+aufklappbar. Ein fester Hinweis meldet den eigenen Zug. Das vollständige Steckbriefbild bleibt
+unbeschnitten. Der Client-Würfel besitzt sechs feste Seiten und landet auf dem gespeicherten
+Ergebnis; nach der Animation werden keine Augen ausgetauscht.
 Nach dem Spielstart zeigt das Portal Runde, aktiven Spieler, Wege von Feld zu Feld, Aktionen,
 Teampositionen und letzte Ereignisse. Portal und Spieler zeigen einen 2,6 Sekunden animierten
 Würfel mit Nebel und kurzem Lichtimpuls. Ergebnis und Ereignis-ID werden zuerst gespeichert;
@@ -26,7 +30,8 @@ die Animation verändert keinen Wurf und startet nicht bei jedem Polling erneut.
 Android-Host mit lokalem HTTP-Server, Code-Lobby und exklusiver Charakterauswahl über Steckbriefe.
 Alle Spieler sind Partner. Der Host kann übrige Figuren als Gegner hinzufügen. Nach den Partnern
 folgt eine Gegnerphase mit zufällig ausgewähltem Bewegungshelfer und einer Angriffsanzeige beim
-betroffenen Spieler. Nicht beteiligte Spieler sehen eine fliegende TARDIS. Die Portal-Lobby zeigt
+betroffenen Spieler. Nicht beteiligte Spieler sehen standardmäßig ihren eigenen Steckbrief;
+die fliegende TARDIS bleibt optional im Spieltab. Die Portal-Lobby zeigt
 Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespeichert.
 
 Ein freies 6×6-Demofeld dient weiterhin zum Testen von Zugfolge, Bewegung und W6-Zufall.
@@ -40,7 +45,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 221 Kern-/HTTP-Prüfungen und 89 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 221 Kern-/HTTP-Prüfungen und 103 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -78,9 +83,9 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zum aktuellen Portalcode. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.5.1
+## Installationshinweis 0.6.0
 
-**Über 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
+**Über 0.5.0/0.5.1 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
 
 ### Ältere Version 0.4.0

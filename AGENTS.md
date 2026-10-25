@@ -17,7 +17,8 @@
 8. Dieses Repository ist die dauerhafte Quelle; keine parallelen Projektstatusdateien pflegen.
 9. Bestätigt: Alle beigetretenen Spieler sind Partner, unabhängig vom Seriencharakter.
    Nur zusätzlich am Portal hinzugefügte, unbesetzte Figuren werden Gegner.
-10. Nicht beteiligte Handys zeigen TARDIS. Bei Gegnerbewegung Helfer zufällig am Host
+10. Seit neuestem Wunsch 0.6.0: wartende Spieler sehen ihren Steckbrief; TARDIS optional
+    im Tab Spiel. Bei Gegnerbewegung Helfer zufällig am Host
     bestimmen und speichern; Angriffsansicht gezielt beim betroffenen Spieler anzeigen.
     Nicht behaupten, eine lokale Browserseite könne gesperrte Telefone fernentsperren.
 11. Charakterfotos und endgültige Ausdauer-/Kraftwerte fehlen noch. Platzhalter klar
@@ -43,7 +44,7 @@
 18. Aktuelle Startbildschirme: Portal „Dr WHO“, Spieler „Dr. Who“ und „Version“, Zugang
     „Portalcode“. Auf Portal-Startseite statischer Doctor-Who-Hintergrund, keine TARDIS-Animation,
     Spielanleitung oder Abenteuer-Untertitel. Spieler sehen vor Beitritt die aktuelle reine
-    Platzbelegung. Repositoryname/SSID bleiben Dr_Who; TARDIS-Warteanimation der Spieler bleibt.
+    Platzbelegung. Repositoryname/SSID bleiben Dr_Who; TARDIS bleibt optional im Spieltab.
 19. Charakterauswahl als wischbares Karussell mit weichen Randübergängen beibehalten.
     „lokal & ohne Konto“ ist aus der Versionszeile entfernt. Porträts sind realistische
     KI-generierte JPEGs, keine echten Figuren-/Serienfotos; später austauschbar.
@@ -59,3 +60,8 @@
     CLIENT_VERSION im Browser muss zur App-Version passen; Host nutzt BuildConfig.
 22. Für jeden Build ab 0.5.0 den gesicherten privaten Signierschlüssel wiederverwenden und
     Zertifikat vor APK-Ausgabe vergleichen. Normales Update ohne Deinstallation ermöglichen.
+23. Seit 0.6.0 Spieler-Tabs Spiel/Steckbrief/Was passiert ist. Verlauf auf-/zuklappbar;
+    Tab-/Aufklappauswahl bei Polling erhalten. Oben deutlicher Zughinweis; eigener Zug/neuer
+    Auftrag öffnet Spiel, Warten standardmäßig eigenen Steckbrief. Vollständiges Bild ohne Crop.
+    Würfel muss auf gespeicherter Augenzahl landen: sechs feste Seiten, passende Orientierung,
+    keine anderen Augen nach Animation einblenden. Keine Deckkraftanimation auf dem 3D-Würfel.

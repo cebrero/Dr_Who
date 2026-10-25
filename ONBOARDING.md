@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.5.1 · Versions-/Partieabgleich und erneute Client-Anmeldung**
-<!-- app-version: 0.5.1 -->
-<!-- reviewed-source-sha256: c3576abc3d45975c785ceb043fb761d352222365bfbd0448967938ec3a2d977b -->
+Stand: **25.10.2026 · Version 0.6.0 · Spieler-Tabs, vollständiger Steckbrief und korrekte Würfellandung**
+<!-- app-version: 0.6.0 -->
+<!-- reviewed-source-sha256: c7711e9ea1a080e2415bcb48206fa3b46b9f70593a42439691fee123edf9b0c9 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -41,7 +41,7 @@ Keine vollständige Figurenliste und kein vollständiges Teileinventar sind bish
 | Portal-Lobby | Während der Auswahl Verbindungshilfe, Portalcode, Fortschritt und Zuordnung Spielername → Figur anzeigen |
 | Teams | Alle beigetretenen Spieler sind Partner. Übrige bekannte Figuren können danach ausschließlich am Portal als Gegner hinzugefügt werden |
 | Gegnerbewegung | Wenn ein Gegner bewegt werden muss, bestimmt die App zufällig einen Spieler für die physische Ausführung |
-| Warteanzeige | Handys gerade nicht beteiligter Spieler zeigen eine fliegende TARDIS |
+| Warteanzeige | Seit neuestem Wunsch 0.6.0: eigener Steckbrief als Standard; TARDIS optional im Tab Spiel |
 | Angriffsanzeige | Angegriffener Spieler sieht den eigenen Steckbrief, die Attribute des Gegners und die konkreten Folgen für seinen Charakter |
 | Beispiel Doctor | Schallschraubenzieher kann Türen öffnen |
 | Beispiel Daleks | Schießen nur bis zu drei Felder in geraden Richtungen |
@@ -71,7 +71,7 @@ Technische, später änderbare Entscheidungen; nicht mit zugesagten Endfunktione
   Die App erkennt physische Figuren derzeit nicht automatisch; Kameras/Sensoren sind nicht vereinbart.
 - Deutschsprachige Oberfläche. Java 17 als schlankes Android-Grundgerüst mit getrenntem Kernmodul.
 - Statischer, KI-generierter Doctor-Who-Hintergrund in der Portal-Lobby; selbst gezeichnete
-  TARDIS-Animation nur in der separaten Großansicht und auf wartenden Spielerhandys. Keine Serienmedien beschafft.
+  TARDIS-Animation nur in der separaten Großansicht und optional im Spieltab wartender Spieler. Keine Serienmedien beschafft.
 - Noch keine Entscheidung zu Hoch-/Querformat, Telefonabmessungen, Halterungsausschnitt oder Ton.
 
 ## 4. Spielziel – Vorschlag, noch NICHT bestätigt
@@ -146,7 +146,8 @@ klar gekennzeichnete Übergangslösung, keine fertig implementierte Sonderfähig
    Dieser erhält den Auftrag am eigenen Handy und bestätigt die physische Ausführung.
 3. Wird ein Spieler angegriffen, wechselt sein Handy zur Angriffsansicht: eigener Steckbrief,
    Gegnerattribute und gespeicherte konkrete Folge. Nur das Ziel bestätigt die Anzeige.
-4. Unbeteiligte Handys zeigen währenddessen eine fliegende TARDIS.
+4. Unbeteiligte Handys zeigen seit 0.6.0 standardmäßig den eigenen Steckbrief.
+   Die fliegende TARDIS bleibt im optional gewählten Tab „Spiel“ sichtbar.
 5. Nach allen Gegnern beginnt die nächste Runde. Sind keine Gegner hinzugefügt, beginnt
    die nächste Runde unmittelbar nach dem letzten Partner.
 
@@ -213,7 +214,8 @@ Gewünschte Dauer und Schwierigkeitsgrad? Mehrere Figuren pro Spieler?
 4. Nach den Spielerzügen folgen die hinzugefügten Gegner nacheinander. Benötigt ein Gegner
    eine physische Bewegung, bestimmt der Host aus allen Partnern zufällig einen Helfer.
    Wiederholtes Anfordern desselben offenen Auftrags würfelt nicht neu. Der Helfer bestätigt
-   die ausgeführte Tischbewegung. Alle übrigen Handys bleiben in der TARDIS-Warteanzeige.
+   die ausgeführte Tischbewegung. Alle übrigen Handys warten im eigenen Steckbrief
+   (seit 0.6.0); die TARDIS ist zusätzlich im Tab „Spiel“ erreichbar.
 5. Bei einem Angriff sieht das Ziel beide Steckbriefe und die gespeicherte Ereignisbeschreibung.
    Nur das Ziel kann diese Anzeige bestätigen. Erst nach offenen Bestätigungen kann der Host
    den Gegnerzug abschließen; nach dem letzten Gegner beginnt die nächste Runde.
@@ -330,8 +332,9 @@ Spieleranzahl, vier übersichtlichen Plätzen, Spielernamen und Charakterporträ
 Auf der Startseite stehen keine Spielanleitung und kein Abenteuer-Untertitel; dort läuft keine TARDIS-Animation.
 WLAN-Name, Passwort, Spielseite und Code stehen kompakt in einer Verbindungskarte.
 Spielleitung und bisherige Test-/Verwaltungsfunktionen liegen auf einer separaten Seite.
-Eine große TARDIS-Ansicht ist über die Spielleitung verfügbar. Noch keine Medienbibliothek/Videoimport. Nicht beteiligte Spieler sehen eine eigene CSS-Animation einer fliegenden blauen
-TARDIS. Das betroffene Handy schaltet innerhalb der geöffneten Webseite zur Angriffsansicht;
+Eine große TARDIS-Ansicht ist über die Spielleitung verfügbar. Noch keine Medienbibliothek/Videoimport. Nicht beteiligte Spieler sehen seit 0.6.0
+standardmäßig ihren eigenen Steckbrief; im Tab „Spiel“ ist weiterhin eine eigene CSS-Animation
+einer fliegenden blauen TARDIS verfügbar. Das betroffene Handy schaltet innerhalb der geöffneten Webseite zur Angriffsansicht;
 ein ausgeschaltetes oder gesperrtes Telefon kann die lokale Website nicht verlässlich aufwecken.
 Bildschirm-Timeout und Energieverhalten müssen am Gerät geprüft werden.
 
@@ -495,7 +498,37 @@ Installation hat eine neue Partie-ID. Gleiche App-Version bedeutet nicht dieselb
   deinstallieren. Geschützter Geräte-/Adresswechsel, verlorener Browsernachweis und Spielstand-
   Export/Import bleiben eigene offene Funktionen.
 
-## 9. Technische Grundlage 0.5.1
+### Spieler-Tabs, Steckbrief und Würfellandung ab 0.6.0
+
+**Neuester Nutzerwunsch hat Vorrang vor der früheren reinen TARDIS-Warteanzeige:**
+
+- Nach Spielstart drei obere Tabs **Spiel**, **Steckbrief**, **Was passiert ist**. Der Verlauf
+  enthält eine auf-/zuklappbare Rubrik; der Klick auf seinen Tab öffnet sie. Gewählte Tabs und
+  der Aufklappzustand bleiben bei normalen Zustandsabfragen erhalten. Tastaturbedienung über
+  Pfeile/Home/End, passende ARIA-Tabrollen und sichtbare Fokusmarkierungen sind vorhanden.
+- Kompakter Kopf und beim Scrollen oben bleibender Hinweis: **Du bist am Zug!** mit hervorgehobener
+  Farbe oder Name des aktuell aktiven Spielers/Gegners. Der Hinweis bleibt auch beim Lesen des
+  Steckbriefs/Verlaufs sichtbar. Browser kann weiterhin kein gesperrtes Handy fernentsperren.
+- Während andere an der Reihe sind automatisch den eigenen Steckbrief zeigen. Beim Beginn des
+  eigenen Zugs automatisch zum Spieltab wechseln. Neuer Gegnerhelfer-Auftrag oder Angriff hat
+  Vorrang und öffnet ebenfalls den Spieltab mit eindeutigem Hinweis. Manuelles Nachlesen ist
+  anschließend weiterhin möglich; Polling zwingt nicht ständig zum Spieltab zurück.
+- Das Steckbriefbild erhält sein vollständiges 3:4-Format mit `object-fit: contain`. Keine
+  beschnittenen Köpfe/Körper im eigenen Steckbrief. Auch die Auswahlkarte enthält das ganze Bild
+  innerhalb ihrer kleineren Bildfläche; native Portal-Avatare dürfen weiterhin rund zugeschnitten sein.
+- Client-Würfel besitzt durchgängig sechs feste nummerierte Seiten, auch während der Animation.
+  Die gespeicherte Augenzahl bestimmt die Landedrehung. Nach Ablauf werden weder Würfel-DOM noch
+  Augen ausgetauscht. Animation und ruhende Darstellung haben dieselbe Endtransformation.
+- Der Würfel selbst bleibt vollständig deckend und behält `preserve-3d`; veränderliche Deckkraft
+  auf dem rotierenden Würfel würde seine 3D-Flächen abflachen. Drehung und Nebelbewegung über
+  CSS-Transformationen mit Compositor-Hinweis. Kein neuer Zufall im Browser. Dauer weiterhin
+  2,6 Sekunden, Nebel/kurzer Lichtimpuls und zurückgehaltene Ergebnisbeschriftung bleiben erhalten.
+  Bei reduzierter Bewegung statischer Nebel bis zur gespeicherten Aufdeckung.
+- Client-/Host-Regeln, API-Protokoll 1, Anmeldung und Speicherformat 5 unverändert. Die native
+  Portal-Würfelanimation wurde nicht geändert. Frame-Rate auf tatsächlichen Android-Spielerhandys
+  ist weiter zu prüfen; mobiles Chromium ersetzt keinen Hardwaretest.
+
+## 9. Technische Grundlage 0.6.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -553,6 +586,23 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.6.0 am 25.10.2026:
+
+- `npm test`: **103 DOM-Prüfungen bestanden**. Neu: obere Tabs/Tastatur, aufklappbarer Verlauf,
+  Erhalt der Auswahl beim Polling, eigene Zuganzeige, Steckbrief beim Warten, Aufgaben-/Angriffs-
+  Priorität sowie derselbe Würfel mit unveränderten Augen vor/während/nach Aufdeckung.
+- Mobiler Chromium-Test bei 390×844 und 320 Pixel Breite: vollständiges 3:4-Porträt mit contain,
+  Tabs/Verlauf, automatischer Ansichtswechsel und sechs animierte Würfe tatsächlich geprüft.
+  Für jede Augenzahl 1–6 ist die größte nach vorn gerichtete Fläche das gespeicherte Ergebnis;
+  Matrixdifferenz zwischen Animationsende und ruhendem Würfel **0 für alle sechs Werte**.
+  Gleicher Würfel/gleiche Augen bleiben erhalten. Reduzierte Bewegung und schmale Ansicht ohne
+  horizontales Seitenüberlaufen geprüft; keine JavaScript-Fehler.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**,
+  **221 Kernprüfungen bestanden**, Lint **0 Fehler / 12 Warnungen**. App 0.6.0 / Versionscode 8.
+- APK-Signatur mit 0.5.1 verglichen: **identisch**, direktes Update ohne Deinstallation möglich.
+  Finale Anleitung wird vor Ausgabe erneut als APK-Asset übernommen. Keine Regellogik oder
+  Speicherdaten geändert. Kein echter Telefon-/WLAN-Test; Bildrate auf Android weiterhin offen.
 
 Für 0.5.1 am 25.10.2026:
 
@@ -682,8 +732,9 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 25.10.2026 | 0.3.1 | Nutzer wählt Spielerdesign B und Portaldesign A; Spieler-CSS auf Pergament/Petrol/Messing und Serifenschrift umgestellt; Regeln unverändert |
 | 25.10.2026 | 0.4.0 | Grafische Portal-Lobby mit drehender TARDIS/Charakterporträts; einfache WLAN-Einrichtung, echter mDNS-Hostname, Port-80-Versuch mit 8080-Fallback, WLAN-/Seiten-QR und Code-Vorbelegung |
 | 25.10.2026 | 0.5.0 | Statischer Doctor-Who-Hintergrund statt Lobby-Animation; aufgeräumte Starttexte, Portalcode, Dr. Who/Version auf Spielerhandys, öffentliche reine Belegungsanzeige, wischbares Steckbrief-Karussell, realistischere generierte Porträts, TARDIS-Launcher-Icon, automatische Portal-Spielübersicht und 2,6 Sekunden Würfelinszenierung mit persistenten Ereignissen (Format 5) |
-
 | 25.10.2026 | 0.5.1 | Automatischer Versions-/Protokoll-/Partieabgleich; ungültige Anmeldung führt zurück zum Beitritt, Metadaten ohne Token, kein Übertragen alter Aktionen und Schutz vor verspäteten alten Antworten; gleicher Signierschlüssel wie 0.5.0 |
+
+| 25.10.2026 | 0.6.0 | Drei Spieler-Tabs und aufklappbarer Verlauf; sichtbare Zughinweise, Steckbrief als Warteansicht mit vollständigem Bild; sechs feste Würfelseiten und Landedrehung passend zum gespeicherten Ergebnis ohne Zahlentausch |
 
 ## 13. Fortsetzung in einem anderen Chat
 
@@ -723,7 +774,8 @@ am besten; Design A ist für das Portal-Handy bestätigt. Nicht erneut nach A/B/
 - **Spieler: B „Zeitreise-Archiv“** – helle Pergamentflächen, Petrol-Schaltflächen,
   Messing-/Goldakzente und Serifenschrift für Überschriften. Gilt für Anmeldung, Auswahl,
   Steckbriefe, Würfel-/Bewegungsansicht und Angriffsansicht. Die TARDIS-Warteanimation bleibt
-  als Weltraumszene innerhalb des Archivrahmens erhalten.
+  als optionale Weltraumszene im Tab „Spiel“ innerhalb des Archivrahmens erhalten;
+  seit 0.6.0 ist der eigene Steckbrief die Standard-Warteansicht.
 - **Portal: A „TARDIS-Konsole“** – dunkelblau, Cyan, klar erkennbare Verbindungs-/Spieldaten
   und leuchtende Portalwirkung. Die vorhandene dunkle Android-Portalbasis bleibt dafür bestehen.
 - **C „Zeitwirbel“** wurde nicht als Gestaltung ausgewählt.

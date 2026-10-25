@@ -19,7 +19,7 @@ async function main(){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
    if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
    if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
@@ -65,22 +65,33 @@ async function main(){
   check($('cardPosition').textContent.includes('3 / 3 · Weinender Engel'),'updated character ownership preserves browsed card');
   const active=copy(base);active.revision=3;active.started=true;active.current='A';w.render(active);
   check(!$('game').hidden&&$('idle').hidden,'active partner sees controls');
+  check(!$('playerArea').hidden&&!$('playPanel').hidden&&$('tabPlay').getAttribute('aria-selected')==='true','own turn opens play tab');
+  check($('turnNoticeTitle').textContent==='Du bist am Zug!'&&$('turnNotice').classList.contains('is-active'),'own-turn notice is prominent above tabs');
+  $('tabProfile').click();check(!$('profilePanel').hidden&&$('playPanel').hidden&&$('myProfile').textContent.includes('Der Doctor'),'profile tab exposes own dossier during own turn');
+  $('tabHistory').click();check(!$('historyPanel').hidden&&$('historyDetails').open,'history tab opens collapsible event log');
+  $('historyDetails').open=false;w.render(copy(active));check(!$('historyPanel').hidden&&!$('historyDetails').open,'polling preserves selected tab and collapsed history');
+  $('tabHistory').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));
+  check(!$('playPanel').hidden&&w.document.activeElement===$('tabPlay'),'tab keyboard navigation selects and focuses play');
   check(!$('rollButton').disabled,'active partner may act');
   check($('controls').hidden&&$('turnChoices').hidden,'first roll required before moving or acting');
   const waiting=copy(active);waiting.revision=4;waiting.current='B';w.render(waiting);
-  check(!$('idle').hidden&&$('game').hidden,'uninvolved partner sees TARDIS');
-  check($('idle').querySelector('.tardis'),'TARDIS animation exists');
+  check(!$('idle').hidden&&$('game').hidden,'uninvolved partner gets waiting status');
+  check(!$('profilePanel').hidden&&$('myProfile').textContent.includes('Der Doctor'),'waiting partner sees own dossier by default');
   check($('rollButton').disabled,'uninvolved controls disabled');
+  check($('turnNoticeTitle').textContent==='Bob ist am Zug.','notice identifies active partner');
+  $('tabHistory').click();w.render(copy(waiting));check(!$('historyPanel').hidden,'waiting player may inspect history without polling forcing a tab');
   const enemy=copy(waiting);enemy.revision=5;enemy.current=null;enemy.phase='enemies';enemy.activeEnemy='weeping-angel';enemy.helperId='B';w.render(enemy);
   check(!$('idle').hidden&&$('helper').hidden,'unassigned player waits in enemy phase');
   enemy.revision=6;enemy.helperId='A';w.render(enemy);
   check(!$('helper').hidden&&$('idle').hidden,'selected helper sees movement task');
+  check(!$('playPanel').hidden&&$('turnNoticeTitle').textContent.includes('Gegnerfigur bewegen'),'new helper task opens play tab and notice');
   next=copy(enemy);next.revision=7;next.helperId='';next.movementDone=true;
   const count=requests.length;$('confirmMovement').click();$('confirmMovement').click();await tick();
   check(requests.length===count+1,'double tap sends one movement confirmation');
   check(requests.at(-1).body.get('action')==='confirmMovement','helper confirms distinct action');
   const attack=copy(next);attack.revision=8;attack.attack={id:'attack-1',enemyId:'weeping-angel',targetId:'A',text:'Für 2 Runden gebannt. <img src=x onerror=alert(1)>',pending:true};w.render(attack);
   check(!$('battle').hidden&&$('idle').hidden,'attacked player gets active battle view');
+  check(!$('playPanel').hidden&&$('turnNoticeTitle').textContent==='Du wirst angegriffen','attack takes priority over waiting profile');
   check($('defenderProfile').textContent.includes('Der Doctor'),'own dossier visible');
   check($('attackerProfile').textContent.includes('Weinender Engel'),'attacker dossier visible');
   check($('outcome').textContent===attack.attack.text&&!$('outcome').querySelector('img'),'outcome rendered as safe exact text');
@@ -96,11 +107,16 @@ async function main(){
   const moving=copy(choice);moving.revision=12;moving.turn={stage:'move',roll:5,remaining:3};w.render(moving);
   check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');
   check($('turnPrompt').textContent.includes('3 von 5'),'remaining distance shown');
+  const cube=$('roll').querySelector('.dice-cube'),fixedFaces=cube.innerHTML;
   const revealing=copy(choice);revealing.revision=13;revealing.rollEvent={id:'roll-1',playerId:'A',value:5};revealing.log=['Alice würfelt 5'];w.render(revealing);
   check($('roll').classList.contains('rolling')&&!$('roll').getAttribute('aria-label').includes('5'),'result stays hidden while dice tumble');
+  check($('roll').querySelector('.dice-cube')===cube&&cube.innerHTML===fixedFaces,'animation uses existing cube with fixed numbered faces');
+  check([...cube.children].map(face=>face.dataset.value).sort().join('')==='123456','all six numbered faces exist throughout animation');
+  check($('roll').dataset.face==='5','animation targets committed value before reveal');
   check($('turnChoices').hidden&&$('moveChoiceButton').disabled&&!$('log').textContent.includes('würfelt 5'),'movement, action and result log wait for reveal');
   w.render(revealing);check(revealStarts===1,'polling same saved die does not restart animation');
   revealTimer();check($('rollResult').textContent==='Dein Wurf: 5'&&!$('turnChoices').hidden&&!$('moveChoiceButton').disabled,'after 2.6 seconds saved result and choices become available');
+  check($('roll').querySelector('.dice-cube')===cube&&cube.innerHTML===fixedFaces,'reveal never replaces die or changes pips');
   check(JSON.parse(w.localStorage.getItem('drwho.v1')).revealedRoll==='session:roll-1','completed reveal remembered across reconnect');
   w.render(revealing);check(revealStarts===1,'same event does not animate again after reveal');
   const second=copy(revealing);second.revision=14;second.rollEvent.id='roll-2';w.render(second);
@@ -116,7 +132,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -142,7 +158,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
    w.setInterval=callback=>{recoveryPoll=callback;return 0};
    w.fetch=async(path,options)=>{
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'old-session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'old-session'})};
     if(path==='/api/state'){
      if(!valid)return await new Promise(resolve=>held.push(resolve));
      return {ok:true,status:200,json:async()=>copy(base)};
@@ -157,7 +173,7 @@ async function main(){
    // Keep a second old poll in flight so a late 401 can arrive after successful login.
    await tick();const late=recoveryPoll();await tick();
    held[0]({ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})});await tick();
-   check(!$('join').hidden&&['game','selection','idle','helper','battle'].every(id=>$(id).hidden),'stale token never traps client on old game screen');
+   check(!$('join').hidden&&['playerArea','game','selection','idle','helper','battle'].every(id=>$(id).hidden),'stale token never traps client on old game screen');
    const stored=JSON.parse(w.localStorage.getItem('drwho.v1'));
    check(stored.token===''&&stored.pending===null&&stored.join.requestId===originalJoin.requestId,'invalid access cleared while original join proof remains');
    check($('name').value==='Alice'&&$('code').value===(newParty?'654321':'123456'),'name retained and current QR code available');
@@ -177,7 +193,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
    w.fetch=async(path,options)=>{
     if(options.method==='POST')postRequests++;
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.5.2':'0.5.1',protocolVersion:mismatch==='protocol'?2:1,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.6.1':'0.6.0',protocolVersion:mismatch==='protocol'?2:1,sessionId:mismatch==='party'?'new-party':'session'})};
     if(path==='/api/state')stateRequests++;
     return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
    };
@@ -193,7 +209,7 @@ async function main(){
     guarded.window.render(copy(base));check($('selection').hidden&&!$('reloadPage').hidden,'late old snapshot cannot reopen UI after compatibility block');
    }
    check(stateRequests===0&&postRequests===0,'metadata mismatch blocks stale state and automatic registration');
-   check(['game','selection','idle','helper','battle'].every(id=>$(id).hidden),'mismatch never leaves an interactive old view visible');
+   check(['playerArea','game','selection','idle','helper','battle'].every(id=>$(id).hidden),'mismatch never leaves an interactive old view visible');
   }finally{guarded.window.close()}
  }
  console.log('PASS: '+checks+' total player-page behavior checks including expired registrations');
