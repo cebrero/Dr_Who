@@ -55,6 +55,7 @@ public final class GameEngine {
     }
 
     public synchronized String code() { return state.code; }
+    public synchronized String sessionId() { return state.id; }
     /** Public pre-join occupancy only; no player names, codes, tokens or game state. */
     public synchronized String lobbyStatus() { return "{\"occupied\":" + state.players.size() + ",\"capacity\":4}"; }
     /** Consistent host-only presentation data; never exposed as a public HTTP route. */

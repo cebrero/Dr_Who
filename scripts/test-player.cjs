@@ -13,14 +13,16 @@ const base={sessionId:'session',revision:1,started:false,ready:true,selectedCoun
 const copy=o=>JSON.parse(JSON.stringify(o));
 const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
- let next=copy(base),requests=[],fail=false,revealTimer,revealStarts=0;
+ let next=copy(base),requests=[],fail=false,unauthorized=false,networkState=false,revealTimer,revealStarts=0;
  const html=fs.readFileSync('app/src/main/assets/player.html','utf8');
  const dom=new JSDOM(html,{url:'http://192.168.4.1:8080/?code=123456',runScripts:'dangerously',beforeParse(w){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
-   if(fail&&path!=='/api/state')throw new Error('offline');
+   if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
+   if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
    return {ok:true,status:200,json:async()=>copy(next)};
   };
  }});
@@ -103,6 +105,10 @@ async function main(){
   w.render(revealing);check(revealStarts===1,'same event does not animate again after reveal');
   const second=copy(revealing);second.revision=14;second.rollEvent.id='roll-2';w.render(second);
   check(revealStarts===2&&$('roll').classList.contains('rolling'),'a new event with same die value animates again');revealTimer();
+  networkState=true;await w.poll();check($('join').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).token==='test-token','temporary network failure retains valid login');networkState=false;w.render(second);
+  unauthorized=true;$('actionChoiceButton').click();await tick();
+  check(!$('join').hidden&&$('game').hidden&&$('selection').hidden,'command authorization failure returns to join form');
+  check($('retry').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).pending===null,'expired command is discarded rather than replayed into next game');
   console.log('PASS: '+checks+' player-page behavior checks');
  }finally{w.close()}
  // The join screen must show real occupancy without authenticating or registering a player.
@@ -110,6 +116,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -127,5 +134,68 @@ async function main(){
   check($('name').value==='Martha'&&$('code').value==='123456'&&joins===0,'occupancy polling preserves input and never registers guest');
   console.log('PASS: '+checks+' total player-page behavior checks');
  }finally{guest.window.close()}
+ // Fresh host installation rejects the token left behind in the client browser.
+ for(const newParty of [false,true]){
+  let recoveryPoll,valid=false;const posts=[],held=[];
+  const originalJoin={name:'Alice',code:'123456',requestId:'original-join-request-1234'};
+  const recovery=new JSDOM(html,{url:'http://192.168.4.1:8080/?code='+(newParty?'654321':'123456'),runScripts:'dangerously',beforeParse(w){
+   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
+   w.setInterval=callback=>{recoveryPoll=callback;return 0};
+   w.fetch=async(path,options)=>{
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.5.1',protocolVersion:1,sessionId:'old-session'})};
+    if(path==='/api/state'){
+     if(!valid)return await new Promise(resolve=>held.push(resolve));
+     return {ok:true,status:200,json:async()=>copy(base)};
+    }
+    if(path==='/api/lobby')return {ok:true,status:200,json:async()=>({occupied:newParty?0:1,capacity:4})};
+    assert.equal(path,'/api/join');posts.push({body:new URLSearchParams(String(options.body)),headers:options.headers});valid=true;
+    return {ok:true,status:200,json:async()=>({token:'current-token',sessionId:'session'})};
+   };
+  }});
+  try{
+   const w=recovery.window,$=id=>w.document.getElementById(id);
+   // Keep a second old poll in flight so a late 401 can arrive after successful login.
+   await tick();const late=recoveryPoll();await tick();
+   held[0]({ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})});await tick();
+   check(!$('join').hidden&&['game','selection','idle','helper','battle'].every(id=>$(id).hidden),'stale token never traps client on old game screen');
+   const stored=JSON.parse(w.localStorage.getItem('drwho.v1'));
+   check(stored.token===''&&stored.pending===null&&stored.join.requestId===originalJoin.requestId,'invalid access cleared while original join proof remains');
+   check($('name').value==='Alice'&&$('code').value===(newParty?'654321':'123456'),'name retained and current QR code available');
+   check(posts.length===0,'expired token does not silently join or occupy another seat');
+   await recoveryPoll();check($('joinOccupancy').textContent.startsWith((newParty?'0':'1')+' von 4'),'fresh lobby occupancy available after rejection');
+   $('join').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();
+   check(posts.length===1&&!posts[0].headers.Authorization,'explicit new login sends no rejected bearer token');
+   check((posts[0].body.get('requestId')===originalJoin.requestId)===!newParty,'same name/code reuses join proof; changed portal code creates fresh request');
+   check($('join').hidden&&!$('selection').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).token==='current-token','client proceeds to current character selection');
+   held[1]({ok:false,status:401,json:async()=>({error:'old response'})});await late;
+   check($('join').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).token==='current-token','late old 401 cannot sign out new valid registration');
+  }finally{recovery.window.close()}
+ }
+ for(const mismatch of ['party','version','protocol']){
+  let stateRequests=0,postRequests=0;
+  const guarded=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
+   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
+   w.fetch=async(path,options)=>{
+    if(options.method==='POST')postRequests++;
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.5.2':'0.5.1',protocolVersion:mismatch==='protocol'?2:1,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/state')stateRequests++;
+    return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
+   };
+  }});
+  try{
+   await tick();const $=id=>guarded.window.document.getElementById(id),stored=JSON.parse(guarded.window.localStorage.getItem('drwho.v1'));
+   if(mismatch==='party'){
+    check(!$('join').hidden&&$('reloadPage').hidden,'same app version with new party returns directly to login');
+    check(stored.token===''&&stored.pending===null,'party change discards old access and commands');
+   }else{
+    check(!$('reloadPage').hidden&&$('join').hidden,'version/protocol mismatch offers reload instead of false login failure');
+    check(stored.token==='known-token'&&stored.pending.requestId==='pending-command','software update preserves same-party credentials and request receipt');
+    guarded.window.render(copy(base));check($('selection').hidden&&!$('reloadPage').hidden,'late old snapshot cannot reopen UI after compatibility block');
+   }
+   check(stateRequests===0&&postRequests===0,'metadata mismatch blocks stale state and automatic registration');
+   check(['game','selection','idle','helper','battle'].every(id=>$(id).hidden),'mismatch never leaves an interactive old view visible');
+  }finally{guarded.window.close()}
+ }
+ console.log('PASS: '+checks+' total player-page behavior checks including expired registrations');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

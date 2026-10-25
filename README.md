@@ -8,7 +8,7 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.5.0
+## Stand 0.5.1
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
@@ -40,7 +40,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 217 Kern-/HTTP-Prüfungen und 54 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 221 Kern-/HTTP-Prüfungen und 89 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -74,7 +74,16 @@ bash scripts/test-core.sh
 Optionale Tests der Spieleransicht mit Node.js 22: `npm ci --ignore-scripts` und `npm test`.
 Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerhandys benötigt.
 
-## Installationshinweis 0.5.0
+Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer neuen Partie führt
+statt einer blockierenden Fehlermeldung die Anmeldung zurück zum aktuellen Portalcode. Bei einer
+anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
+
+## Installationshinweis 0.5.1
+
+**Über 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
+Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
+
+### Ältere Version 0.4.0
 
 Der alte temporäre Signierschlüssel ist nicht mehr verfügbar. Diese APK hat deshalb eine
 andere Signatur als 0.4.0 und lässt sich nicht direkt darüber installieren. Eine Deinstallation

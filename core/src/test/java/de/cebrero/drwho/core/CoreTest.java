@@ -216,11 +216,12 @@ public final class CoreTest {
         String token=ready(e,"Alice","doctor");e.startDemo();
         check(e.portalState().headline.contains("Alice")&&e.portalState().detail.contains("A1"),"portal shows current actor and position");
         String request=id();long before=revision(e.snapshot(token));e.command(token,request,before,"roll","");
+        check(!e.sessionId().equals(new GameEngine(new MemoryStore()).sessionId()),"fresh installation has different party identity even with same app version");
         GameEngine.PortalState rolled=e.portalState();
         check(!rolled.rollId.isEmpty()&&rolled.die==5&&rolled.rollPlayer.equals("Alice"),"portal receives stable committed die event");
         check(e.snapshot(token).contains("\"rollEvent\":{\"id\":"+GameEngine.quote(rolled.rollId)),"authenticated clients receive same dice event");
         e.command(token,request,before,"roll","");check(e.portalState().rollId.equals(rolled.rollId)&&dice.rolls==1,"retry does not create presentation event");
-        e=new GameEngine(store,dice);check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
+        e=new GameEngine(store,dice);check(e.sessionId().equals(rolled.sessionId),"party identity survives normal restart and update");check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
         e.command(token,id(),revision(e.snapshot(token)),"chooseMove","");
         e.command(token,id(),revision(e.snapshot(token)),"move","S");
         check(e.portalState().events.get(e.portalState().events.size()-1).contains("Alice zieht von A1 nach A2"),"movement event records origin and destination");
@@ -249,9 +250,12 @@ public final class CoreTest {
     }
     static void http() throws Exception {
         GameEngine e = new GameEngine(new MemoryStore());
-        try(LocalServer server=new LocalServer(e,"<h1>Dr_Who</h1>".getBytes(StandardCharsets.UTF_8),0)){
+        try(LocalServer server=new LocalServer(e,"<h1>Dr_Who</h1>".getBytes(StandardCharsets.UTF_8),0,name->null,"0.5.1")){
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
+            Response info=call(server,"/api/info",null,null,false);
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":1,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");
             String form="name=A&code="+e.code()+"&requestId="+id();

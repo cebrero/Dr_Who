@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.5.0 · Portal-Spielübersicht, Würfelinszenierung und wischbare Steckbriefe**
-<!-- app-version: 0.5.0 -->
-<!-- reviewed-source-sha256: b69fd7b7734be75357c24a24491e2ae0c6becd7e199c27c1f810b05d7fd48fc0 -->
+Stand: **25.10.2026 · Version 0.5.1 · Versions-/Partieabgleich und erneute Client-Anmeldung**
+<!-- app-version: 0.5.1 -->
+<!-- reviewed-source-sha256: c3576abc3d45975c785ceb043fb761d352222365bfbd0448967938ec3a2d977b -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -461,7 +461,41 @@ kurz aufblitzen. Dies ist eine Darstellungsvorgabe und ändert keine Spielregel.
 - Reale Handyperformance, Timing bei App-Hintergrund/Display-Sperre und native Optik bleiben
   Gerätetests. Browseroberfläche kann keine gesperrten Handys fernentsperren.
 
-## 9. Technische Grundlage 0.5.0
+### Versionsabgleich und veraltete Client-Anmeldung ab 0.5.1
+
+**Vom Nutzer beobachteter Fehler:** Alte APK mit begonnener Partie deinstalliert, danach 0.5.0
+frisch installiert. Der Browser behielt seinen alten Token und zeigte nur „Diese Anmeldung gehört
+nicht zu dieser Partie“. Der Host-Spielstand wurde durch die Deinstallation entfernt; die neue
+Installation hat eine neue Partie-ID. Gleiche App-Version bedeutet nicht dieselbe Partie.
+
+- `GET /api/info` liefert ohne Anmeldung nur `appVersion`, `protocolVersion` (aktuell 1) und
+  eine zufällige, nicht geheime `sessionId`. Keine Namen, Figuren, Tokens oder Portalcodes.
+  `/api/lobby` bleibt auf die reine Platzbelegung begrenzt; `/api/state` bleibt authentisiert.
+- Android meldet die echte Build-Version aus `BuildConfig.VERSION_NAME`; native Versionszeile
+  nutzt dieselbe Quelle. Bei Versionserhöhung auch `CLIENT_VERSION` und die sichtbare Versionszeile
+  in `player.html` anpassen. Der Client prüft Portal-Metadaten beim Laden und alle zehn Sekunden.
+- App- oder Protokollversion weicht ab: alte Ansichten sperren und „Spieleroberfläche neu laden“
+  anbieten. Tokens und unbestätigte Anfrage-ID bleiben für einen sicheren Retry nach dem Neuladen
+  erhalten. Keine gültige Anmeldung allein wegen eines Softwareupdates löschen.
+- Gleiche Version, aber neue Partie-ID: nur alte Client-Anmeldung, noch offene Client-Aktion und
+  Würfel-Präsentationsstatus verwerfen. Automatisch Anmeldemaske zeigen, Namen beibehalten und
+  aktuelle Platzbelegung abfragen. Keine automatische Neuanmeldung, kein zusätzlicher Platzbezug.
+- Auch ein tatsächlicher HTTP-401 bei Zustands- oder Aktionsanfrage führt zur Anmeldemaske statt
+  in die Sackgasse. Nicht mehr gültige Aktionen werden niemals in die neue Partie übertragen.
+- Ursprüngliche Beitrittsanfrage bleibt gespeichert: Wenn Name und Code unverändert sind, wird
+  dieselbe Anfrage-ID erneut verwendet. Der vorhandene Host kann damit denselben Platz auch nach
+  Spielstart zurückgeben; keine alleinige Identifizierung über den Spielernamen und kein Token-Bypass.
+  Bei anderem Namen/Portalcode entsteht erst nach explizitem „Beitreten“ eine neue Anmeldung.
+- Antworten einer alten Token-Anfrage nach erfolgreichem Neubeitritt werden ignoriert. Ein normaler
+  Netzfehler löscht die Anmeldung nicht. Protokollprüfung ersetzt keine Authentisierung.
+- Soforthilfe für 0.5.0: aktuelle Portal-Adresse in einem privaten/Inkognito-Tab öffnen und mit
+  aktuellem Portalcode neu beitreten. Das hilft nur beim Einstieg in die neue Partie, stellt keinen
+  durch Deinstallation gelöschten Host-Spielstand wieder her. Browserdaten nicht pauschal löschen.
+- 0.5.1 verwendet den gesicherten Schlüssel von 0.5.0. Als Update installieren, 0.5.0 nicht vorher
+  deinstallieren. Geschützter Geräte-/Adresswechsel, verlorener Browsernachweis und Spielstand-
+  Export/Import bleiben eigene offene Funktionen.
+
+## 9. Technische Grundlage 0.5.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -519,6 +553,24 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.5.1 am 25.10.2026:
+
+- `npm test`: **89 DOM-Prüfungen bestanden**. Neue Fälle: abgelaufene Anmeldung, erneuter
+  Beitritt ohne alte Aktionen, Name/QR-Code erhalten, ursprüngliche Anfrage-ID wiederverwenden,
+  keine stille Neuanmeldung, verspätete 401 nach erfolgreicher Anmeldung, WLAN-Unterbrechung,
+  gleiche Version/neue Partie, Versions-/Protokollabweichung mit Neuladen-Schaltfläche sowie
+  gesperrte alte Momentaufnahme nach einer Versionsabweichung.
+- `bash scripts/test-core.sh`: **221 Prüfungen bestanden**. Neue Fälle prüfen öffentliche,
+  schreibgeschützte Metadaten ohne Zugangsdaten, unterschiedliche neue Partie-IDs sowie stabile
+  Partie-ID nach Wiederherstellung. Spielregeln und Speicherformat 5 unverändert.
+- Android `:app:clean :core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**,
+  erneut 221 Kernprüfungen. Lint **0 Fehler / 12 Warnungen**. Versionsmetadaten 0.5.1 / Code 7.
+- Mobiler Chromium-Test: alte Anmeldung/neue Partie führt zum Formular; genau ein expliziter
+  Beitritt; simuliertes Versionsupdate fordert Neuladen und erhält dabei die gültige Anmeldung
+  ohne zweiten Platz. Keine JavaScript-Fehler festgestellt.
+- APK-Zertifikat mit 0.5.0 verglichen: **identisch**, direktes Update möglich. Spielstand nicht
+  durch Deinstallation entfernen. Kein realer Android-Gerätetest durchgeführt.
 
 Für 0.5.0 am 25.10.2026:
 
@@ -629,8 +681,9 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 25.10.2026 | 0.3.0 | W6 zu Beginn jedes Spielerzugs, exakte Reststrecke, Richtungswechsel, 5/6-Wahl, Speicherformat 4; zentrale ONBOARDING.md mit Spielregeln und Build-Prüfung; drei visuelle Designvorschläge |
 | 25.10.2026 | 0.3.1 | Nutzer wählt Spielerdesign B und Portaldesign A; Spieler-CSS auf Pergament/Petrol/Messing und Serifenschrift umgestellt; Regeln unverändert |
 | 25.10.2026 | 0.4.0 | Grafische Portal-Lobby mit drehender TARDIS/Charakterporträts; einfache WLAN-Einrichtung, echter mDNS-Hostname, Port-80-Versuch mit 8080-Fallback, WLAN-/Seiten-QR und Code-Vorbelegung |
-
 | 25.10.2026 | 0.5.0 | Statischer Doctor-Who-Hintergrund statt Lobby-Animation; aufgeräumte Starttexte, Portalcode, Dr. Who/Version auf Spielerhandys, öffentliche reine Belegungsanzeige, wischbares Steckbrief-Karussell, realistischere generierte Porträts, TARDIS-Launcher-Icon, automatische Portal-Spielübersicht und 2,6 Sekunden Würfelinszenierung mit persistenten Ereignissen (Format 5) |
+
+| 25.10.2026 | 0.5.1 | Automatischer Versions-/Protokoll-/Partieabgleich; ungültige Anmeldung führt zurück zum Beitritt, Metadaten ohne Token, kein Übertragen alter Aktionen und Schutz vor verspäteten alten Antworten; gleicher Signierschlüssel wie 0.5.0 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

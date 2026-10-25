@@ -52,3 +52,10 @@
     und Clients etwa 2–3 Sekunden mit Nebel/kurzem Blitz. Gespeicherten Wert einmalig aufdecken,
     Folgehandlungen währenddessen sperren; niemals für Animation neu würfeln. Stabile Wurf-ID
     aus Speicherformat 5 nutzen, Polling darf Animation nicht neu starten. Barrierearme Alternative.
+21. Seit 0.5.1 Version/Protokoll und Partie-ID getrennt prüfen. Neue Partie oder echte 401:
+    zurück zur Anmeldung; keine alten Aktionen übertragen, kein automatischer Platzbezug.
+    Andere Softwareversion: Neuladen anbieten, gültige Anmeldung erhalten. WLAN-Aussetzer
+    ist kein Logout. Alten Poll-Antworten nach neuem Beitritt keine Wirkung geben.
+    CLIENT_VERSION im Browser muss zur App-Version passen; Host nutzt BuildConfig.
+22. Für jeden Build ab 0.5.0 den gesicherten privaten Signierschlüssel wiederverwenden und
+    Zertifikat vor APK-Ausgabe vergleichen. Normales Update ohne Deinstallation ermöglichen.

@@ -29,9 +29,10 @@ h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;line-height
 
 [hidden]{display:none!important}
 </style>
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.5.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.5.1</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
+<button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
 <form id="join" class="card"><h2>Der Runde beitreten</h2>
 <label for="name">Dein Name</label><input id="name" maxlength="24" required autocomplete="nickname">
 <label for="code">Portalcode</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
@@ -52,6 +53,8 @@ h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;line-height
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
+const CLIENT_VERSION='0.5.1',PROTOCOL_VERSION=1;
+let portalCheckedAt=0,compatibilityBlocked=false;
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
 let token=saved.token||'';pending=saved.pending||null;
@@ -65,15 +68,15 @@ async function api(path,data){
  }finally{clearTimeout(timeout)}
 }
 function controls(){
- const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!rolling&&!state.attack.pending;
+ const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
  $('rollButton').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
  $('actionChoiceButton').disabled=!active||state.turn.stage!=='choice';
- $('retry').hidden=!pending;$('retry').disabled=busy;
- $('confirmMovement').disabled=busy||!!pending;
- $('ackAttack').disabled=busy||!!pending;
- document.querySelectorAll('.choose').forEach(b=>b.disabled=b.dataset.locked==='true'||busy||!!pending);
+ $('retry').hidden=!pending||compatibilityBlocked;$('retry').disabled=busy;
+ $('confirmMovement').disabled=!state||busy||!!pending;
+ $('ackAttack').disabled=!state||busy||!!pending;
+ document.querySelectorAll('.choose').forEach(b=>b.disabled=compatibilityBlocked||!state||b.dataset.locked==='true'||busy||!!pending);
 }
 function el(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e}
 function dossier(c){
@@ -119,6 +122,7 @@ function presentRoll(s,active){
  },2600);
 }
 function render(s){
+ if(compatibilityBlocked)return;
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
  state=s;$('join').hidden=true;
  const me=s.players.find(p=>p.id===s.you),playing=s.started&&s.ready;
@@ -160,8 +164,39 @@ function render(s){
  $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
  for(const event of (rolling?[]:s.log).slice(-8).reverse()){const li=document.createElement('li');li.textContent=event;$('log').append(li)}controls();
 }
+function returnToJoin(){
+ const name=saved.join?.name||state?.players.find(p=>p.id===state.you)?.name||'';
+ token='';pending=null;state=null;rolling=false;rollingId='';
+ // Keep the original join request: the same name/code can reclaim its existing slot.
+ delete saved.sessionId;delete saved.revealedRoll;
+ let storageFailed=false;try{persist()}catch(e){storageFailed=true}
+ $('name').value=name;$('join').hidden=false;
+ for(const id of ['selection','game','idle','helper','battle'])$(id).hidden=true;
+ $('roll').classList.remove('rolling','revealed');$('characters').replaceChildren();delete $('characters').dataset.signature;cardIndex=0;
+ $('message').textContent='Die gespeicherte Anmeldung passt nicht zu diesem Portal. Gib den aktuellen Portalcode ein und tritt erneut bei.'+(storageFailed?' Browser-Speicherung bitte erlauben.':'');
+ controls();
+}
+function requireReload(message){
+ compatibilityBlocked=true;state=null;
+ for(const id of ['join','selection','game','idle','helper','battle'])$(id).hidden=true;
+ $('reloadPage').hidden=false;$('message').textContent=message;controls();
+}
 async function poll(){
- if(busy)return;
+ if(busy||compatibilityBlocked)return;
+ if(Date.now()-portalCheckedAt>=10000){
+  const accessBeforeCheck=token;
+  try{
+   const info=await api('/api/info');if(token!==accessBeforeCheck||compatibilityBlocked)return;
+   if(info.protocolVersion!==PROTOCOL_VERSION||info.appVersion!==CLIENT_VERSION){requireReload('Das Portal wurde aktualisiert. Bitte lade die Spieleroberfläche neu.');return}
+   if(typeof info.sessionId!=='string'||!info.sessionId){requireReload('Portal-Informationen sind unvollständig. Bitte lade die Spieleroberfläche neu.');return}
+   portalCheckedAt=Date.now();
+   if(token&&saved.sessionId&&saved.sessionId!==info.sessionId)returnToJoin();
+  }catch(e){
+   if(token!==accessBeforeCheck||compatibilityBlocked)return;
+   if(e.status===404){requireReload('Portal und Spieleroberfläche passen nicht zusammen. Bitte lade die Seite neu.');return}
+   $('message').textContent='Portal gerade nicht erreichbar. WLAN und Portal-App prüfen. Deine Anmeldung bleibt erhalten.';return;
+  }
+ }
  if(!token){
   try{
    const lobby=await api('/api/lobby');
@@ -170,8 +205,13 @@ async function poll(){
   }catch(e){$('joinOccupancy').textContent='Belegung gerade nicht verfügbar. Portal und WLAN prüfen.'}
   return;
  }
- try{render(await api('/api/state'));if(!pending)$('message').textContent=''}
- catch(e){$('message').textContent=e.status===401?'Diese Anmeldung gehört nicht zu dieser Partie. Host oder Browseradresse prüfen.':'Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true)}
+ const access=token;
+ try{const current=await api('/api/state');if(token!==access||compatibilityBlocked)return;render(current);if(!pending)$('message').textContent=''}
+ catch(e){
+  if(token!==access||compatibilityBlocked)return;
+  if(e.status===401){returnToJoin();return}
+  $('message').textContent='Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true);
+ }
 }
 $('join').addEventListener('submit',async event=>{
  event.preventDefault();if(joining)return;joining=true;$('joinButton').disabled=true;
@@ -183,20 +223,22 @@ $('join').addEventListener('submit',async event=>{
  finally{joining=false;$('joinButton').disabled=false}
 });
 async function send(){
- if(!pending||busy)return;busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
- try{const s=await api(pending.kind==='character'?'/api/character':'/api/command',pending);pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
+ if(!pending||busy)return;const access=token,request=pending;busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
+ try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
  catch(e){
-  if(e.status===400||e.status===401){pending=null;persist();$('message').textContent=e.message}
+  if(token!==access||pending!==request||compatibilityBlocked)return;
+  if(e.status===401){returnToJoin();return}
+  if(e.status===400){pending=null;persist();$('message').textContent=e.message}
   else $('message').textContent='Keine Bestätigung erhalten. Gleiche Anfrage erneut senden; sie wird nicht doppelt ausgeführt.';
  }finally{busy=false;controls()}
 }
 function command(action,direction=''){
- if(!state||busy||pending)return;
+ if(!state||busy||pending||compatibilityBlocked)return;
  pending={requestId:uuid(),revision:String(state.revision),action,direction};
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicher nicht verfügbar. Bitte Speicherung für diese Seite erlauben.';controls()}
 }
 function choose(characterId){
- if(busy||pending)return;pending={kind:'character',requestId:uuid(),characterId};
+ if(!state||busy||pending||compatibilityBlocked)return;pending={kind:'character',requestId:uuid(),characterId};
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
 }
 $('previousCard').addEventListener('click',()=>showCard(cardIndex-1));
@@ -211,9 +253,10 @@ $('characters').addEventListener('scroll',()=>{
  cardIndex=nearest;carouselInfo();
 },{passive:true});
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
+$('reloadPage').addEventListener('click',()=>location.reload());
 $('rollButton').addEventListener('click',()=>command('roll'));$('retry').addEventListener('click',send);
 $('moveChoiceButton').addEventListener('click',()=>command('chooseMove'));$('actionChoiceButton').addEventListener('click',()=>command('action'));
 $('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
-if(token){$('join').hidden=true;$('game').hidden=false}poll();setInterval(poll,1500);
+if(token){$('join').hidden=true;$('game').hidden=false}controls();poll();setInterval(poll,1500);
 const connectionCode=new URL(location.href).searchParams.get('code');if(connectionCode&&/^[0-9]{6}$/.test(connectionCode))$('code').value=connectionCode;
 </script></html>

@@ -1,6 +1,7 @@
 plugins { id 'com.android.application' }
 android {
     namespace 'de.cebrero.drwho'
+    buildFeatures { buildConfig true }
     compileSdk 36
     defaultConfig {
         applicationId 'de.cebrero.drwho'

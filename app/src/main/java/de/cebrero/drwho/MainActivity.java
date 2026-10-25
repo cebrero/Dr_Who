@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
         try{
             engine=new GameEngine(new AndroidStore(new File(getFilesDir(),"session-v1.drw")));
             byte[] page=asset("player.html");
-            try{server=new LocalServer(engine,page,80,this::portrait);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait);}
+            try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME);}
             network=new PortalNetwork(this,name->{if(server!=null)server.setLocalHostname(name);});
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
         buildLobby();buildDirector();buildPlay();buildStage();if(engine.playing())showPlay();else showLobby();updatePortal();
@@ -108,7 +108,7 @@ public class MainActivity extends Activity {
         content.addView(button("Gegnerzug abschließen",()->{try{engine.finishEnemyTurn();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
         content.addView(button("WLAN einrichten / ändern",this::wifiOptions));
         content.addView(button("Automatischen Hotspot beenden",()->{if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}updatePortal();}));
-        content.addView(text("Dr WHO · Version 0.5.0",12,MUTED));
+        content.addView(text("Dr WHO · Version "+BuildConfig.VERSION_NAME,12,MUTED));
     }
     private void buildPlay(){
         LinearLayout content=padded();play=screen(content);play.setVisibility(View.GONE);

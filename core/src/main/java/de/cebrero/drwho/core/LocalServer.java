@@ -12,6 +12,7 @@ public final class LocalServer implements Closeable {
     private final GameEngine engine;
     private final byte[] page;
     private final Portraits portraits;
+    private final String appVersion;
     private final ServerSocket listener;
     private final ThreadPoolExecutor workers = new ThreadPoolExecutor(4, 4, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<>(16), r -> { Thread t = new Thread(r, "drwho-client"); t.setDaemon(true); return t; });
@@ -29,6 +30,10 @@ public final class LocalServer implements Closeable {
         this(engine, page, port, id -> null);
     }
     public LocalServer(GameEngine engine, byte[] page, int port, Portraits portraits) throws IOException {
+        this(engine,page,port,portraits,"dev");
+    }
+    public LocalServer(GameEngine engine, byte[] page, int port, Portraits portraits, String appVersion) throws IOException {
+        this.appVersion = appVersion;
         this.engine = engine; this.page = page.clone();
         this.portraits = portraits;
         listener = new ServerSocket(); listener.setReuseAddress(true);
@@ -81,6 +86,9 @@ public final class LocalServer implements Closeable {
                 }
                 if (method.equals("GET") && path.equals("/api/lobby")) {
                     json(out, 200, engine.lobbyStatus()); return;
+                }
+                if (method.equals("GET") && path.equals("/api/info")) {
+                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":1,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
                 }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";
