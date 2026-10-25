@@ -79,6 +79,9 @@ public final class LocalServer implements Closeable {
                     else reply(out, 200, path.endsWith(".svg") ? "image/svg+xml" : "image/jpeg", photo);
                     return;
                 }
+                if (method.equals("GET") && path.equals("/api/lobby")) {
+                    json(out, 200, engine.lobbyStatus()); return;
+                }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";
                 if (method.equals("GET") && path.equals("/api/state")) {

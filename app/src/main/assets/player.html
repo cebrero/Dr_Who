@@ -1,30 +1,46 @@
 <!doctype html>
 <html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dr_Who · Spieler</title>
+<title>Dr. Who · Spieler</title>
 <style>
 :root{color-scheme:light;--ink:#173f43;--petrol:#123b40;--brass:#a78147;--paper:#f4ead3;--muted:#655d4e;font:16px/1.5 system-ui,sans-serif;background:#0c292e;color:var(--ink)}
 *{box-sizing:border-box}body{max-width:620px;margin:auto;padding:25px 16px 42px;background:radial-gradient(ellipse at top,#20494b,transparent 70%)}
-h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;line-height:1.2}h1{font-size:36px;letter-spacing:.12em;margin:8px 0}h2{font-size:25px;margin:8px 0 16px}h3{font-size:19px}p{line-height:1.6}small{font-size:12px;letter-spacing:.06em}header{text-align:center;color:#ead6ad;margin-bottom:26px;padding:12px 4px 20px;border-bottom:1px solid #a7814770}header small{color:#d3c09a}header::after{content:'✦';display:block;color:#c3a568;margin-top:14px;font-size:18px}
+h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;line-height:1.2}h1{font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:42px;letter-spacing:.025em;margin:8px 0}h2{font-size:25px;margin:8px 0 16px}h3{font-size:19px}p{line-height:1.6}small{font-size:12px;letter-spacing:.06em}header{text-align:center;color:#ead6ad;margin-bottom:26px;padding:12px 4px 20px;border-bottom:1px solid #a7814770}header small{color:#d3c09a}header::after{content:'✦';display:block;color:#c3a568;margin-top:14px;font-size:18px}
 .card{padding:21px;border:1px solid var(--brass);border-radius:12px;color:var(--ink);background:radial-gradient(ellipse at 12% 0,#fff9e9a6,transparent 60%),repeating-linear-gradient(4deg,#8b693108 0 1px,transparent 1px 5px),var(--paper);box-shadow:inset 0 0 0 4px #fff7df5c,0 9px 28px #030f172b;margin:16px 0}
 .muted{color:var(--muted)}body>p.muted,main>p.muted{color:#ded0af}label{display:block;margin:18px 0 7px;font-weight:600}input,button{font:inherit;border-radius:8px;padding:14px;border:1px solid var(--brass)}input{width:100%;min-height:52px;background:#fff9ec;color:var(--ink);box-shadow:inset 0 2px 5px #5b452a0c}button{background:var(--petrol);color:#fff5dc;cursor:pointer;min-height:52px;font-weight:600;box-shadow:inset 0 1px 0 #ffffff12,0 3px 7px #241e1617}button:disabled{opacity:.48;cursor:default;box-shadow:none}button:not(:disabled):active{transform:translateY(1px)}:focus-visible{outline:3px solid #c6993e;outline-offset:3px}.primary{background:linear-gradient(#1c4a4d,#11363c);color:#fff7e4;width:100%;margin-top:18px}.wide{width:100%;margin-top:10px}#actionChoiceButton{background:#fff7e5;color:var(--ink)}#message{color:#ffdfa2;min-height:25px;white-space:pre-wrap;text-align:center}#message:empty{min-height:0}
 #round{display:block;text-align:center;color:#796136;letter-spacing:.12em}#turn{text-align:center;color:var(--ink);font-size:28px}#players{text-align:center;font-size:13px;color:var(--muted);margin-bottom:18px}details{border-top:1px solid #b3996a55;border-bottom:1px solid #b3996a55;padding:11px 0;margin:14px 0}summary{cursor:pointer;font-size:14px;font-weight:600}#roll{font:72px/1.2 Georgia,serif;color:var(--ink);display:grid;place-items:center;width:134px;min-height:134px;margin:26px auto 16px;border:2px solid var(--brass);border-radius:23px;background:radial-gradient(circle at 35% 25%,#fffdf4,#eee0bd 70%);box-shadow:inset 0 0 0 5px #fffaed,0 7px 20px #8a6a3426}#turnPrompt{text-align:center;font-family:Georgia,serif;font-size:22px}#turnChoices{display:grid;gap:4px}
 .controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:20px 0}.controls button:nth-child(1){grid-column:2}.controls button:nth-child(2){grid-column:1}#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:22px 0}.cell{aspect-ratio:1;border:1px solid #bca97e;border-radius:5px;padding:4px;font-size:10px;color:#655a43;background:#fff7e4;overflow:hidden}.piece{display:block;color:#245b60;font-size:11px;overflow-wrap:anywhere}.mine{border-color:#174f56;background:#19474c;color:#fff0d0}.mine .piece{color:#fff7df}li{margin-bottom:10px;overflow-wrap:anywhere}
-.characters{display:grid;gap:18px}.dossier{overflow:hidden;padding:0}.portrait{height:210px;background:radial-gradient(ellipse at 50% 35%,#f9f0d5,#c9b58b);display:grid;place-items:center;position:relative;color:#705c37;letter-spacing:.13em;border-bottom:1px solid #b69b64}.portrait::before{content:'';position:absolute;width:155px;height:155px;border:1px solid #98794160;border-radius:50%;box-shadow:0 0 0 9px #98794112,0 0 0 10px #98794138}.portrait img{position:absolute;width:100%;height:100%;object-fit:cover;z-index:1}.portrait span{font-size:13px;position:relative}.details{padding:19px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{padding:12px;background:#fff8e3;border:1px solid #b9a17370;border-radius:7px;font-size:14px}.stat small{display:block;margin-bottom:6px;color:#71613f}.chosen{border:2px solid #245e60;box-shadow:0 0 0 2px #d5bd87}.choose{width:100%;margin-top:14px}.battle{border-color:#9a4a49}.battle h2{color:#7d3034}.outcome{font-size:20px;white-space:pre-wrap;line-height:1.6}#outcome{border-left:3px solid #9a4a49;padding:12px;background:#f6dfcf}.compare{display:grid;gap:16px}
+.characters{display:flex;align-items:flex-start;gap:16px;position:relative;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:22px;overscroll-behavior-x:contain;padding:8px 22px 22px;scrollbar-width:thin;scrollbar-color:var(--brass) transparent;-webkit-mask-image:linear-gradient(to right,transparent,#000 18px,#000 calc(100% - 18px),transparent);mask-image:linear-gradient(to right,transparent,#000 18px,#000 calc(100% - 18px),transparent)}.characters>.dossier{flex:0 0 100%;min-width:0;scroll-snap-align:center;scroll-snap-stop:always;margin:0}.characters .portrait{height:280px}.characters .portrait img{object-position:center 28%}.carousel-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#ead6ad;margin:12px 0}.carousel-nav button{flex:0 0 52px;padding:10px}.carousel-nav p{text-align:center;margin:0;font-size:14px}.swipe-hint{font-size:14px;color:#ded0af}.characters:focus-visible{outline-offset:-3px}.dossier{overflow:hidden;padding:0}.portrait{height:210px;background:radial-gradient(ellipse at 50% 35%,#f9f0d5,#c9b58b);display:grid;place-items:center;position:relative;color:#705c37;letter-spacing:.13em;border-bottom:1px solid #b69b64}.portrait::before{content:'';position:absolute;width:155px;height:155px;border:1px solid #98794160;border-radius:50%;box-shadow:0 0 0 9px #98794112,0 0 0 10px #98794138}.portrait img{position:absolute;width:100%;height:100%;object-fit:cover;z-index:1}.portrait span{font-size:13px;position:relative}.details{padding:19px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{padding:12px;background:#fff8e3;border:1px solid #b9a17370;border-radius:7px;font-size:14px}.stat small{display:block;margin-bottom:6px;color:#71613f}.chosen{border:2px solid #245e60;box-shadow:0 0 0 2px #d5bd87}.choose{width:100%;margin-top:14px}.battle{border-color:#9a4a49}.battle h2{color:#7d3034}.outcome{font-size:20px;white-space:pre-wrap;line-height:1.6}#outcome{border-left:3px solid #9a4a49;padding:12px;background:#f6dfcf}.compare{display:grid;gap:16px}
 .flight{height:300px;position:relative;overflow:hidden;border:1px solid #a8864b;border-radius:8px;background:radial-gradient(ellipse at center,#21495e,#071421 70%)}.star{position:absolute;width:3px;height:3px;background:#c5e5ff;border-radius:50%;box-shadow:90px 60px #82acdb,190px 210px #82acdb,270px 100px white,40px 220px white,140px 130px white;left:10%;top:10%}.tardis{position:absolute;width:84px;height:142px;left:calc(50% - 42px);top:70px;background:linear-gradient(90deg,#173c70,#23568b 55%,#153968);border:4px solid #2c5a8b;box-shadow:0 0 45px #5bbde74a;animation:tardisFly 9s ease-in-out infinite}.tardis:before{content:'POLICE BOX';position:absolute;top:4px;left:1px;right:1px;background:#0a1933;color:#fff;text-align:center;font-size:8px;letter-spacing:1px;padding:3px 0}.lamp{position:absolute;top:-18px;left:29px;width:17px;height:14px;background:#a6e9ff;box-shadow:0 0 22px #82d9ff}.windows{position:absolute;left:7px;right:7px;top:29px;height:36px;background:repeating-linear-gradient(90deg,transparent 0 9px,#23568b 9px 12px),linear-gradient(#b4e6ed 0 45%,#23568b 45% 55%,#b4e6ed 55%);border:2px solid #12315a}.panels{position:absolute;left:7px;right:7px;top:73px;bottom:5px;background:linear-gradient(90deg,transparent 46%,#14335d 46% 54%,transparent 54%);border:2px solid #13365e}.idletext{text-align:center}@keyframes tardisFly{0%,100%{transform:translate(-55px,25px) rotate(-17deg) scale(.85)}35%{transform:translate(60px,-25px) rotate(18deg) scale(1.1)}70%{transform:translate(15px,45px) rotate(340deg) scale(.72)}}@media(prefers-reduced-motion:reduce){.tardis{animation:none}}@media(max-width:380px){body{padding:16px 12px 30px}.card{padding:17px}.dossier{padding:0}.stat{padding:9px;font-size:13px}h2{font-size:23px}}
+
+/* A committed host result is revealed only after the presentation finishes. */
+#roll{position:relative;width:180px;min-height:170px;margin:22px auto 8px;border:0;background:none;box-shadow:none;perspective:650px;isolation:isolate}
+.dice-cube{position:relative;width:90px;height:90px;transform-style:preserve-3d;transform:rotateX(-12deg) rotateY(-16deg);z-index:2}
+.die-face{position:absolute;inset:0;border:2px solid #a78147;border-radius:14px;background:linear-gradient(135deg,#fffdf3,#e6d4aa);box-shadow:inset 0 0 0 4px #fff9e7;backface-visibility:hidden;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:13px;gap:5px;font:46px Georgia,serif;color:#123b40}
+.die-face:nth-child(1){transform:translateZ(45px)}.die-face:nth-child(2){transform:rotateY(90deg) translateZ(45px)}.die-face:nth-child(3){transform:rotateY(180deg) translateZ(45px)}.die-face:nth-child(4){transform:rotateY(-90deg) translateZ(45px)}.die-face:nth-child(5){transform:rotateX(90deg) translateZ(45px)}.die-face:nth-child(6){transform:rotateX(-90deg) translateZ(45px)}
+.pip{width:100%;aspect-ratio:1;align-self:center;justify-self:center;border-radius:50%;background:#17474b;box-shadow:inset 1px 2px 3px #0005}.unknown{display:grid;place-items:center;padding:0}
+#roll::before{content:'';position:absolute;inset:-10px -35px;background:radial-gradient(ellipse,#d4f5e9b3,transparent 65%),radial-gradient(ellipse at 25% 55%,#9eb5b080,transparent 65%);filter:blur(14px);opacity:0;z-index:3;pointer-events:none}
+#roll::after{content:'';position:absolute;inset:-20px;background:radial-gradient(circle,#fffef8d9,#d4f5e960,transparent 68%);opacity:0;pointer-events:none;z-index:4}
+#roll.rolling .dice-cube{animation:diceTumble 2.6s cubic-bezier(.16,.45,.28,1) both}#roll.rolling::before{animation:diceMist 2.6s ease-out both}#roll.revealed::after{animation:diceFlash .4s ease-out both}
+.dice-caption{text-align:center;font-family:Georgia,serif;color:var(--petrol);font-size:20px;min-height:32px}
+@keyframes diceTumble{0%{transform:translateY(-12px) rotateX(0deg) rotateY(0deg) scale(.5);opacity:.15}50%{transform:translateY(8px) rotateX(520deg) rotateY(650deg) scale(.9);opacity:.65}85%{transform:translateY(0) rotateX(720deg) rotateY(1080deg) scale(1);opacity:1}100%{transform:rotateX(708deg) rotateY(1064deg);opacity:1}}
+@keyframes diceMist{0%{opacity:.3;transform:scale(.65)}35%{opacity:1;transform:scale(.9) translateX(-12px)}75%{opacity:.85}100%{opacity:0;transform:scale(1.45) translateX(16px)}}
+@keyframes diceFlash{0%{opacity:.7;transform:scale(.75)}100%{opacity:0;transform:scale(1.2)}}
+@media(prefers-reduced-motion:reduce){#roll.rolling .dice-cube{animation:none;opacity:.5}#roll.rolling::before{animation:none;opacity:.4}#roll.revealed::after{animation:none}}
+
 [hidden]{display:none!important}
 </style>
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>DR_WHO</h1><small>Technikdemo 0.4.0 · lokal &amp; ohne Konto</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.5.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <form id="join" class="card"><h2>Der Runde beitreten</h2>
 <label for="name">Dein Name</label><input id="name" maxlength="24" required autocomplete="nickname">
-<label for="code">Code vom Spielleiter-Handy</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
-<button class="primary" id="joinButton">Beitreten</button><p class="muted">Bis zu vier Spieler. Das WLAN-Passwort und dieser Beitrittscode sind zwei verschiedene Dinge.</p></form>
-<section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Fotos und Werte ergänzen wir passend zu den vorhandenen Figuren. Bisher sind drei Charaktere bekannt; weitere folgen mit deinem Inventar.</p></div><div id="characters" class="characters"></div></section>
+<label for="code">Portalcode</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
+<button class="primary" id="joinButton">Beitreten</button><p id="joinOccupancy" class="muted" role="status" aria-live="polite">Spielerplätze werden geladen …</p></form>
+<section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
 <section id="idle" class="card" hidden><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 class="idletext">Unterwegs durch Raum und Zeit</h2><p id="idleStatus" class="idletext"></p></section>
 <section id="helper" class="card" hidden><small>DU WURDEST ZUFÄLLIG AUSGEWÄHLT</small><h2>Bewege die Gegnerfigur</h2><div id="helperProfile"></div><p>Der Spielleiter nennt Ziel und Weg. Versetze die Figur auf dem Tisch und bestätige anschließend die Bewegung.</p><button id="confirmMovement" class="primary">Figur bewegt · bestätigen</button></section>
 <section id="battle" class="card battle" hidden aria-live="polite"><small>DEIN CHARAKTER WIRD ANGEGRIFFEN</small><h2 id="battleTitle"></h2><p id="outcome" class="outcome"></p><div class="compare"><div><h2>Dein Charakter</h2><div id="defenderProfile"></div></div><div><h2>Dein Gegner</h2><div id="attackerProfile"></div></div></div><button id="ackAttack" class="primary">Verstanden · weiter</button></section>
-<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><details><summary>Dein Charakter-Steckbrief</summary><div id="myProfile"></div></details><div id="roll" aria-live="polite"></div>
+<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><details><summary>Dein Charakter-Steckbrief</summary><div id="myProfile"></div></details><div id="roll" role="img" aria-label="W6 noch nicht gewürfelt"></div><p id="rollResult" class="dice-caption" role="status" aria-live="polite"></p>
 <p id="turnPrompt" class="outcome"></p>
 <button type="button" id="rollButton" class="primary">Jetzt würfeln</button>
 <div id="turnChoices" hidden><button id="moveChoiceButton" class="primary" type="button">Bewegen</button><button id="actionChoiceButton" class="wide" type="button">Aktion wählen · Techniktest</button><p class="muted">Die Aktionswahl wird gespeichert. Ihre konkrete Wirkung folgt mit den Charakterregeln.</p></div>
@@ -36,7 +52,7 @@ h1,h2,h3{font-family:Georgia,'Times New Roman',serif;font-weight:500;line-height
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-let saved={},state=null,pending=null,busy=false,joining=false;
+let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
 let token=saved.token||'';pending=saved.pending||null;
 function persist(){saved.token=token;saved.pending=pending;localStorage.setItem(key,JSON.stringify(saved))}
@@ -49,7 +65,7 @@ async function api(path,data){
  }finally{clearTimeout(timeout)}
 }
 function controls(){
- const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!state.attack.pending;
+ const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!rolling&&!state.attack.pending;
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
  $('rollButton').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
@@ -68,23 +84,59 @@ function dossier(c){
  const list=el('ul');c.abilities.forEach(a=>list.append(el('li',a)));details.append(list);card.append(photo,details);return card;
 }
 function profileInto(id,c){const container=$(id),signature=JSON.stringify(c);if(container.dataset.signature===signature)return;container.dataset.signature=signature;container.replaceChildren();if(c)container.append(dossier(c))}
+function carouselInfo(){
+ const cards=$('characters').children;
+ $('cardPosition').textContent=cards.length?(cardIndex+1)+' / '+cards.length+' · '+cards[cardIndex].dataset.name:'';
+ $('previousCard').disabled=cardIndex===0;$('nextCard').disabled=cardIndex>=cards.length-1;
+}
+function showCard(index,animate=true){
+ const carousel=$('characters'),cards=carousel.children;if(!cards.length)return;
+ cardIndex=Math.max(0,Math.min(cards.length-1,index));
+ const card=cards[cardIndex],left=Math.max(0,card.offsetLeft-(carousel.clientWidth-card.offsetWidth)/2);
+ const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ if(typeof carousel.scrollTo==='function')carousel.scrollTo({left,behavior:animate&&!reduced?'smooth':'auto'});else carousel.scrollLeft=left;
+ carouselInfo();
+}
+const pipPositions={1:[5],2:[1,9],3:[1,5,9],4:[1,3,7,9],5:[1,3,5,7,9],6:[1,3,4,6,7,9]};
+function paintDice(value){
+ const scene=$('roll');if(scene.dataset.face===String(value))return;scene.dataset.face=String(value);scene.replaceChildren();
+ const cube=el('div',undefined,'dice-cube');cube.setAttribute('aria-hidden','true');
+ const faceValue=value>0?value:1,faces=[faceValue,...[1,2,3,4,5,6].filter(n=>n!==faceValue)];
+ for(const n of faces){const face=el('div',undefined,'die-face');
+  if(value===0){face.classList.add('unknown');face.textContent='?'}else for(const position of pipPositions[n]){const pip=el('i',undefined,'pip');pip.style.gridArea=Math.ceil(position/3)+' / '+((position-1)%3+1);face.append(pip)}
+  cube.append(face);
+ }scene.append(cube);
+}
+function presentRoll(s,active){
+ const event=s.rollEvent;if(!active||!event||!event.id||event.playerId!==s.you||event.value<1||s.turn.roll!==event.value)return;
+ const identity=s.sessionId+':'+event.id;
+ if(saved.revealedRoll===identity||rollingId===identity)return;
+ rolling=true;rollingId=identity;$('roll').classList.remove('revealed');$('roll').classList.add('rolling');
+ setTimeout(()=>{
+  if(rollingId!==identity)return;rolling=false;saved.revealedRoll=identity;
+  try{persist()}catch(e){$('message').textContent='Wurf gespeichert. Browser-Speicherung prüfen.'}
+  $('roll').classList.remove('rolling');$('roll').classList.add('revealed');if(state)render(state);
+ },2600);
+}
 function render(s){
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
  state=s;$('join').hidden=true;
  const me=s.players.find(p=>p.id===s.you),playing=s.started&&s.ready;
  const attacked=playing&&s.attack.pending&&s.attack.targetId===s.you;
  const helping=playing&&s.phase==='enemies'&&s.helperId===s.you;
- const active=playing&&s.phase==='players'&&s.current===s.you;
+ const active=playing&&s.phase==='players'&&s.current===s.you;presentRoll(s,active);
  $('selection').hidden=playing;$('game').hidden=!active;$('helper').hidden=!helping;$('battle').hidden=!attacked;$('idle').hidden=!playing||active||helping||attacked;
  $('selectionStatus').textContent=s.selectedCount+' / '+s.players.length+' haben gewählt. '+(me.characterId?'Deine Figur ist reserviert. Der Spielleiter startet die Partie.':'Wähle eine freie Figur.');
  const signature=JSON.stringify([s.characters,me.characterId,s.started,s.ready]);
  if($('characters').dataset.signature!==signature){
+  const browsed=$('characters').children[cardIndex]?.dataset.characterId||me.characterId;
   $('characters').dataset.signature=signature;$('characters').replaceChildren();
   for(const c of s.characters){
-   const card=dossier(c),mine=c.owner===s.you,owner=s.players.find(p=>p.id===c.owner),locked=playing||c.enemy||!!c.owner;
+   const card=dossier(c);card.dataset.characterId=c.id;card.dataset.name=c.name;const mine=c.owner===s.you,owner=s.players.find(p=>p.id===c.owner),locked=playing||c.enemy||!!c.owner;
    if(mine)card.classList.add('chosen');const button=el('button',mine?'Deine Figur':c.enemy?'Als Gegner hinzugefügt':owner?'Gewählt von '+owner.name:'Diesen Charakter wählen','choose');button.type='button';button.dataset.locked=String(locked);button.disabled=locked||busy||!!pending;
    button.addEventListener('click',()=>choose(c.id));card.lastChild.append(button);$('characters').append(card);
   }
+  const retained=Array.from($('characters').children).findIndex(card=>card.dataset.characterId===browsed);showCard(retained<0?0:retained,false);
  }
  const own=s.characters.find(c=>c.id===me.characterId),enemy=s.characters.find(c=>c.id===s.activeEnemy);
  profileInto('myProfile',own);profileInto('helperProfile',enemy);
@@ -101,15 +153,23 @@ function render(s){
    const figure=document.createElement('span');figure.className='piece';figure.textContent=p.name;cell.append(figure);if(p.id===s.you)cell.classList.add('mine');
   }$('grid').append(cell);
  }
- $('roll').textContent=s.turn.roll?String(s.turn.roll):'?';
- $('roll').setAttribute('aria-label',s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'W6 noch nicht gewürfelt');$('log').replaceChildren();
- $('rollButton').hidden=s.turn.stage!=='roll';$('turnChoices').hidden=s.turn.stage!=='choice';$('controls').hidden=s.turn.stage!=='move';
- $('turnPrompt').textContent=s.turn.stage==='roll'?'Dein Zug beginnt: zuerst würfeln.':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
+ paintDice(rolling?-1:s.turn.roll);$('rollResult').textContent=rolling?'Dein Wurf entsteht im Zeitwirbel …':s.turn.roll?'Dein Wurf: '+s.turn.roll:'';
+ $('roll').setAttribute('aria-label',rolling?'W6 wird gewürfelt. Ergebnis folgt.':s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'W6 noch nicht gewürfelt');$('log').replaceChildren();
+ $('rollButton').hidden=s.turn.stage!=='roll';$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||s.turn.stage!=='move';
+ $('turnPrompt').textContent=rolling?'Gleich zeigt sich dein Ergebnis.':s.turn.stage==='roll'?'Dein Zug beginnt: zuerst würfeln.':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
  $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
- for(const event of s.log.slice(-8).reverse()){const li=document.createElement('li');li.textContent=event;$('log').append(li)}controls();
+ for(const event of (rolling?[]:s.log).slice(-8).reverse()){const li=document.createElement('li');li.textContent=event;$('log').append(li)}controls();
 }
 async function poll(){
- if(!token||busy)return;
+ if(busy)return;
+ if(!token){
+  try{
+   const lobby=await api('/api/lobby');
+   if(!Number.isInteger(lobby.occupied)||!Number.isInteger(lobby.capacity)||lobby.capacity!==4||lobby.occupied<0||lobby.occupied>lobby.capacity)throw new Error('Ungültige Belegung');
+   $('joinOccupancy').textContent=lobby.occupied+' von '+lobby.capacity+' Plätzen belegt · '+(lobby.capacity-lobby.occupied)+' frei';
+  }catch(e){$('joinOccupancy').textContent='Belegung gerade nicht verfügbar. Portal und WLAN prüfen.'}
+  return;
+ }
  try{render(await api('/api/state'));if(!pending)$('message').textContent=''}
  catch(e){$('message').textContent=e.status===401?'Diese Anmeldung gehört nicht zu dieser Partie. Host oder Browseradresse prüfen.':'Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true)}
 }
@@ -139,10 +199,21 @@ function choose(characterId){
  if(busy||pending)return;pending={kind:'character',requestId:uuid(),characterId};
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
 }
+$('previousCard').addEventListener('click',()=>showCard(cardIndex-1));
+$('nextCard').addEventListener('click',()=>showCard(cardIndex+1));
+$('characters').addEventListener('keydown',event=>{
+ const positions={ArrowLeft:cardIndex-1,ArrowRight:cardIndex+1,Home:0,End:$('characters').children.length-1};
+ if(event.target===$('characters')&&Object.prototype.hasOwnProperty.call(positions,event.key)){event.preventDefault();showCard(positions[event.key])}
+});
+$('characters').addEventListener('scroll',()=>{
+ const carousel=$('characters'),center=carousel.scrollLeft+carousel.clientWidth/2;let nearest=0,distance=Infinity;
+ Array.from(carousel.children).forEach((card,i)=>{const d=Math.abs(card.offsetLeft+card.offsetWidth/2-center);if(d<distance){distance=d;nearest=i}});
+ cardIndex=nearest;carouselInfo();
+},{passive:true});
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
 $('rollButton').addEventListener('click',()=>command('roll'));$('retry').addEventListener('click',send);
 $('moveChoiceButton').addEventListener('click',()=>command('chooseMove'));$('actionChoiceButton').addEventListener('click',()=>command('action'));
 $('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
-if(token){$('join').hidden=true;$('game').hidden=false;poll()}setInterval(poll,1500);
+if(token){$('join').hidden=true;$('game').hidden=false}poll();setInterval(poll,1500);
 const connectionCode=new URL(location.href).searchParams.get('code');if(connectionCode&&/^[0-9]{6}$/.test(connectionCode))$('code').value=connectionCode;
 </script></html>

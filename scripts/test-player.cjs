@@ -13,9 +13,10 @@ const base={sessionId:'session',revision:1,started:false,ready:true,selectedCoun
 const copy=o=>JSON.parse(JSON.stringify(o));
 const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
- let next=copy(base),requests=[],fail=false;
+ let next=copy(base),requests=[],fail=false,revealTimer,revealStarts=0;
  const html=fs.readFileSync('app/src/main/assets/player.html','utf8');
  const dom=new JSDOM(html,{url:'http://192.168.4.1:8080/?code=123456',runScripts:'dangerously',beforeParse(w){
+  const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
@@ -37,6 +38,19 @@ async function main(){
   check($('selectionStatus').textContent.includes('2 / 2'),'selection progress visible');
   const photo=$('characters').querySelector('img');photo.dispatchEvent(new w.Event('error'));
   check(!photo.isConnected&&$('characters').textContent.includes('FOTO FOLGT'),'missing photo degrades to labelled placeholder');
+  const carousel=$('characters');
+  Object.defineProperty(carousel,'clientWidth',{configurable:true,value:328});
+  Object.defineProperty(w.HTMLElement.prototype,'offsetLeft',{configurable:true,get(){return this.parentElement===carousel?22+Array.from(carousel.children).indexOf(this)*300:0}});
+  Object.defineProperty(w.HTMLElement.prototype,'offsetWidth',{configurable:true,get(){return this.parentElement===carousel?284:0}});
+  carousel.scrollTo=({left})=>{carousel.scrollLeft=left;carousel.dispatchEvent(new w.Event('scroll'))};
+  check($('previousCard').disabled&&!$('nextCard').disabled,'carousel starts with a previous boundary');
+  $('nextCard').click();check($('cardPosition').textContent.includes('2 / 3 · Dalek'),'next arrow browses second dossier');
+  w.render(copy(base));check($('cardPosition').textContent.includes('Dalek'),'unchanged polling does not reset browsed card');
+  carousel.dispatchEvent(new w.KeyboardEvent('keydown',{key:'End',bubbles:true}));
+  check($('nextCard').disabled&&$('cardPosition').textContent.includes('3 / 3'),'keyboard reaches final card and boundary');
+  carousel.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));
+  check($('cardPosition').textContent.includes('1 / 3'),'keyboard returns to first card');
+  $('nextCard').click();$('nextCard').click();
   // Retry a character selection after an unconfirmed network request.
   fail=true;buttons[2].click();await tick();
   check(requests.at(-1).path==='/api/character','character button uses authenticated choice route');
@@ -46,6 +60,7 @@ async function main(){
   $('retry').click();await tick();
   check(requests.at(-1).body.get('requestId')===selectionRequest,'selection retry reuses request identity');
   check($('retry').hidden,'confirmed choice clears retry');
+  check($('cardPosition').textContent.includes('3 / 3 · Weinender Engel'),'updated character ownership preserves browsed card');
   const active=copy(base);active.revision=3;active.started=true;active.current='A';w.render(active);
   check(!$('game').hidden&&$('idle').hidden,'active partner sees controls');
   check(!$('rollButton').disabled,'active partner may act');
@@ -79,7 +94,38 @@ async function main(){
   const moving=copy(choice);moving.revision=12;moving.turn={stage:'move',roll:5,remaining:3};w.render(moving);
   check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');
   check($('turnPrompt').textContent.includes('3 von 5'),'remaining distance shown');
+  const revealing=copy(choice);revealing.revision=13;revealing.rollEvent={id:'roll-1',playerId:'A',value:5};revealing.log=['Alice würfelt 5'];w.render(revealing);
+  check($('roll').classList.contains('rolling')&&!$('roll').getAttribute('aria-label').includes('5'),'result stays hidden while dice tumble');
+  check($('turnChoices').hidden&&$('moveChoiceButton').disabled&&!$('log').textContent.includes('würfelt 5'),'movement, action and result log wait for reveal');
+  w.render(revealing);check(revealStarts===1,'polling same saved die does not restart animation');
+  revealTimer();check($('rollResult').textContent==='Dein Wurf: 5'&&!$('turnChoices').hidden&&!$('moveChoiceButton').disabled,'after 2.6 seconds saved result and choices become available');
+  check(JSON.parse(w.localStorage.getItem('drwho.v1')).revealedRoll==='session:roll-1','completed reveal remembered across reconnect');
+  w.render(revealing);check(revealStarts===1,'same event does not animate again after reveal');
+  const second=copy(revealing);second.revision=14;second.rollEvent.id='roll-2';w.render(second);
+  check(revealStarts===2&&$('roll').classList.contains('rolling'),'a new event with same die value animates again');revealTimer();
   console.log('PASS: '+checks+' player-page behavior checks');
  }finally{w.close()}
+ // The join screen must show real occupancy without authenticating or registering a player.
+ let occupied=0,offline=false,lobbyPoll,joins=0;
+ const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
+  w.setInterval=callback=>{lobbyPoll=callback;return 0};
+  w.fetch=async(path)=>{
+   if(path==='/api/join')joins++;
+   assert.equal(path,'/api/lobby');
+   if(offline)throw new Error('offline');
+   return {ok:true,status:200,json:async()=>({occupied,capacity:4})};
+  };
+ }});
+ try{
+  const $=id=>guest.window.document.getElementById(id);
+  await tick();check($('joinOccupancy').textContent==='0 von 4 Plätzen belegt · 4 frei','empty lobby occupancy fetched before joining');
+  $('name').value='Martha';$('code').value='123456';occupied=3;await lobbyPoll();
+  check($('joinOccupancy').textContent==='3 von 4 Plätzen belegt · 1 frei','occupancy updates as other players join');
+  occupied=4;await lobbyPoll();check($('joinOccupancy').textContent==='4 von 4 Plätzen belegt · 0 frei','full lobby displayed accurately');
+  offline=true;await lobbyPoll();check($('joinOccupancy').textContent.includes('nicht verfügbar'),'network failure does not leave stale occupancy presented as current');
+  offline=false;await lobbyPoll();check($('joinOccupancy').textContent.startsWith('4 von 4'),'occupancy recovers after network interruption');
+  check($('name').value==='Martha'&&$('code').value==='123456'&&joins===0,'occupancy polling preserves input and never registers guest');
+  console.log('PASS: '+checks+' total player-page behavior checks');
+ }finally{guest.window.close()}
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

@@ -7,7 +7,7 @@ import java.util.*;
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 4, MAGIC = 0x4457484f;
+    private static final int FORMAT = 5, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private State state;
@@ -32,6 +32,7 @@ public final class GameEngine {
         boolean movementDone, attackPending;
         String turnStage = "roll";
         int turnRoll, remaining;
+        String rollEventId = "", rollPlayerId = "";
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
@@ -54,6 +55,29 @@ public final class GameEngine {
     }
 
     public synchronized String code() { return state.code; }
+    /** Public pre-join occupancy only; no player names, codes, tokens or game state. */
+    public synchronized String lobbyStatus() { return "{\"occupied\":" + state.players.size() + ",\"capacity\":4}"; }
+    /** Consistent host-only presentation data; never exposed as a public HTTP route. */
+    public static final class PortalState {
+        public String sessionId, rollId, rollPlayer, headline, detail;
+        public int round, die;
+        public List<String> events = new ArrayList<>(), positions = new ArrayList<>();
+    }
+    public synchronized PortalState portalState() {
+        PortalState view = new PortalState();
+        view.sessionId=state.id;view.rollId=state.rollEventId;view.rollPlayer=playerName(state.rollPlayerId);
+        view.round=state.round;view.die=state.lastRoll;view.events.addAll(state.log);
+        for(Player p:state.players)view.positions.add(p.name+" · "+characterName(p.characterId)+" · Feld "+cell(p));
+        if(!playing()){view.headline="Dein Team sammelt sich";view.detail="Charaktere wählen und Abenteuer starten.";}
+        else if(state.phase.equals("players")){
+            Player p=state.players.get(state.current);view.headline=p.name+" · "+characterName(p.characterId);
+            view.detail="Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?"Bewegung oder Charakteraktion wählen.":"Noch "+state.remaining+" Felder ziehen.");
+        }else{
+            view.headline=characterName(state.enemies.get(state.enemyIndex))+" · Gegnerzug";
+            view.detail=state.attackPending?"Angriff auf "+playerName(state.attackTarget)+": "+state.attackText:!state.helperId.isEmpty()?playerName(state.helperId)+" bewegt die Gegnerfigur.":"Gegneraktion an der Spielleitung festlegen.";
+        }
+        return view;
+    }
     public synchronized String lobbyText() {
         StringBuilder b = new StringBuilder(selectedCount() + " / " + state.players.size() + " haben gewählt · " + state.players.size() + " / 4 beigetreten\n");
         for (Player p : state.players) b.append(p.name).append(" → ").append(p.characterId.isEmpty() ? "wählt noch …" : characterName(p.characterId)).append('\n');
@@ -84,7 +108,7 @@ public final class GameEngine {
         return b.toString();
     }
     public synchronized String join(String name, String code, String requestId) throws IOException {
-        if (!state.code.equals(code)) throw new IllegalArgumentException("Beitrittscode falsch.");
+        if (!state.code.equals(code)) throw new IllegalArgumentException("Portalcode falsch.");
         name = name == null ? "" : name.trim();
         if (name.isEmpty() || name.length() > 24 || name.codePoints().anyMatch(Character::isISOControl))
             throw new IllegalArgumentException("Name: 1–24 Zeichen ohne Steuerzeichen.");
@@ -122,6 +146,7 @@ public final class GameEngine {
         b.append(",\"revision\":").append(state.revision).append(",\"started\":").append(state.started)
             .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
+            .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append("}")
             .append(",\"turn\":{\"stage\":").append(quote(state.turnStage)).append(",\"roll\":").append(state.turnRoll)
             .append(",\"remaining\":").append(state.remaining).append("}")
             .append(",\"you\":").append(quote(self.id)).append(",\"phase\":").append(quote(state.phase))
@@ -190,14 +215,15 @@ public final class GameEngine {
                 if (x < 0 || x >= 6 || y < 0 || y >= 6) throw new IllegalArgumentException("Außerhalb des Demo-Spielfelds.");
                 for (Player other : next.players) if (other != p && other.x == x && other.y == y)
                     throw new IllegalArgumentException("Dieses Feld ist belegt.");
-                p.x = x; p.y = y;
+                String from = cell(p); p.x = x; p.y = y;
                 next.remaining--;
-                addLog(next, p.name + " → " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.");
+                addLog(next, p.name + " zieht von " + from + " nach " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.");
                 finished = next.remaining == 0;
                 break;
             case "roll":
                 if (!next.turnStage.equals("roll")) throw new IllegalArgumentException("Du hast in diesem Zug bereits gewürfelt.");
                 next.lastRoll = random.nextInt(6) + 1;
+                next.rollEventId = UUID.randomUUID().toString(); next.rollPlayerId = p.id;
                 next.turnRoll = next.lastRoll; next.remaining = next.turnRoll;
                 next.turnStage = next.turnRoll >= 5 ? "choice" : "move";
                 addLog(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."));
@@ -321,7 +347,7 @@ public final class GameEngine {
     }
     private static Player authenticated(State s, String token) {
         if (token != null) for (Player p : s.players) if (p.token.equals(token)) return p;
-        throw new SecurityException("Bitte mit Beitrittscode anmelden.");
+        throw new SecurityException("Bitte mit Portalcode anmelden.");
     }
     private static void addLog(State s, String text) {
         s.log.add(text); while (s.log.size() > 60) s.log.remove(0);
@@ -347,6 +373,7 @@ public final class GameEngine {
         out.writeUTF(s.phase); out.writeInt(s.enemyIndex); out.writeUTF(s.helperId); out.writeBoolean(s.movementDone);
         out.writeUTF(s.attackId); out.writeUTF(s.attackEnemy); out.writeUTF(s.attackTarget); out.writeUTF(s.attackText); out.writeBoolean(s.attackPending);
         out.writeUTF(s.turnStage); out.writeInt(s.turnRoll); out.writeInt(s.remaining);
+        out.writeUTF(s.rollEventId); out.writeUTF(s.rollPlayerId);
         out.flush(); return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -377,11 +404,14 @@ public final class GameEngine {
             s.attackId = in.readUTF(); s.attackEnemy = in.readUTF(); s.attackTarget = in.readUTF(); s.attackText = in.readUTF(); s.attackPending = in.readBoolean();
         }
         if (format >= 4) { s.turnStage = in.readUTF(); s.turnRoll = in.readInt(); s.remaining = in.readInt(); }
+        if (format >= 5) { s.rollEventId = in.readUTF(); s.rollPlayerId = in.readUTF(); }
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
             s.turnStage.equals("choice") && s.turnRoll >= 5 && s.turnRoll <= 6 && s.remaining == s.turnRoll ||
             s.turnStage.equals("move") && s.turnRoll >= 1 && s.turnRoll <= 6 && s.remaining >= 1 && s.remaining <= s.turnRoll;
         if (!validTurn || s.phase.equals("enemies") && !s.turnStage.equals("roll")) throw new IOException("Ungültiger Würfel-/Bewegungszustand.");
         Set<String> playerIds = new HashSet<>(); for (Player p : s.players) playerIds.add(p.id);
+        if ((!s.rollEventId.isEmpty() && (!s.rollEventId.matches("[a-f0-9-]{36}") || !playerIds.contains(s.rollPlayerId) || s.lastRoll < 1)) ||
+            (s.rollEventId.isEmpty() && !s.rollPlayerId.isEmpty())) throw new IOException("Ungültiges Würfelereignis.");
         if (!(s.phase.equals("players") || s.phase.equals("enemies")) || s.enemyIndex < 0 ||
             (s.phase.equals("enemies") && (!s.started || s.enemyIndex >= s.enemies.size())) ||
             (!s.helperId.isEmpty() && (!s.phase.equals("enemies") || !playerIds.contains(s.helperId) || s.movementDone)) ||

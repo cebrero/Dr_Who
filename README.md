@@ -8,13 +8,20 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.4.0
+## Stand 0.5.0
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
-und Typografiegrundlage ist umgesetzt. Die Portal-Lobby zeigt eine drehende TARDIS, vier
+und Typografiegrundlage ist umgesetzt. Die Portal-Lobby zeigt einen statischen Doctor-Who-Hintergrund, vier
 Spielerplätze mit Charakterporträts, Spieleranzahl und kompakte Zugangsdaten. Echte Figurenfotos
-folgen noch; Doctor, Dalek und Engel besitzen bereits stilisierte Offline-Illustrationen.
+folgen noch; Doctor, Dalek und Engel besitzen realistische KI-generierte Offline-Porträts.
+Starttexte wurden vereinfacht („Dr WHO“ am Portal, „Dr. Who“ bei Spielern, „Portalcode“).
+Spieler sehen schon vor dem Beitritt die aktuelle Belegung. Das App-Icon ist eine blaue TARDIS.
+Die Steckbriefe lassen sich als Karten seitlich durchwischen; die Sichtkanten blenden weich aus.
+Nach dem Spielstart zeigt das Portal Runde, aktiven Spieler, Wege von Feld zu Feld, Aktionen,
+Teampositionen und letzte Ereignisse. Portal und Spieler zeigen einen 2,6 Sekunden animierten
+Würfel mit Nebel und kurzem Lichtimpuls. Ergebnis und Ereignis-ID werden zuerst gespeichert;
+die Animation verändert keinen Wurf und startet nicht bei jedem Polling erneut.
 
 Android-Host mit lokalem HTTP-Server, Code-Lobby und exklusiver Charakterauswahl über Steckbriefe.
 Alle Spieler sind Partner. Der Host kann übrige Figuren als Gegner hinzufügen. Nach den Partnern
@@ -33,7 +40,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 204 Kern-/HTTP-Prüfungen und 35 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 217 Kern-/HTTP-Prüfungen und 54 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -67,6 +74,13 @@ bash scripts/test-core.sh
 Optionale Tests der Spieleransicht mit Node.js 22: `npm ci --ignore-scripts` und `npm test`.
 Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerhandys benötigt.
 
+## Installationshinweis 0.5.0
+
+Der alte temporäre Signierschlüssel ist nicht mehr verfügbar. Diese APK hat deshalb eine
+andere Signatur als 0.4.0 und lässt sich nicht direkt darüber installieren. Eine Deinstallation
+löscht den bisherigen Spielstand: eine vorhandene Partie vorerst in der alten App behalten.
+Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
+
 ## Technikdemo verwenden
 
 1. APK auf dem Spielleiter-Handy installieren und App öffnen.
@@ -74,10 +88,10 @@ Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerha
    mit **Dr_Who / drwho123** einrichten und die tatsächlichen Daten in der App bestätigen.
    Alternativ „Automatisch starten“: Android vergibt dafür eigene Zugangsdaten.
 3. Spieler scannen zuerst „WLAN-QR“, danach „Seiten-QR“. Der Seiten-QR enthält die direkte
-   Adresse mit vorausgefülltem Beitrittscode. Alternativ die angezeigte `http://drwho.local`-
+   Adresse mit vorausgefülltem Portalcode. Alternativ die angezeigte `http://drwho.local`-
    Adresse öffnen; wenn Port 80 nicht verfügbar ist, erscheint zusätzlich `:8080`.
    Die direkte IP bleibt als Ausweichweg sichtbar. `.local` muss am echten Gerät geprüft werden.
-4. Namen und sechsstelligen Beitrittscode eingeben. Das WLAN-Passwort ist davon getrennt.
+4. Namen und sechsstelligen Portalcode eingeben. Das WLAN-Passwort ist davon getrennt.
 5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
    der Host übrige Figuren als Gegner hinzufügen und die Technikdemo starten.
 6. Der aktive Spieler würfelt zuerst am eigenen Gerät. Bei 1–4 zieht er genau diese Anzahl
@@ -97,9 +111,9 @@ ein Adresswechsel oder gelöschte Browserdaten brauchen später eine Wiederbeitr
 Die Website wechselt bei Beteiligung zur aktiven Ansicht; gesperrte Handys werden damit nicht
 fernentsperrt. Bildschirm-Timeout und Energiesparen am realen Gerät berücksichtigen.
 
-Fotos später als JPEG in `app/src/main/assets/portraits/` ergänzen: `doctor.jpg`, `dalek.jpg`
-und `weeping-angel.jpg`. Die nativen Avatare bevorzugen diese Fotos. Die Browser-Steckbriefe
-verwenden zunächst die mitgelieferten SVG-Illustrationen; ihr Bildpfad steht im Charakterkatalog.
+Echte Figurenfotos später als JPEG in `app/src/main/assets/portraits/` ergänzen: `doctor.jpg`, `dalek.jpg`
+und `weeping-angel.jpg`. Die nativen Avatare bevorzugen diese Fotos. Die Browser-Steckbriefe und nativen Avatare
+verwenden dieselben mitgelieferten, realistisch generierten JPEGs; Bildpfade stehen im Charakterkatalog.
 
 ## Struktur
 

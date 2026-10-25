@@ -5,7 +5,7 @@ import android.graphics.*;
 import android.view.View;
 import java.io.*;
 
-/** Local character illustrations; real JPEG portraits take precedence when supplied. */
+/** Bundled JPEG character portraits; editable Canvas illustrations are the fallback. */
 final class CharacterAvatarView extends View {
     private final Paint paint=new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Path clip=new Path(),shape=new Path();

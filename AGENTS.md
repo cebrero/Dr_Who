@@ -39,5 +39,16 @@
     Apps. Keine versteckten APIs/Reflection und kein frei konfigurierbares Passwort versprechen.
     drwho.local wird echt per mDNS angekündigt; IP-/QR-Ausweichweg und tatsächlichen Port zeigen.
     Namensauflösung und Hotspotverhalten erst nach echtem Gerätetest als bestätigt bezeichnen.
-17. Für den nächsten Build vorgemerkt: TARDIS als App-/Launcher-Icon statt abstraktem Portal.
-    In der nächsten Umsetzung vor dem Build berücksichtigen; Wunsch allein löst keinen Build aus.
+17. Seit 0.5.0 umgesetzt und beibehalten: blaue TARDIS als App-/Launcher-Icon.
+18. Aktuelle Startbildschirme: Portal „Dr WHO“, Spieler „Dr. Who“ und „Version“, Zugang
+    „Portalcode“. Auf Portal-Startseite statischer Doctor-Who-Hintergrund, keine TARDIS-Animation,
+    Spielanleitung oder Abenteuer-Untertitel. Spieler sehen vor Beitritt die aktuelle reine
+    Platzbelegung. Repositoryname/SSID bleiben Dr_Who; TARDIS-Warteanimation der Spieler bleibt.
+19. Charakterauswahl als wischbares Karussell mit weichen Randübergängen beibehalten.
+    „lokal & ohne Konto“ ist aus der Versionszeile entfernt. Porträts sind realistische
+    KI-generierte JPEGs, keine echten Figuren-/Serienfotos; später austauschbar.
+20. Nach Spielstart automatisch Portal-Spielübersicht zeigen: Runde, aktiver Spieler/Gegner,
+    Bewegung mit Ausgangs-/Zielfeld, Aktionen, W6 und Ereignisse. Würfelanimation an Portal
+    und Clients etwa 2–3 Sekunden mit Nebel/kurzem Blitz. Gespeicherten Wert einmalig aufdecken,
+    Folgehandlungen währenddessen sperren; niemals für Animation neu würfeln. Stabile Wurf-ID
+    aus Speicherformat 5 nutzen, Polling darf Animation nicht neu starten. Barrierearme Alternative.

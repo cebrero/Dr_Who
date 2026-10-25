@@ -48,7 +48,7 @@ public final class CoreTest {
         String token = join(e,name); e.chooseCharacter(token,id(),character); return token;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -196,7 +196,7 @@ public final class CoreTest {
         check(restored.snapshot(a).contains("\"round\":2")&&restored.snapshot(a).contains("\"phase\":\"players\""),"next round begins after acknowledged enemy turn");
     }
     static void migration() throws Exception {
-        for(int format:new int[]{1,2,3}){
+        for(int format:new int[]{1,2,3,4}){
             MemoryStore store=new MemoryStore();ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
             out.writeInt(0x4457484f);out.writeInt(format);out.writeUTF("old-game");out.writeUTF("123456");out.writeBoolean(true);
             out.writeInt(7);out.writeInt(0);out.writeInt(4);out.writeLong(10);out.writeInt(1);
@@ -204,11 +204,30 @@ public final class CoreTest {
             if(format>=2){out.writeUTF("doctor");out.writeInt(1);out.writeUTF("dalek");}
             out.writeInt(0);out.writeInt(0);
             if(format>=3){out.writeUTF("players");out.writeInt(0);out.writeUTF("");out.writeBoolean(false);out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeBoolean(false);}
+            if(format>=4){out.writeUTF("roll");out.writeInt(0);out.writeInt(0);}
             store.data=bytes.toByteArray();GameEngine e=new GameEngine(store);
             if(format==1){check(!e.readyForPlay(),"v1 requires character before resuming");e.chooseCharacter("old-token",id(),"doctor");}
             check(e.playing(),"old game resumes after setup");check(e.snapshot("old-token").contains("\"round\":7"),"migration keeps round");
             check(e.snapshot("old-token").contains("\"x\":2,\"y\":3"),"migration keeps position");
         }
+    }
+    static void presentation() throws Exception {
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;GameEngine e=new GameEngine(store,dice);
+        String token=ready(e,"Alice","doctor");e.startDemo();
+        check(e.portalState().headline.contains("Alice")&&e.portalState().detail.contains("A1"),"portal shows current actor and position");
+        String request=id();long before=revision(e.snapshot(token));e.command(token,request,before,"roll","");
+        GameEngine.PortalState rolled=e.portalState();
+        check(!rolled.rollId.isEmpty()&&rolled.die==5&&rolled.rollPlayer.equals("Alice"),"portal receives stable committed die event");
+        check(e.snapshot(token).contains("\"rollEvent\":{\"id\":"+GameEngine.quote(rolled.rollId)),"authenticated clients receive same dice event");
+        e.command(token,request,before,"roll","");check(e.portalState().rollId.equals(rolled.rollId)&&dice.rolls==1,"retry does not create presentation event");
+        e=new GameEngine(store,dice);check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
+        e.command(token,id(),revision(e.snapshot(token)),"chooseMove","");
+        e.command(token,id(),revision(e.snapshot(token)),"move","S");
+        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Alice zieht von A1 nach A2"),"movement event records origin and destination");
+        check(e.portalState().rollId.equals(rolled.rollId),"movement does not replay dice event");
+        for(int i=0;i<4;i++)e.command(token,id(),revision(e.snapshot(token)),"move","S");
+        e.command(token,id(),revision(e.snapshot(token)),"roll","");
+        check(e.portalState().die==5&&!e.portalState().rollId.equals(rolled.rollId),"equal consecutive dice values still have different events");
     }
     static final class Response {
         int status; String body;
@@ -232,12 +251,15 @@ public final class CoreTest {
         GameEngine e = new GameEngine(new MemoryStore());
         try(LocalServer server=new LocalServer(e,"<h1>Dr_Who</h1>".getBytes(StandardCharsets.UTF_8),0)){
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
+            check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");
             String form="name=A&code="+e.code()+"&requestId="+id();
             check(call(server,"/api/join",form,null,false).status==401,"cross-site form blocked");
             Response joined=call(server,"/api/join",form,null,true);check(joined.status==200,"HTTP join");
             String token=text(joined.body,"token");
+            Response lobby=call(server,"/api/lobby",null,null,false);
+            check(lobby.status==200&&lobby.body.equals("{\"occupied\":1,\"capacity\":4}"),"live lobby count includes registered players without exposing identity");
             check(call(server,"/api/state",null,token,false).status==200,"authenticated snapshot");
             check(call(server,"/api/character","characterId=doctor&requestId="+id(),null,true).status==401,"choice requires authentication");
             check(call(server,"/api/character","characterId=doctor&requestId="+id(),token,true).status==200,"HTTP character choice");

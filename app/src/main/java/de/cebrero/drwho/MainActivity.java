@@ -30,7 +30,10 @@ public class MainActivity extends Activity {
     private WifiManager.LocalOnlyHotspotReservation reservation;
     private boolean hotspotPending,destroyed,confirming;
     private FrameLayout root,stage;
-    private ScrollView lobby,director;
+    private ScrollView lobby,director,play;
+    private TextView playRound,playActor,playDetail,playEvents,playPositions,playDiceLabel;
+    private DiceView playDice;
+    private ImageView lobbyBackground;
     private LinearLayout playerRows;
     private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,code,gameStatus,stageStatus;
     private Button wifiButton,startButton;
@@ -42,6 +45,9 @@ public class MainActivity extends Activity {
         super.onCreate(saved);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         root=new FrameLayout(this);root.setBackgroundColor(INK);
         root.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
+        lobbyBackground=new ImageView(this);lobbyBackground.setImageResource(R.drawable.portal_background);
+        lobbyBackground.setScaleType(ImageView.ScaleType.CENTER_CROP);lobbyBackground.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        root.addView(lobbyBackground,new FrameLayout.LayoutParams(-1,-1));
         setContentView(root);prefs=getSharedPreferences("portal-wifi",MODE_PRIVATE);
         if(prefs.getBoolean("manualConfirmed",false)){ssid=prefs.getString("ssid",ConnectionLinks.SSID);password=prefs.getString("password",ConnectionLinks.PASSWORD);}
         try{
@@ -50,7 +56,7 @@ public class MainActivity extends Activity {
             try{server=new LocalServer(engine,page,80,this::portrait);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait);}
             network=new PortalNetwork(this,name->{if(server!=null)server.setLocalHostname(name);});
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
-        buildLobby();buildDirector();buildStage();showLobby();updatePortal();
+        buildLobby();buildDirector();buildPlay();buildStage();if(engine.playing())showPlay();else showLobby();updatePortal();
     }
     private byte[] asset(String path)throws IOException{
         try(InputStream in=getAssets().open(path);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
@@ -73,9 +79,9 @@ public class MainActivity extends Activity {
     private LinearLayout padded(){LinearLayout c=column();c.setPadding(dp(18),dp(14),dp(18),dp(20));return c;}
     private void buildLobby(){
         LinearLayout content=padded();lobby=screen(content);
-        LinearLayout heading=row();LinearLayout titles=column();titles.addView(text("DR_WHO",29,CYAN));titles.addView(text("DEIN PORTAL INS ABENTEUER",10,MUTED));
+        LinearLayout heading=row();LinearLayout titles=column();TextView title=text("Dr WHO",32,WHITE);title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));titles.addView(title);
         heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));countBadge=text("0 / 4",22,WHITE);heading.addView(countBadge);content.addView(heading);
-        TardisView tardis=new TardisView(this);content.addView(tardis,new LinearLayout.LayoutParams(-1,dp(165)));
+        Space artwork=new Space(this);content.addView(artwork,new LinearLayout.LayoutParams(-1,dp(110)));
         LinearLayout connection=card(content);connection.addView(text("1  MIT DEM WLAN VERBINDEN",11,MUTED));
         wifiName=text("WLAN starten",22,WHITE);connection.addView(wifiName);wifiName.setTextIsSelectable(true);
         wifiPassword=text("",18,CYAN);wifiPassword.setTextIsSelectable(true);connection.addView(wifiPassword);
@@ -84,9 +90,9 @@ public class MainActivity extends Activity {
         connection.addView(text("2  SPIELSEITE ÖFFNEN",11,MUTED));website=text("Warte auf WLAN …",22,CYAN);website.setTextIsSelectable(true);connection.addView(website);
         fallback=text("",12,MUTED);fallback.setTextIsSelectable(true);connection.addView(fallback);
         LinearLayout qrButtons=row();qrButtons.addView(button("WLAN-QR",()->showQr(true)),new LinearLayout.LayoutParams(0,-2,1));qrButtons.addView(button("Seiten-QR",()->showQr(false)),new LinearLayout.LayoutParams(0,-2,1));connection.addView(qrButtons);
-        code=text("BEITRITTSCODE  "+engine.code(),18,WHITE);connection.addView(code);
+        code=text("PORTALCODE  "+engine.code(),18,WHITE);connection.addView(code);
         LinearLayout players=card(content);playerCount=text("DEIN TEAM · 0 / 4",16,CYAN);players.addView(playerCount);playerRows=column();players.addView(playerRows);
-        startButton=button("Abenteuer starten",()->{if(engine.playing())showDirector();else startGame();});content.addView(startButton);
+        startButton=button("Abenteuer starten",()->{if(engine.playing())showPlay();else startGame();});content.addView(startButton);
         content.addView(button("Spielleitung",this::showDirector));
     }
     private void buildDirector(){
@@ -95,24 +101,35 @@ public class MainActivity extends Activity {
         gameStatus=text("",17,WHITE);content.addView(gameStatus);
         content.addView(button("Übrige Figur als Gegner hinzufügen",this::enemyDialog));
         content.addView(button("Partie starten / fortsetzen",this::startGame));
-        content.addView(button("TARDIS groß anzeigen",()->{lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.VISIBLE);}));
+        content.addView(button("TARDIS groß anzeigen",()->{lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.VISIBLE);}));
         content.addView(text("Gegnerzug",20,CYAN));content.addView(text("Bewegung und Angriffsfolgen werden bis zur fertigen Gegnersteuerung hier vorgegeben.",14,MUTED));
         content.addView(button("Bewegungshelfer bestimmen",()->{try{toast(engine.requestEnemyMovement()+" bewegt die Gegnerfigur.");updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
         content.addView(button("Angriff auf Spieler anzeigen",this::attackDialog));
         content.addView(button("Gegnerzug abschließen",()->{try{engine.finishEnemyTurn();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
         content.addView(button("WLAN einrichten / ändern",this::wifiOptions));
         content.addView(button("Automatischen Hotspot beenden",()->{if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}updatePortal();}));
-        content.addView(text("Dr_Who · 0.4.0",12,MUTED));
+        content.addView(text("Dr WHO · Version 0.5.0",12,MUTED));
     }
+    private void buildPlay(){
+        LinearLayout content=padded();play=screen(content);play.setVisibility(View.GONE);
+        LinearLayout top=row();top.addView(text("Dr WHO",27,WHITE),new LinearLayout.LayoutParams(0,-2,1));playRound=text("RUNDE 1",17,CYAN);top.addView(playRound);content.addView(top);
+        LinearLayout turn=card(content);turn.addView(text("JETZT AM ZUG",11,MUTED));playActor=text("",25,WHITE);turn.addView(playActor);playDetail=text("",17,CYAN);turn.addView(playDetail);
+        playDiceLabel=text("Noch kein Wurf",14,MUTED);playDiceLabel.setGravity(Gravity.CENTER);turn.addView(playDiceLabel);
+        playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(200)));
+        LinearLayout events=card(content);events.addView(text("DAS GESCHIEHT GERADE",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(5),1);events.addView(playEvents);
+        LinearLayout positions=card(content);positions.addView(text("DEIN TEAM AUF DEM SPIELFELD",12,CYAN));playPositions=text("",15,WHITE);positions.addView(playPositions);
+        LinearLayout actions=row();actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Spielleitung",this::showDirector),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
+    }
+    private void showPlay(){lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);play.setVisibility(View.VISIBLE);updatePortal();}
     private void buildStage(){
         stage=new FrameLayout(this);stage.setBackgroundColor(INK);root.addView(stage,new FrameLayout.LayoutParams(-1,-1));stage.setVisibility(View.GONE);
         stage.addView(new TardisView(this),new FrameLayout.LayoutParams(-1,-1));
-        TextView title=text("DR_WHO",32,CYAN);title.setGravity(Gravity.CENTER);FrameLayout.LayoutParams top=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);top.topMargin=dp(32);stage.addView(title,top);
+        TextView title=text("Dr WHO",32,CYAN);title.setGravity(Gravity.CENTER);FrameLayout.LayoutParams top=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);top.topMargin=dp(32);stage.addView(title,top);
         stageStatus=text("",20,WHITE);stageStatus.setGravity(Gravity.CENTER);stageStatus.setPadding(dp(20),0,dp(20),dp(35));stage.addView(stageStatus,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
         stage.setContentDescription("Drehende TARDIS. Antippen öffnet die Portal-Lobby.");stage.setOnClickListener(v->showLobby());
     }
-    private void showLobby(){lobby.setVisibility(View.VISIBLE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);}
-    private void showDirector(){lobby.setVisibility(View.GONE);director.setVisibility(View.VISIBLE);stage.setVisibility(View.GONE);updatePortal();}
+    private void showLobby(){play.setVisibility(View.GONE);lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.VISIBLE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);}
+    private void showDirector(){play.setVisibility(View.GONE);lobbyBackground.setVisibility(View.GONE);lobby.setVisibility(View.GONE);director.setVisibility(View.VISIBLE);stage.setVisibility(View.GONE);updatePortal();}
     private void updatePortal(){
         if(engine==null||network==null||playerRows==null)return;
         network.update(server.port());
@@ -135,11 +152,23 @@ public class MainActivity extends Activity {
                 r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));r.addView(text(id.isEmpty()?"○":"✓",21,id.isEmpty()?MUTED:CYAN));playerRows.addView(r);
             }
         }
-        startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielleitung öffnen":"Abenteuer starten");
+        startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":"Abenteuer starten");
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
+        GameEngine.PortalState info=engine.portalState();
+        playRound.setText("RUNDE "+info.round);playActor.setText(info.headline);
+        if(play.getVisibility()==View.VISIBLE){
+            String seenKey="seen-roll-"+info.sessionId;
+            playDice.showRoll(info.rollId.isEmpty()?"legacy-"+info.die:info.rollId,info.die,!info.rollId.isEmpty()&&!prefs.getString(seenKey,"").equals(info.rollId),()->{prefs.edit().putString(seenKey,info.rollId).apply();updatePortal();});
+        }
+        boolean revealing=playDice.isAnimating();playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
+        playDiceLabel.setText(info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
+        StringBuilder events=new StringBuilder();
+        if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");
+        else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-5);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
+        playEvents.setText(events.toString());playPositions.setText(android.text.TextUtils.join("\n",info.positions));
     }
     private String summary(){StringBuilder b=new StringBuilder(engine.hostText().split("\n")[0]);for(String line:engine.hostText().split("\n"))if(line.startsWith("Am Zug:")||line.startsWith("Gegnerzug:")||line.startsWith("Noch ")||line.startsWith("Wurf "))b.append('\n').append(line);return b.append("\n\nAntippen · Portal-Lobby").toString();}
-    private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing())toast("Das Abenteuer läuft.");}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
+    private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing()){showPlay();toast("Das Abenteuer läuft.");}}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
     private void enemyDialog(){
         java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
         String[] names=new String[available.size()];for(int i=0;i<names.length;i++)names[i]=available.get(i).name;
@@ -208,8 +237,8 @@ public class MainActivity extends Activity {
         try{
             Map<EncodeHintType,Object> hints=new EnumMap<>(EncodeHintType.class);hints.put(EncodeHintType.CHARACTER_SET,"UTF-8");
             BitMatrix bits=new QRCodeWriter().encode(value,BarcodeFormat.QR_CODE,720,720,hints);int[] pixels=new int[720*720];for(int y=0;y<720;y++)for(int x=0;x<720;x++)pixels[y*720+x]=bits.get(x,y)?Color.BLACK:Color.WHITE;
-            Bitmap bitmap=Bitmap.createBitmap(pixels,720,720,Bitmap.Config.ARGB_8888);ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setAdjustViewBounds(true);image.setPadding(dp(14),dp(14),dp(14),dp(14));image.setContentDescription(wifi?"QR-Code zum Spiel-WLAN":"QR-Code zur Spielseite mit ausgefülltem Beitrittscode");
-            new AlertDialog.Builder(this).setTitle(wifi?"1 · Mit dem WLAN verbinden":"2 · Spielseite öffnen").setView(image).setMessage(wifi?"Mit der Kamera des Spielerhandys scannen.":"Zuerst mit dem WLAN verbinden, dann scannen. Der Beitrittscode wird ausgefüllt.").setPositiveButton("Fertig",null).show();
+            Bitmap bitmap=Bitmap.createBitmap(pixels,720,720,Bitmap.Config.ARGB_8888);ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setAdjustViewBounds(true);image.setPadding(dp(14),dp(14),dp(14),dp(14));image.setContentDescription(wifi?"QR-Code zum Spiel-WLAN":"QR-Code zur Spielseite mit ausgefülltem Portalcode");
+            new AlertDialog.Builder(this).setTitle(wifi?"1 · Mit dem WLAN verbinden":"2 · Spielseite öffnen").setView(image).setMessage(wifi?"Mit der Kamera des Spielerhandys scannen.":"Zuerst mit dem WLAN verbinden, dann scannen. Der Portalcode wird ausgefüllt.").setPositiveButton("Fertig",null).show();
         }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}

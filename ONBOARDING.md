@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.4.0 · einfache Verbindung und grafische Portal-Lobby**
-<!-- app-version: 0.4.0 -->
-<!-- reviewed-source-sha256: 59d72af2607b97ed1c0ff49629c71b5ad0bfb6491dcca05e265dc86f51c5e9fb -->
+Stand: **25.10.2026 · Version 0.5.0 · Portal-Spielübersicht, Würfelinszenierung und wischbare Steckbriefe**
+<!-- app-version: 0.5.0 -->
+<!-- reviewed-source-sha256: b69fd7b7734be75357c24a24491e2ae0c6becd7e199c27c1f810b05d7fd48fc0 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -38,7 +38,7 @@ Keine vollständige Figurenliste und kein vollständiges Teileinventar sind bish
 | Fortsetzung | Spielzustand und Brettaufbau speichern, später fortsetzen und physisch wieder aufbauen |
 | Figuren | Unterschiedliche Fähigkeiten und Eigenschaften pro Charakter |
 | Charakterwahl | Nach Beitritt Steckbrief mit Foto, Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten; gewählte Figur für andere gesperrt |
-| Portal-Lobby | Während der Auswahl Verbindungshilfe, Beitrittscode, Fortschritt und Zuordnung Spielername → Figur anzeigen |
+| Portal-Lobby | Während der Auswahl Verbindungshilfe, Portalcode, Fortschritt und Zuordnung Spielername → Figur anzeigen |
 | Teams | Alle beigetretenen Spieler sind Partner. Übrige bekannte Figuren können danach ausschließlich am Portal als Gegner hinzugefügt werden |
 | Gegnerbewegung | Wenn ein Gegner bewegt werden muss, bestimmt die App zufällig einen Spieler für die physische Ausführung |
 | Warteanzeige | Handys gerade nicht beteiligter Spieler zeigen eine fliegende TARDIS |
@@ -70,7 +70,8 @@ Technische, später änderbare Entscheidungen; nicht mit zugesagten Endfunktione
 - Bewegungen werden von Spielern eingegeben und auf dem echten Tisch nachvollzogen.
   Die App erkennt physische Figuren derzeit nicht automatisch; Kameras/Sensoren sind nicht vereinbart.
 - Deutschsprachige Oberfläche. Java 17 als schlankes Android-Grundgerüst mit getrenntem Kernmodul.
-- Einfache selbst gezeichnete Portalanimation als Platzhalter. Keine Serienmedien beschafft.
+- Statischer, KI-generierter Doctor-Who-Hintergrund in der Portal-Lobby; selbst gezeichnete
+  TARDIS-Animation nur in der separaten Großansicht und auf wartenden Spielerhandys. Keine Serienmedien beschafft.
 - Noch keine Entscheidung zu Hoch-/Querformat, Telefonabmessungen, Halterungsausschnitt oder Ton.
 
 ## 4. Spielziel – Vorschlag, noch NICHT bestätigt
@@ -107,8 +108,8 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Vor der Partie
 
-1. Portal-Handy zeigt eine klare Lobby mit rotierender TARDIS, WLAN-Zugang, Spielseite und
-   Beitrittscode. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg; Netzwerkdetails siehe Abschnitt 8a.
+1. Portal-Handy zeigt eine klare Lobby mit statischem Doctor-Who-Hintergrund, WLAN-Zugang, Spielseite und
+   Portalcode. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg; Netzwerkdetails siehe Abschnitt 8a.
 2. Bis zu vier Spieler treten am eigenen Handy mit Namen und Code bei.
 3. Jeder wählt einen Steckbrief mit Foto/Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
@@ -299,12 +300,12 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 4, ältere Formate
-1, 2 und 3 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 5, ältere Formate
+1, 2, 3 und 4 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Demo-Koordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
-Zustandsrevision, 60 Protokollzeilen und den letzten 128 Anfragequittungen. Android `AtomicFile`
+Würfelereignis-ID und zugehöriger Spieler-ID, Zustandsrevision, 60 Protokollzeilen und den letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
@@ -324,8 +325,9 @@ Auflösung, sichtbare Handyfläche und Sound noch erfragen. MP4/Wiederholschleif
 mögliche technische Wahl; keine Dateien oder Lizenzrechte voraussetzen. Abspielen darf keine
 Regel erneut auslösen. Das gespeicherte Ereignis ist maßgeblich, die Animation nur Darstellung.
 
-Heute: Grafische Portal-Lobby mit großer, kontinuierlich um die eigene Achse rotierender
-TARDIS, Spieleranzahl, vier übersichtlichen Plätzen, Spielernamen und Charakterporträts.
+Heute (0.5.0): Grafische Portal-Lobby mit statischem Doctor-Who-/Zeitwirbel-Hintergrund,
+Spieleranzahl, vier übersichtlichen Plätzen, Spielernamen und Charakterporträts.
+Auf der Startseite stehen keine Spielanleitung und kein Abenteuer-Untertitel; dort läuft keine TARDIS-Animation.
 WLAN-Name, Passwort, Spielseite und Code stehen kompakt in einer Verbindungskarte.
 Spielleitung und bisherige Test-/Verwaltungsfunktionen liegen auf einer separaten Seite.
 Eine große TARDIS-Ansicht ist über die Spielleitung verfügbar. Noch keine Medienbibliothek/Videoimport. Nicht beteiligte Spieler sehen eine eigene CSS-Animation einer fliegenden blauen
@@ -373,13 +375,93 @@ die eine notwendige Eingabe verdeckt. Bestehende Designwahl Spieler B / Portal A
 
 ### Grafische Lobby
 
-Drehende TARDIS aus eigener Canvas-Grafik mit vier projizierten Seiten; keine Internetmedien.
+Seit 0.5.0 statischer, lokal mitgelieferter Doctor-Who-Hintergrund statt drehender TARDIS
+auf der Startseite. Die eigene Canvas-TARDIS bleibt nur in der separaten Großansicht erhalten.
 Vier Spielerzeilen mit Namen, gewählter Figur und Charakterbild sowie Zähler „beigetreten/bereit“.
 Doctor, Dalek und Weinender Engel haben eigene stilisierte Illustrationen. Es sind keine echten
-Figurenfotos und beim Doctor ist keine konkrete Schauspieler-Inkarnation festgelegt.
+Figurenfotos und beim Doctor ist keine konkrete Schauspieler-Inkarnation festgelegt. Seit 0.5.0
+werden in Steckbriefen und Avataren realistischere KI-generierte JPEGs verwendet.
 Verwaltung/Gegner-Teststeuerung über „Spielleitung“ statt überladener Hauptseite.
 
-## 9. Technische Grundlage 0.4.0
+### Verbindliche Startbildschirm-Anpassungen 0.5.0 (25.10.2026)
+
+- Portalüberschrift exakt **Dr WHO**, ohne Unterstrich oder Bindestrich. Kein Abenteuer-Untertitel,
+  keine Spielanleitung und keine TARDIS-Animation auf der Portal-Startseite. WLAN-/Seitenzugang,
+  QR-Codes, Spielernamen, Charakterbilder und Spieleranzahl bleiben sichtbar.
+- Spielerüberschrift und Seitentitel **Dr. Who**, Groß-/Kleinschreibung beibehalten; deutlichere
+  Serifenschrift im bestätigten Archivdesign. Versionszeile nur **Version 0.5.0** statt „Technikdemo“;
+  der Zusatz „lokal & ohne Konto“ wurde auf Wunsch ebenfalls entfernt.
+- Auf Startbildschirmen heißt der sechsstellige Zugang **Portalcode** statt „Beitrittscode“
+  oder „Code vom Spielleiter-Handy“. Repositoryname und voreingestellte SSID bleiben `Dr_Who`.
+- Vor dem Spielerbeitritt aktuelle Anzeige **N von 4 Plätzen belegt · M frei**, alle 1,5 Sekunden
+  aktualisiert. Registrierte Personen zählen sofort, auch ohne gewählte Figur. Bei Verbindungsfehler
+  wird die Belegung als nicht verfügbar angezeigt, keine erfundene Zahl und kein stiller Beitritt.
+- `GET /api/lobby` ist ohne Anmeldung erreichbar und liefert ausschließlich `occupied` und
+  `capacity`. Keine Namen, Figuren, Spielzustände, Portal- oder Wiederbeitrittscodes veröffentlichen.
+  Authentisierung von `/api/state` und allen Spieleraktionen bleibt unverändert.
+- Blaue TARDIS als adaptives Android-App-/Launcher-Icon umgesetzt. Das bisher abstrakte
+  Portal-Symbol wurde ersetzt. App-Name im Launcher: **Dr. Who**.
+- Charakterauswahl als horizontal wischbares Kartenkarussell mit Einrasten pro Karte und
+  weichem Verblassen an beiden Sichtkanten. Zusätzlich Vor-/Zurück-Pfeile, Kartenposition
+  und Tastaturbedienung (Pfeile/Home/End). Eine vergebene Karte bleibt gesperrt; regelmäßige
+  Zustandsabfragen und Besitzänderungen erhalten die gerade betrachtete Karte. Reduzierte
+  Bewegungseinstellungen werden bei der Pfeilnavigation berücksichtigt.
+- Realistischere KI-generierte JPEG-Porträts für Doctor, Dalek und Weinenden Engel ersetzen
+  die bisherigen SVGs in den Steckbriefen; auch Portal-Avatare verwenden diese JPEGs. Keine
+  echten Figurenfotos oder offiziellen Serienfotos. Der Doctor ist eine freie Interpretation,
+  keine festgelegte Schauspieler-Inkarnation. Tatsächliche Figurenfotos können später dieselben
+  Bildpfade ersetzen. Die alten SVGs bleiben als bearbeitbare Illustrationen im Repository.
+- Spielregeln unverändert. Speicherformat 5 ergänzt eine stabile Würfelereignis-ID und Spieler-ID;
+  Format 1–4 bleibt lesbar. Fliegende TARDIS auf wartenden Spielerhandys
+  und separate große TARDIS über „Spielleitung“ bleiben erhalten.
+
+Hintergrunddatei: `app/src/main/res/drawable-nodpi/portal_background.jpg` (768×1152, offline).
+Erstellt mit der integrierten Bildgenerierung; kein offizielles Serienbild. Endgültiger Hintergrund-Prompt:
+
+> Use case: stylized-concept. Asset type: static background artwork for the Android portal start screen of a Doctor Who tabletop companion. A recognizable blue TARDIS police box stands in a sweeping cosmic time vortex of deep midnight navy, teal and restrained cyan light with tiny distant stars, cinematic painterly science fiction. Portrait composition, 1024x1536. Place the TARDIS in the upper third toward the right; the center and lower two thirds remain very dark and calm so opaque UI connection cards can sit in front. Elegant immersive atmosphere, no people, no interface mockup, no lettering, no logos, no watermark. This is a still background, not an animation.
+
+Porträtdateien: `app/src/main/assets/portraits/{doctor,dalek,weeping-angel}.jpg` (bis 750×1000).
+Erstellt mit der integrierten Bildgenerierung. Endgültige Porträt-Prompts:
+
+- Doctor: Use case: photorealistic-natural. Asset type: realistic character dossier portrait for a Doctor Who tabletop app. The Doctor, a warmly charismatic fictional adult male Time Lord with an original face (not a specific actor), tousled brown hair, a long dark coat and subtly patterned waistcoat, holding a slender glowing sonic screwdriver. Waist-up centered portrait, direct engaging gaze, believable skin and fabric details, cinematic photographic realism, restrained warm gold key light and cool petrol-blue rim light, softly blurred TARDIS console interior. Vertical 3:4 crop, head centered with generous space above and around so it also crops to a circular avatar. One character only. No lettering, no cards, no statistics, no borders, no watermark. Match an elegant parchment, petrol and brass character-selection interface.
+- Dalek: Use case: photorealistic-natural. Asset type: realistic character dossier portrait for a Doctor Who tabletop app. A single recognizable bronze Dalek from Doctor Who, detailed domed head with one long central eyestalk glowing cool blue, ribbed midsection with plunger arm and ray gun, armored tapered skirt with spherical hemispheres. Centered three-quarter view, entire upper body and most of skirt visible. Cinematic photographic realism, believable aged brass and bronze textures, warm gold key light, cool petrol-blue rim light, softly blurred dark science-fiction corridor. Vertical 3:4 composition with generous space around the centered subject for an optional circular avatar crop. Match elegant parchment, petrol and brass UI. No people, no text, no interface, no borders, no watermark.
+- Engel: Use case: photorealistic-natural. Asset type: realistic character dossier portrait for a Doctor Who tabletop app. A single recognizable Weeping Angel: a weathered grey stone female angel statue with large feathered wings, wavy carved hair, long draped classical robes, both hands covering its face in the iconic weeping pose. Centered waist-up portrait, wings symmetrically framing the subject. Cinematic photographic realism, convincing eroded stone texture and subtle moss, moody cool petrol-blue lighting with a restrained warm gold edge light, softly blurred old cemetery at dusk. Atmospheric and eerie but no gore. Vertical 3:4 crop, generous room above head and around for a circular avatar crop. No lettering, no interface, no borders, no watermark.
+
+### Portal-Spielansicht und inszenierter W6 ab 0.5.0
+
+**Bestätigter Nutzerwunsch:** Nach Spielstart soll das Portal die wichtigsten Spielereignisse
+anzeigen: aktiver Spieler, Zug von Feld X nach Y, ausgeführte Aktion und animiertes Würfelergebnis.
+Auch Spielerhandys würfeln sichtbar etwa 2–3 Sekunden, bevor die Augen aus Nebel erscheinen und
+kurz aufblitzen. Dies ist eine Darstellungsvorgabe und ändert keine Spielregel.
+
+**Umgesetzt:**
+
+- Beim Start und Fortsetzen öffnet die native Portal-Spielübersicht automatisch: Runde,
+  aktueller Spieler/Charakter oder Gegner, Feld/Reststrecke bzw. Aufgabe, letzter W6, letzte fünf
+  Ereignisse und Positionen des Teams. „Portal-Lobby“ und „Spielleitung“ bleiben erreichbar.
+- Bewegung protokolliert nun Ursprung UND Ziel, z. B. „Alice zieht von A1 nach A2“. Aktionswahl,
+  Gegnerhelfer und Angriffsfolgen stammen wie bisher aus dem gespeicherten Spielzustand.
+  Eine protokollierte Test-Aktionswahl hat weiterhin noch keine berechnete Charakterwirkung.
+- Native Würfelinszenierung (Canvas/ValueAnimator) und 3D-CSS-Würfel im Spielerbrowser laufen
+  jeweils 2,6 Sekunden mit Drehen/Taumeln, Nebel und einem einzelnen kurzen Lichtimpuls.
+  Der Spieler sieht das endgültige Ergebnis und seine Bewegungs-/Aktionswahl erst nach Ablauf.
+  Währenddessen bleiben Würfel-/Bewegungs-/Aktionsknöpfe gesperrt und Ergebnistext/Log verborgen.
+- Das Ergebnis wird zuerst einmalig am Host berechnet und atomisch gespeichert. Jeder neue
+  Wurf erhält eine gespeicherte Ereignis-ID plus Spieler-ID (Format 5). Regelmäßiges Polling,
+  Retry und Bewegung erzeugen keine neue Wurf-ID und keine erneute Würfelentscheidung.
+- Spielerbrowser merkt sich vollständig gezeigte Würfelereignisse lokal pro Partie; Portal
+  merkt sie sich in privaten Einstellungen. Dieselbe Ereignis-ID startet nicht bei jeder
+  Aktualisierung neu. Ein neuer Wurf mit derselben Augenzahl besitzt eine neue ID und animiert.
+  Unterbrechung mitten in der Animation kann die Darstellung nach Rückkehr wiederholen,
+  niemals den gespeicherten Zufall. Alte Formate haben noch keine Ereignis-ID.
+- Portal erhält Updates wie bisher im 1,5-Sekunden-Takt. Darstellung auf Portal und Browser
+  kann dadurch zeitlich versetzt beginnen; keine exakt synchronisierten Videoeffekte behaupten.
+- Reduzierte Bewegung im Browser: statische Nebelanzeige mit derselben Wartezeit, ohne Drehen
+  und Blitz. Deaktivierte Android-Systemanimationen zeigen den gespeicherten Wert unmittelbar.
+- Reale Handyperformance, Timing bei App-Hintergrund/Display-Sperre und native Optik bleiben
+  Gerätetests. Browseroberfläche kann keine gesperrten Handys fernentsperren.
+
+## 9. Technische Grundlage 0.5.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -424,10 +506,8 @@ Verwaltung/Gegner-Teststeuerung über „Spielleitung“ statt überladener Haup
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
-**Verbindlich für den nächsten Build (Nutzerwunsch 25.10.2026):** Eine erkennbare blaue
-TARDIS als App-/Launcher-Icon verwenden, sichtbar auf Android-Startbildschirm und in der
-App-Liste. Das derzeitige abstrakte Portal-Icon ersetzen. Noch nicht in APK 0.4.0 umgesetzt;
-wegen dieser Vormerkung allein keinen neuen Build erzeugen.
+Der vorgemerkte TARDIS-Icon-Wunsch ist mit 0.5.0 umgesetzt. Die konkreten Startbildschirm-
+Anpassungen sind in Abschnitt 8a dokumentiert und bei weiteren Änderungen zu bewahren.
 
 Die kooperative Rollenverteilung ist geklärt. Als Nächstes Figurenliste und Fotos sowie
 Ausdauer/Kraft und gewünschte Sonderfähigkeiten erfassen; danach den Zielvorschlag „Der Zeitriss“
@@ -439,6 +519,27 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.5.0 am 25.10.2026:
+
+- `npm test`: **54 DOM-Prüfungen bestanden**. Neue Belegungsanzeige bei 0/3/4 Spielern,
+  Netzfehler und Wiederverbindung; Eingaben bleiben erhalten, Polling meldet niemanden an.
+  Dazu Karussellnavigation, Tastatur, Randbegrenzung, Kartenerhalt nach Besitzwechsel sowie
+  Würfel-Ergebnis erst nach Timer, gesperrte Folgehandlungen, kein Animationsneustart bei Polling,
+  gemerkte Aufdeckung und neuer Effekt bei neuem Wurf mit gleicher Augenzahl.
+- `bash scripts/test-core.sh`: **217 Prüfungen bestanden**, einschließlich öffentlicher Belegung
+  ohne Veröffentlichung von Namen, Codes oder Spielzustand; Format-4-Migration, persistente
+  Wurf-ID, Ursprung/Ziel im Bewegungslog und neue ID auch bei gleicher Augenzahl.
+- Abschließend `:app:clean :core:smokeTest :app:assembleDebug :app:lintDebug`:
+  **BUILD SUCCESSFUL**, erneut 217 Kernprüfungen, Lint **0 Fehler / 12 Warnungen**.
+  Shader der nativen Würfelanimation sind vorab gecacht; letzter W6 alter Formate wird ohne
+  neue Animation angezeigt. Nach abschließendem Testbericht nochmals APK-Asset aktualisieren.
+  Bei doppelten generierten R-Klassen aus alten Build-Ausgaben hilft ein sauberer App-Build.
+- Mobiler Chromium-Test bei 390×844: JPEGs laden, echte Touch-Wischgeste erreicht nächste Karte,
+  Pfeilnavigation funktioniert, kein seitliches Seitenüberlaufen, Ergebnis während Würfeln verborgen
+  und nach Ablauf wählbare Folgehandlung. Screenshots für Sichtprüfung betrachtet.
+- Kein echter Android-Gerätetest durchgeführt; insbesondere native Portal-Spielansicht und
+  Würfelanimation, WLAN/QR/mDNS und reale Performance bleiben Hardwareprüfungen.
 
 Für 0.4.0 am 25.10.2026:
 
@@ -500,6 +601,25 @@ Prüfung am Host, Bildschirm-Timeouts der Spieler, App-Abbruch und Wiederbeitrit
 DOM-Tests ersetzen keine Sichtprüfung auf realen Handys. Fotos, verbindliche Attribute, wirkende
 Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sind noch offen.
 
+### APK-Signierung und Fortsetzung ab 0.5.0
+
+Der ursprüngliche temporäre Debug-Schlüssel für APK 0.4.0 ist in der aktuellen Umgebung nicht
+mehr vorhanden. 0.5.0 wurde mit einem neuen Debug-Schlüssel signiert. Deshalb **kein direktes
+Update über 0.4.0 möglich**. Bestehende Installation nicht ohne Sicherung entfernen: Android
+löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch offen.
+
+- Bisheriges Zertifikat SHA-256: `e0e73387152fbcc397aa5790717d35790a95d95c59845778e05df1494de7ade5`.
+- Zertifikat ab 0.5.0 SHA-256: `2940936793e828d87a8e2178dc62223c24bd9ebc66ab114241c71f52d1231b40`.
+- Für die Fortsetzung den privaten Debug-Schlüssel `Dr_Who_debug_signing_0.5.0.jks`
+  aus den persönlichen ChatGPT-Dateien abrufen. Er gehört außerhalb des öffentlichen Repositorys.
+  Vor weiteren Builds genau diesen wiederverwenden,
+  damit Versionen ab 0.5.0 installierbare Updates bleiben. Keine Schlüssel ins Repository stellen.
+- Aktuelle lokale Datei liegt außerhalb des Repositorys unter
+  `../build-tools/android-user/debug.keystore` (`ANDROID_USER_HOME` für diese Builds).
+  Standard-Android-Debug-Alias/-Kennwort; kein Produktions-Signiersystem.
+- APK-Signatur und Versionsmetadaten vor Übergabe geprüft. Ein verlorener privater Schlüssel
+  kann aus einer bereits signierten APK nicht zurückgewonnen werden.
+
 ## 12. Änderungshistorie
 
 | Datum | Version | Änderung |
@@ -509,6 +629,8 @@ Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sin
 | 25.10.2026 | 0.3.0 | W6 zu Beginn jedes Spielerzugs, exakte Reststrecke, Richtungswechsel, 5/6-Wahl, Speicherformat 4; zentrale ONBOARDING.md mit Spielregeln und Build-Prüfung; drei visuelle Designvorschläge |
 | 25.10.2026 | 0.3.1 | Nutzer wählt Spielerdesign B und Portaldesign A; Spieler-CSS auf Pergament/Petrol/Messing und Serifenschrift umgestellt; Regeln unverändert |
 | 25.10.2026 | 0.4.0 | Grafische Portal-Lobby mit drehender TARDIS/Charakterporträts; einfache WLAN-Einrichtung, echter mDNS-Hostname, Port-80-Versuch mit 8080-Fallback, WLAN-/Seiten-QR und Code-Vorbelegung |
+
+| 25.10.2026 | 0.5.0 | Statischer Doctor-Who-Hintergrund statt Lobby-Animation; aufgeräumte Starttexte, Portalcode, Dr. Who/Version auf Spielerhandys, öffentliche reine Belegungsanzeige, wischbares Steckbrief-Karussell, realistischere generierte Porträts, TARDIS-Launcher-Icon, automatische Portal-Spielübersicht und 2,6 Sekunden Würfelinszenierung mit persistenten Ereignissen (Format 5) |
 
 ## 13. Fortsetzung in einem anderen Chat
 
@@ -563,10 +685,11 @@ nicht als App-Assets übernommen. Der aktuelle Ausbau übernimmt Farben, Typogra
 Bedienflächen; eine pixelgleiche Nachbildung des Bildes wird nicht behauptet. Charakterfotos
 und endgültige Werte folgen nach den tatsächlichen Figuren des Nutzers.
 
-Ab 0.4.0 wurde die Portal-Lobby auch strukturell überarbeitet und die drehende TARDIS sowie
+Ab 0.4.0 wurde die Portal-Lobby auch strukturell überarbeitet und zunächst die drehende TARDIS sowie
 stilisierte Charakterbilder ergänzt. Der Nutzer verlangt dauerhaft einen einfachen, immersiven
 Einstieg mit vielen passenden Grafiken/Animationen; diese sollen Orientierung und Atmosphäre
-unterstützen, ohne die Bedienung zu überladen.
+unterstützen, ohne die Bedienung zu überladen. Seit 0.5.0 ersetzt auf ausdrücklichen Wunsch
+ein statischer Hintergrund die Animation auf der Portal-Startseite; der neue Wunsch hat Vorrang.
 
 ## 16. Technische Referenzen
 
