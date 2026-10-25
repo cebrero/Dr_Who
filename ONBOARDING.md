@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.3.0 · Würfelbeginn, exakte Zugweite und aktuelle Spielregeln**
-<!-- app-version: 0.3.0 -->
-<!-- reviewed-source-sha256: 7dfdccbbf609314ed0d2f30996861fca6c0810dfbd23051eb083f242b98919ac -->
+Stand: **25.10.2026 · Version 0.3.1 · Spielerdesign B und Portaldesign A**
+<!-- app-version: 0.3.1 -->
+<!-- reviewed-source-sha256: 6b39f03347e509b37b8ebcbe77801ed8952e35627e2a037371989c9e055ff008 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -48,6 +48,7 @@ Keine vollständige Figurenliste und kein vollständiges Teileinventar sind bish
 | Beispiel Weinende Engel | Gegner im Sichtfeld für zufällig ein bis drei Runden aussetzen lassen |
 | Spielleitung | App speichert Aktionen, verfolgt Bewegungen und entscheidet den Zufallsteil von Aktionen |
 | Darstellung | Portal- und Zwischenanimationen auf dem Host; Nutzer kann geeignete Dateien bereitstellen |
+| Bestätigtes Design | Spielerhandys: B „Zeitreise-Archiv“. Portal-Handy: A „TARDIS-Konsole“ |
 
 Diese Beispiele sind Nutzerwünsche, aber noch keine vollständig definierten oder ausbalancierten
 Regeln. Insbesondere Sichtlinien, Trefferfolgen, Bewegungsweiten, Gegnersteuerung und genaue
@@ -326,7 +327,7 @@ TARDIS. Das betroffene Handy schaltet innerhalb der geöffneten Webseite zur Ang
 ein ausgeschaltetes oder gesperrtes Telefon kann die lokale Website nicht verlässlich aufwecken.
 Bildschirm-Timeout und Energieverhalten müssen am Gerät geprüft werden.
 
-## 9. Technische Grundlage 0.3.0
+## 9. Technische Grundlage 0.3.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Keine Drittanbieter-Laufzeitbibliotheken.
@@ -379,6 +380,16 @@ echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht
 
 ## 11. Tests und bekannte Grenzen
 
+Für 0.3.1 am 25.10.2026:
+
+- `npm test`: **33 DOM-Verhaltenstests bestanden** nach Umstellung auf Design B.
+- Keine neue Regellogik oder Änderung am Speicherformat; die 187 Kernprüfungen aus 0.3.0
+  bleiben der zuletzt ausgeführte Regellogik-Teststand.
+- Android-Build `:app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, Lint **0 Fehler / 8 Warnungen**.
+  Würfelfläche im Archivstil auf eine einzelne große Zahl begrenzt; W6-Beschreibung bleibt
+  für assistive Bedienung als zugänglicher Text erhalten. Danach erneut UI-Test und APK-Build.
+
+
 Für 0.3.0 am 25.10.2026 tatsächlich ausgeführt:
 
 - `bash scripts/test-core.sh`: **187 Prüfungen bestanden**. Zusätzlich zu bisherigen Tests
@@ -421,6 +432,7 @@ Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sin
 | 25.10.2026 | 0.1.0 | Repository angelegt, Originalanforderungen und offene Fragen dokumentiert; kooperatives Missionsziel vorgeschlagen; Android-/Browser-/Host-Grundlage als Technikdemo erstellt |
 | 25.10.2026 | 0.2.0 | Exklusive Steckbrief-Auswahl, Portal-Lobby, Partner-/Gegnerzuordnung, Gegnerphase mit zufälligem Bewegungshelfer, TARDIS-Warteanzeige, Angriffsansicht und rückwärts lesbares Speicherformat 3 |
 | 25.10.2026 | 0.3.0 | W6 zu Beginn jedes Spielerzugs, exakte Reststrecke, Richtungswechsel, 5/6-Wahl, Speicherformat 4; zentrale ONBOARDING.md mit Spielregeln und Build-Prüfung; drei visuelle Designvorschläge |
+| 25.10.2026 | 0.3.1 | Nutzer wählt Spielerdesign B und Portaldesign A; Spieler-CSS auf Pergament/Petrol/Messing und Serifenschrift umgestellt; Regeln unverändert |
 
 ## 13. Fortsetzung in einem anderen Chat
 
@@ -452,19 +464,28 @@ Quellstand mit `./gradlew updateOnboardingStamp` zuordnen und den Build ausführ
   erfundenen Testergebnisse und keine pauschale Behauptung, ein Hash prüfe die Bedeutung des Texts.
 - `PROJEKT.md` bleibt nur als Verweis für frühere Links bestehen. Keine zweite Regelquelle pflegen.
 
-## 15. Designvorschläge – noch keine Auswahl
+## 15. Bestätigte Gestaltung – Spieler B, Portal A
 
-Am 25.10.2026 wurden drei KI-generierte Konzeptbilder als visuelle Vorschläge im Chat erstellt:
+**Nutzerentscheidung vom 25.10.2026:** Design B gefällt dem Nutzer für die Spielerhandys
+am besten; Design A ist für das Portal-Handy bestätigt. Nicht erneut nach A/B/C fragen.
 
-- A „TARDIS-Konsole“: dunkelblau/cyan, technische Konsole, leuchtender Würfel und klare Aktionsfelder.
-- B „Zeitreise-Archiv“: helles Pergament, Petrol/Messing, erzählerischer und ruhiger Eindruck.
-- C „Zeitwirbel“: Schwarz/Indigo, blau-violetter Vortex, filmische große Flächen.
+- **Spieler: B „Zeitreise-Archiv“** – helle Pergamentflächen, Petrol-Schaltflächen,
+  Messing-/Goldakzente und Serifenschrift für Überschriften. Gilt für Anmeldung, Auswahl,
+  Steckbriefe, Würfel-/Bewegungsansicht und Angriffsansicht. Die TARDIS-Warteanimation bleibt
+  als Weltraumszene innerhalb des Archivrahmens erhalten.
+- **Portal: A „TARDIS-Konsole“** – dunkelblau, Cyan, klar erkennbare Verbindungs-/Spieldaten
+  und leuchtende Portalwirkung. Die vorhandene dunkle Android-Portalbasis bleibt dafür bestehen.
+- **C „Zeitwirbel“** wurde nicht als Gestaltung ausgewählt.
 
-Die drei Stilbilder zeigen jeweils den Würfelbeginn und die 5er-Wahl. Ein zusätzliches Bild
-zeigt Portal-Lobby, TARDIS-Warteansicht und Angriffsansicht im Stil A. Es sind keine echten App-Screenshots und keine
-bereits ausgewählten Produktdesigns. Bilder/Illustrationen und dekorative Icons daraus sind
-noch nicht als App-Assets übernommen; Serienfotos fehlen weiterhin. Empfehlung des Assistenten:
-A als gut lesbare Basis, optional mit Portalatmosphäre aus C. Entscheidung des Nutzers offen.
+In 0.3.1 wurde die Spieleroberfläche entsprechend mit lokalem CSS umgestellt. Es werden keine
+externen Fonts oder Texturen geladen. Große Bedienelemente und sichtbare Fokusmarkierungen
+bleiben erhalten. Spielregeln und Speicherformat 4 sind gegenüber 0.3.0 unverändert.
+
+Die zuvor generierten Bilder sind weiterhin Konzeptvorlagen, keine echten App-Screenshots.
+Fotos, aufwendige Illustrationen, dekorative Bildbestandteile und Portalvideos daraus sind noch
+nicht als App-Assets übernommen. Der aktuelle Ausbau übernimmt Farben, Typografie und
+Bedienflächen; eine pixelgleiche Nachbildung des Bildes wird nicht behauptet. Charakterfotos
+und endgültige Werte folgen nach den tatsächlichen Figuren des Nutzers.
 
 ## 16. Technische Referenzen
 

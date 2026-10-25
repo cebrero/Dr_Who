@@ -29,3 +29,5 @@
     prüfen und aktualisieren, dann updateOnboardingStamp ausführen. verifyOnboarding
     darf nicht umgangen oder automatisch vor jedem Build neu gestempelt werden.
     Ein Quellhash ersetzt keine inhaltliche Dokumentationspflege. Testergebnisse ehrlich halten.
+14. Bestätigte Designwahl: B „Zeitreise-Archiv“ für die Spielerhandys (Pergament/Petrol/Messing),
+    A „TARDIS-Konsole“ für das Portal-Handy (Dunkelblau/Cyan). Nicht wieder zur Auswahl stellen.

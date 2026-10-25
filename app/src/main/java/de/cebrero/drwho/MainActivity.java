@@ -75,7 +75,7 @@ public class MainActivity extends Activity {
         console = new ScrollView(this); LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL); panel.setPadding(28,24,28,24); console.addView(panel); root.addView(console);
         panel.addView(text("DR_WHO", 34));
-        panel.addView(text("LOKALER SPIELLEITER · 0.3.0", 13));
+        panel.addView(text("LOKALER SPIELLEITER · 0.3.1", 13));
         panel.addView(text("Charakterwahl & Gegnerzüge · Werte, Fotos und Kampfregeln folgen.", 15));
         panel.addView(text("BEITRITTSCODE  " + engine.code(), 28));
         networkStatus = text("Hotspot starten oder alle Handys mit demselben WLAN verbinden.", 16); panel.addView(networkStatus);
