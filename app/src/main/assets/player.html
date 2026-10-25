@@ -4,16 +4,24 @@
 <style>
 :root{color-scheme:dark;font:16px system-ui;background:#070d1b;color:#e1f1fa}*{box-sizing:border-box}body{max-width:620px;margin:auto;padding:24px 18px 42px}h1{font-size:34px;letter-spacing:.08em;margin:6px 0}h2{font-size:20px}small,.muted{color:#9cb5c9}header{margin-bottom:22px}.card{padding:20px;border:1px solid #234158;border-radius:18px;background:#0e1a2c;margin:16px 0}label{display:block;margin:16px 0 6px}input,button{font:inherit;border-radius:10px;padding:14px;border:1px solid #31536d}input{width:100%;background:#071220;color:inherit}button{background:#133c52;color:#c9f7ff;cursor:pointer;min-height:48px}button:disabled{opacity:.4;cursor:default}.primary{background:#67def2;color:#061421;font-weight:700;width:100%;margin-top:18px}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.controls button:nth-child(1){grid-column:2}.controls button:nth-child(2){grid-column:1}.wide{width:100%;margin-top:10px}#message{color:#ffdb9a;min-height:25px;white-space:pre-wrap}#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:18px 0}.cell{aspect-ratio:1;border:1px solid #27435a;border-radius:7px;padding:4px;font-size:10px;color:#94b0c3;overflow:hidden}.piece{display:block;color:#99f1ff;font-size:11px;overflow-wrap:anywhere}.mine{border-color:#72e6f5;background:#124154}li{margin-bottom:10px;overflow-wrap:anywhere}#roll{font-size:48px;text-align:center;color:#85eeff;margin:12px}#turn{font-size:23px;color:#8fe8ff}p{line-height:1.5}[hidden]{display:none!important}
 </style>
-<header><small>DEIN TABLETOP-BEGLEITER</small><h1>DR_WHO</h1><small>Technikdemo 0.1.0 · lokal &amp; ohne Konto</small></header>
+<style>
+.characters{display:grid;gap:18px}.dossier{overflow:hidden;padding:0}.portrait{height:210px;background:radial-gradient(ellipse at 50% 30%,#265c7e,#122844 60%,#0b1427);display:grid;place-items:center;position:relative;color:#81cee1;letter-spacing:.12em}.portrait img{position:absolute;width:100%;height:100%;object-fit:cover}.portrait span{font-size:15px}.details{padding:18px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{padding:12px;background:#081423;border-radius:10px}.stat small{display:block;margin-bottom:5px}.chosen{border-color:#79e0ee}.tag{font-size:12px;letter-spacing:.08em;color:#7ee5ef}.choose{width:100%;margin-top:14px}.battle{border-color:#8f455c}.battle h2{color:#ffb3bf}.outcome{font-size:20px;white-space:pre-wrap;line-height:1.6}.flight{height:300px;position:relative;overflow:hidden;border-radius:18px;background:radial-gradient(ellipse at center,#173756,#070d1b 70%)}.star{position:absolute;width:3px;height:3px;background:#c5e5ff;border-radius:50%;box-shadow:90px 60px #82acdb,190px 210px #82acdb,270px 100px white,40px 220px white,140px 130px white;left:10%;top:10%}.tardis{position:absolute;width:84px;height:142px;left:calc(50% - 42px);top:70px;background:linear-gradient(90deg,#173c70,#23568b 55%,#153968);border:4px solid #2c5a8b;box-shadow:0 0 45px #5bbde74a;animation:tardisFly 9s ease-in-out infinite}.tardis:before{content:'POLICE BOX';position:absolute;top:4px;left:1px;right:1px;background:#0a1933;color:#fff;text-align:center;font-size:8px;letter-spacing:1px;padding:3px 0}.lamp{position:absolute;top:-18px;left:29px;width:17px;height:14px;background:#a6e9ff;box-shadow:0 0 22px #82d9ff}.windows{position:absolute;left:7px;right:7px;top:29px;height:36px;background:repeating-linear-gradient(90deg,transparent 0 9px,#23568b 9px 12px),linear-gradient(#b4e6ed 0 45%,#23568b 45% 55%,#b4e6ed 55%);border:2px solid #12315a}.panels{position:absolute;left:7px;right:7px;top:73px;bottom:5px;background:linear-gradient(90deg,transparent 46%,#14335d 46% 54%,transparent 54%);border:2px solid #13365e}.idletext{text-align:center}.compare{display:grid;gap:16px}@keyframes tardisFly{0%,100%{transform:translate(-55px,25px) rotate(-17deg) scale(.85)}35%{transform:translate(60px,-25px) rotate(18deg) scale(1.1)}70%{transform:translate(15px,45px) rotate(340deg) scale(.72)}}@media(prefers-reduced-motion:reduce){.tardis{animation:none}}
+</style>
+<header><small>DEIN TABLETOP-BEGLEITER</small><h1>DR_WHO</h1><small>Technikdemo 0.2.0 · lokal &amp; ohne Konto</small></header>
 <div id="message" role="status" aria-live="polite"></div>
+<button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <form id="join" class="card"><h2>Der Runde beitreten</h2>
 <label for="name">Dein Name</label><input id="name" maxlength="24" required autocomplete="nickname">
 <label for="code">Code vom Spielleiter-Handy</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
 <button class="primary" id="joinButton">Beitreten</button><p class="muted">Bis zu vier Spieler. Das WLAN-Passwort und dieser Beitrittscode sind zwei verschiedene Dinge.</p></form>
-<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><div id="roll" aria-live="polite"></div>
+<section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Fotos und Werte ergänzen wir passend zu den vorhandenen Figuren. Bisher sind drei Charaktere bekannt; weitere folgen mit deinem Inventar.</p></div><div id="characters" class="characters"></div></section>
+<section id="idle" class="card" hidden><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 class="idletext">Unterwegs durch Raum und Zeit</h2><p id="idleStatus" class="idletext"></p></section>
+<section id="helper" class="card" hidden><small>DU WURDEST ZUFÄLLIG AUSGEWÄHLT</small><h2>Bewege die Gegnerfigur</h2><div id="helperProfile"></div><p>Der Spielleiter nennt Ziel und Weg. Versetze die Figur auf dem Tisch und bestätige anschließend die Bewegung.</p><button id="confirmMovement" class="primary">Figur bewegt · bestätigen</button></section>
+<section id="battle" class="card battle" hidden aria-live="polite"><small>DEIN CHARAKTER WIRD ANGEGRIFFEN</small><h2 id="battleTitle"></h2><p id="outcome" class="outcome"></p><div class="compare"><div><h2>Dein Charakter</h2><div id="defenderProfile"></div></div><div><h2>Dein Gegner</h2><div id="attackerProfile"></div></div></div><button id="ackAttack" class="primary">Verstanden · weiter</button></section>
+<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="myProfile"></div><div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><div id="roll" aria-live="polite"></div>
 <p class="muted">Techniktest: pro Zug eine Bewegung um ein Feld ODER ein W6-Test ODER passen. Figuren auf dem Tisch selbst entsprechend versetzen. Noch keine Wände oder Charakterfähigkeiten.</p>
 <div class="controls" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div>
-<button type="button" id="rollButton" class="primary">W6-Test würfeln</button><button type="button" id="passButton" class="wide">Passen</button><button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button></section>
+<button type="button" id="rollButton" class="primary">W6-Test würfeln</button><button type="button" id="passButton" class="wide">Passen</button></section>
 <section class="card"><h2>Was passiert ist</h2><ol id="log"></ol></section><p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main>
 <script>
 'use strict';
@@ -32,17 +40,48 @@ async function api(path,data){
  }finally{clearTimeout(timeout)}
 }
 function controls(){
- const active=state&&state.started&&state.current===state.you&&!busy&&!pending;
+ const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!state.attack.pending;
  document.querySelectorAll('#controls button,#rollButton,#passButton').forEach(b=>b.disabled=!active);
  $('retry').hidden=!pending;$('retry').disabled=busy;
+ $('confirmMovement').disabled=busy||!!pending;
+ $('ackAttack').disabled=busy||!!pending;
+ document.querySelectorAll('.choose').forEach(b=>b.disabled=b.dataset.locked==='true'||busy||!!pending);
 }
+function el(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e}
+function dossier(c){
+ const card=el('article',undefined,'card dossier'),photo=el('div',undefined,'portrait');photo.append(el('span','FOTO FOLGT'));
+ if(c.portrait&&/^\/portraits\/[a-z0-9-]{1,64}\.jpg$/.test(c.portrait)){const image=el('img');image.alt=c.name;image.src=c.portrait;image.addEventListener('error',()=>image.remove());photo.append(image)}
+ const details=el('div',undefined,'details');details.append(el('h2',c.name),el('p',c.description));
+ const stats=el('div',undefined,'stats');for(const [name,value] of [['Ausdauer',c.endurance],['Kraft',c.strength]]){const box=el('div',undefined,'stat');box.append(el('small',name),el('strong',value));stats.append(box)}details.append(stats,el('h3','Sonderfähigkeiten'));
+ const list=el('ul');c.abilities.forEach(a=>list.append(el('li',a)));details.append(list);card.append(photo,details);return card;
+}
+function profileInto(id,c){const container=$(id),signature=JSON.stringify(c);if(container.dataset.signature===signature)return;container.dataset.signature=signature;container.replaceChildren();if(c)container.append(dossier(c))}
 function render(s){
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
- state=s;$('join').hidden=true;$('game').hidden=false;
+ state=s;$('join').hidden=true;
+ const me=s.players.find(p=>p.id===s.you),playing=s.started&&s.ready;
+ const attacked=playing&&s.attack.pending&&s.attack.targetId===s.you;
+ const helping=playing&&s.phase==='enemies'&&s.helperId===s.you;
+ const active=playing&&s.phase==='players'&&s.current===s.you;
+ $('selection').hidden=playing;$('game').hidden=!active;$('helper').hidden=!helping;$('battle').hidden=!attacked;$('idle').hidden=!playing||active||helping||attacked;
+ $('selectionStatus').textContent=s.selectedCount+' / '+s.players.length+' haben gewählt. '+(me.characterId?'Deine Figur ist reserviert. Der Spielleiter startet die Partie.':'Wähle eine freie Figur.');
+ const signature=JSON.stringify([s.characters,me.characterId,s.started,s.ready]);
+ if($('characters').dataset.signature!==signature){
+  $('characters').dataset.signature=signature;$('characters').replaceChildren();
+  for(const c of s.characters){
+   const card=dossier(c),mine=c.owner===s.you,owner=s.players.find(p=>p.id===c.owner),locked=playing||c.enemy||!!c.owner;
+   if(mine)card.classList.add('chosen');const button=el('button',mine?'Deine Figur':c.enemy?'Als Gegner hinzugefügt':owner?'Gewählt von '+owner.name:'Diesen Charakter wählen','choose');button.type='button';button.dataset.locked=String(locked);button.disabled=locked||busy||!!pending;
+   button.addEventListener('click',()=>choose(c.id));card.lastChild.append(button);$('characters').append(card);
+  }
+ }
+ const own=s.characters.find(c=>c.id===me.characterId),enemy=s.characters.find(c=>c.id===s.activeEnemy);
+ profileInto('myProfile',own);profileInto('helperProfile',enemy);
+ if(attacked){const attacker=s.characters.find(c=>c.id===s.attack.enemyId);profileInto('defenderProfile',own);profileInto('attackerProfile',attacker);$('battleTitle').textContent=(attacker?attacker.name:'Gegner')+' greift dich an';$('outcome').textContent=s.attack.text}
+ $('idleStatus').textContent=s.phase==='enemies'?(enemy?enemy.name:'Ein Gegner')+' ist am Zug.':(s.players.find(p=>p.id===s.current)?.name||'Ein Partner')+' ist am Zug.';
  $('round').textContent=s.started?'RUNDE '+s.round:'LOBBY · '+s.players.length+' / 4';
  const actor=s.players.find(p=>p.id===s.current);
  $('turn').textContent=!s.started?'Warte auf Spielleiter …':s.current===s.you?'Du bist am Zug':(actor?actor.name:'Spieler')+' ist am Zug';
- $('players').textContent=s.players.map(p=>p.name+(p.id===s.you?' (du)':'')).join(' · ');
+ $('players').textContent=s.players.map(p=>p.name+' · '+(s.characters.find(c=>c.id===p.characterId)?.name||'wählt noch')+(p.id===s.you?' (du)':'')).join(' / ');
  $('grid').replaceChildren();
  for(let y=0;y<6;y++)for(let x=0;x<6;x++){
   const cell=document.createElement('div');cell.className='cell';cell.textContent=String.fromCharCode(65+x)+(y+1);
@@ -69,7 +108,7 @@ $('join').addEventListener('submit',async event=>{
 });
 async function send(){
  if(!pending||busy)return;busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
- try{const s=await api('/api/command',pending);pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
+ try{const s=await api(pending.kind==='character'?'/api/character':'/api/command',pending);pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
  catch(e){
   if(e.status===400||e.status===401){pending=null;persist();$('message').textContent=e.message}
   else $('message').textContent='Keine Bestätigung erhalten. Gleiche Anfrage erneut senden; sie wird nicht doppelt ausgeführt.';
@@ -80,7 +119,12 @@ function command(action,direction=''){
  pending={requestId:uuid(),revision:String(state.revision),action,direction};
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicher nicht verfügbar. Bitte Speicherung für diese Seite erlauben.';controls()}
 }
+function choose(characterId){
+ if(busy||pending)return;pending={kind:'character',requestId:uuid(),characterId};
+ try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
+}
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
 $('rollButton').addEventListener('click',()=>command('roll'));$('passButton').addEventListener('click',()=>command('pass'));$('retry').addEventListener('click',send);
+$('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
 if(token){$('join').hidden=true;$('game').hidden=false;poll()}setInterval(poll,1500);
 </script></html>

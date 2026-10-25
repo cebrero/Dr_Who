@@ -8,8 +8,10 @@ import java.util.concurrent.*;
 
 /** Small HTTP/1.1 demo server. No remote administration and no external assets. */
 public final class LocalServer implements Closeable {
+    public interface Portraits { byte[] load(String id) throws IOException; }
     private final GameEngine engine;
     private final byte[] page;
+    private final Portraits portraits;
     private final ServerSocket listener;
     private final ThreadPoolExecutor workers = new ThreadPoolExecutor(4, 4, 0, TimeUnit.SECONDS,
         new ArrayBlockingQueue<>(16), r -> { Thread t = new Thread(r, "drwho-client"); t.setDaemon(true); return t; });
@@ -18,7 +20,11 @@ public final class LocalServer implements Closeable {
     private volatile boolean closed;
 
     public LocalServer(GameEngine engine, byte[] page, int port) throws IOException {
+        this(engine, page, port, id -> null);
+    }
+    public LocalServer(GameEngine engine, byte[] page, int port, Portraits portraits) throws IOException {
         this.engine = engine; this.page = page.clone();
+        this.portraits = portraits;
         listener = new ServerSocket(); listener.setReuseAddress(true);
         listener.bind(new InetSocketAddress("0.0.0.0", port), 16);
         Thread acceptor = new Thread(this::accept, "drwho-listener"); acceptor.setDaemon(true); acceptor.start();
@@ -58,12 +64,18 @@ public final class LocalServer implements Closeable {
                 if (origin != null && !origin.equals("http://" + host)) throw new SecurityException("Fremder Ursprung.");
                 String method = parts[0], path = parts[1];
                 if (method.equals("GET") && path.equals("/")) { reply(out, 200, "text/html; charset=utf-8", page); return; }
+                if (method.equals("GET") && path.matches("/portraits/[a-z0-9-]{1,64}\\.jpg")) {
+                    byte[] photo = portraits.load(path.substring(10, path.length() - 4));
+                    if (photo == null) json(out, 404, "{\"error\":\"Foto noch nicht hinterlegt.\"}");
+                    else reply(out, 200, "image/jpeg", photo);
+                    return;
+                }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";
                 if (method.equals("GET") && path.equals("/api/state")) {
                     json(out, 200, engine.snapshot(token)); return;
                 }
-                if (!method.equals("POST") || !path.equals("/api/join") && !path.equals("/api/command")) {
+                if (!method.equals("POST") || !path.equals("/api/join") && !path.equals("/api/command") && !path.equals("/api/character")) {
                     json(out, 404, "{\"error\":\"Nicht gefunden.\"}"); return;
                 }
                 if (!"1".equals(headers.get("x-dr-who"))) throw new SecurityException("Spieler-Anfrage erforderlich.");
@@ -78,7 +90,8 @@ public final class LocalServer implements Closeable {
                     if (limited(ip)) { json(out, 429, "{\"error\":\"Zu viele Anmeldeversuche. Eine Minute warten.\"}"); return; }
                     try { json(out, 200, engine.join(form.get("name"), form.get("code"), form.get("requestId"))); }
                     catch (IllegalArgumentException e) { failed(ip); throw e; }
-                } else json(out, 200, engine.command(token, form.get("requestId"), Long.parseLong(form.getOrDefault("revision", "-1")), form.get("action"), form.get("direction")));
+                } else if (path.equals("/api/character")) json(out, 200, engine.chooseCharacter(token, form.get("requestId"), form.get("characterId")));
+                else json(out, 200, engine.command(token, form.get("requestId"), Long.parseLong(form.getOrDefault("revision", "-1")), form.get("action"), form.get("direction")));
             } catch (SecurityException e) { json(out, 401, "{\"error\":" + GameEngine.quote(e.getMessage()) + "}"); }
             catch (IllegalArgumentException e) { json(out, 400, "{\"error\":" + GameEngine.quote(e.getMessage() == null ? "Ungültige Eingabe." : e.getMessage()) + "}"); }
             catch (IOException e) { json(out, 503, "{\"error\":\"Speichern oder Übertragung fehlgeschlagen. Gleiche Anfrage erneut senden.\"}"); }

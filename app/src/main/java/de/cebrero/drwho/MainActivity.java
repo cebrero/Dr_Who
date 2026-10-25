@@ -2,11 +2,15 @@ package de.cebrero.drwho;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.pm.PackageManager;
 import android.graphics.*;
 import android.net.wifi.WifiManager;
 import android.os.*;
 import android.util.AtomicFile;
+import android.text.Layout;
+import android.text.StaticLayout;
+import android.text.TextPaint;
 import android.view.*;
 import android.widget.*;
 import de.cebrero.drwho.core.*;
@@ -31,6 +35,11 @@ public class MainActivity extends Activity {
                 gameStatus.setText(engine.hostText()); connections.setText(addresses());
                 portal.caption = engine.hostText().split("\n")[0];
                 portal.result = engine.hostText();
+                portal.waiting = !engine.playing();
+                portal.updateLobby("VERBINDEN & FIGUR WÄHLEN\n\n" + networkStatus.getText() + "\n\n" + addresses() +
+                    "\nBEITRITTSCODE  " + engine.code() + "\n\n" + engine.lobbyText() +
+                    "\nWLAN verbinden → Webseite öffnen → Namen und Code eingeben → Figur wählen.\n\nAntippen · Spielleiter");
+                portal.invalidate();
             }
             handler.postDelayed(this, 1000);
         }
@@ -52,7 +61,13 @@ public class MainActivity extends Activity {
                 while ((n = in.read(buffer)) != -1) b.write(buffer, 0, n);
                 page = b.toByteArray();
             }
-            server = new LocalServer(engine, page, 8080);
+            server = new LocalServer(engine, page, 8080, id -> {
+                try (InputStream in = getAssets().open("portraits/" + id + ".jpg"); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
+                    byte[] buffer = new byte[4096]; int n;
+                    while ((n = in.read(buffer)) != -1) bytes.write(buffer, 0, n);
+                    return bytes.toByteArray();
+                } catch (FileNotFoundException e) { return null; }
+            });
         } catch (IOException e) {
             TextView error = text("Start fehlgeschlagen. Der vorhandene Spielstand wurde nicht überschrieben.\n" + e.getMessage(), 20);
             root.addView(error); return;
@@ -60,8 +75,8 @@ public class MainActivity extends Activity {
         console = new ScrollView(this); LinearLayout panel = new LinearLayout(this);
         panel.setOrientation(LinearLayout.VERTICAL); panel.setPadding(28,24,28,24); console.addView(panel); root.addView(console);
         panel.addView(text("DR_WHO", 34));
-        panel.addView(text("LOKALER SPIELLEITER · 0.1.0", 13));
-        panel.addView(text("Technikdemo — Charaktere, Inventar und Spielregeln folgen.", 15));
+        panel.addView(text("LOKALER SPIELLEITER · 0.2.0", 13));
+        panel.addView(text("Charakterwahl & Gegnerzüge · Werte, Fotos und Kampfregeln folgen.", 15));
         panel.addView(text("BEITRITTSCODE  " + engine.code(), 28));
         networkStatus = text("Hotspot starten oder alle Handys mit demselben WLAN verbinden.", 16); panel.addView(networkStatus);
         button(panel, "Lokalen Hotspot starten", this::requestHotspot);
@@ -72,11 +87,31 @@ public class MainActivity extends Activity {
         connections = text(addresses(), 18); connections.setTextIsSelectable(true); panel.addView(connections);
         panel.addView(text("Spieler: WLAN verbinden → IP-Adresse im Browser öffnen → Name und Code eingeben. Bei mehreren Adressen die WLAN-/Hotspot-Adresse verwenden. Ohne Internet im WLAN bleiben.", 15));
         gameStatus = text(engine.hostText(), 18); panel.addView(gameStatus);
+        button(panel, "Übrige Figur als Gegner hinzufügen", () -> {
+            java.util.List<CharacterProfile> available = engine.availableEnemies();
+            if (available.isEmpty()) { toast(engine.readyForPlay() ? "Keine übrige bekannte Figur verfügbar." : "Zuerst müssen alle Spieler eine Figur wählen."); return; }
+            String[] names = new String[available.size()]; for (int i = 0; i < names.length; i++) names[i] = available.get(i).name;
+            new AlertDialog.Builder(this).setTitle("Gegner hinzufügen").setItems(names, (dialog, which) -> {
+                try { engine.addEnemy(available.get(which).id); gameStatus.setText(engine.hostText()); }
+                catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
+            }).setNegativeButton("Abbrechen", null).show();
+        });
         button(panel, "Technikdemo starten / fortsetzen", () -> {
             try { engine.startDemo(); gameStatus.setText(engine.hostText()); }
             catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
         });
         button(panel, "Portal anzeigen", () -> { console.setVisibility(View.GONE); portal.setVisibility(View.VISIBLE); });
+        panel.addView(text("GEGNERPHASE · TECHNIKTEST", 16));
+        panel.addView(text("Nach allen Partnern folgen hinzugefügte Gegner. Ziel, Weg und konkrete Angriffsfolgen legt vorerst der Spielleiter fest. Automatische Gegnerregeln folgen.", 15));
+        button(panel, "Bewegungshelfer zufällig bestimmen", () -> {
+            try { toast(engine.requestEnemyMovement() + " bewegt die Figur auf dem Tisch."); }
+            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
+        });
+        button(panel, "Angriff auf Spieler anzeigen", this::attackDialog);
+        button(panel, "Gegnerzug abschließen", () -> {
+            try { engine.finishEnemyTurn(); gameStatus.setText(engine.hostText()); }
+            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
+        });
         panel.addView(text("Automatisches Speichern nach jeder Änderung. Host-App geöffnet lassen. Portal antippen, um hierher zurückzukehren.", 15));
         portal = new PortalView(); portal.setVisibility(View.GONE); root.addView(portal);
         portal.setOnClickListener(v -> { portal.setVisibility(View.GONE); console.setVisibility(View.VISIBLE); });
@@ -90,6 +125,22 @@ public class MainActivity extends Activity {
         button.setOnClickListener(v -> action.run()); panel.addView(button);
     }
     private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
+    private void attackDialog() {
+        java.util.List<String[]> players = engine.playersForHost();
+        if (players.isEmpty()) { toast("Zuerst Spieler anmelden."); return; }
+        LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(24,12,24,12);
+        Spinner target = new Spinner(this); String[] names = new String[players.size()];
+        for (int i = 0; i < names.length; i++) names[i] = players.get(i)[1] + " · " + players.get(i)[2];
+        target.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names)); content.addView(target);
+        EditText outcome = new EditText(this); outcome.setHint("Was ist mit dem Charakter passiert?"); outcome.setMinLines(3);
+        outcome.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(400)}); content.addView(outcome);
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Angriffsfolge anzeigen").setView(content)
+            .setPositiveButton("Beim Ziel anzeigen", null).setNegativeButton("Abbrechen", null).create();
+        dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
+            try { engine.reportAttack(players.get(target.getSelectedItemPosition())[0], outcome.getText().toString()); dialog.dismiss(); }
+            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
+        })); dialog.show();
+    }
     private void requestHotspot() {
         if (reservation != null || hotspotPending) { toast("Hotspot läuft oder wird gestartet."); return; }
         String permission = Build.VERSION.SDK_INT >= 33 ? Manifest.permission.NEARBY_WIFI_DEVICES : Manifest.permission.ACCESS_FINE_LOCATION;
@@ -165,14 +216,37 @@ public class MainActivity extends Activity {
     private final class PortalView extends View {
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final int[] colors = new int[18];
+        private final TextPaint lobbyPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        private StaticLayout lobbyLayout;
+        private int lobbyWidth;
         String caption = "PORTAL BEREIT", result = "";
+        String lobby = "Verbindung wird vorbereitet …";
+        boolean waiting = true;
         PortalView() {
             super(MainActivity.this);
             for (int i = 0; i < colors.length; i++) colors[i] = Color.HSVToColor(110+i*7, new float[]{185+i*2, .75f, 1f});
+            lobbyPaint.setColor(Color.rgb(190,237,249));
+            lobbyPaint.setTextSize(17*getResources().getDisplayMetrics().scaledDensity);
             setContentDescription("Animiertes Portal. Antippen öffnet Spielleitersteuerung.");
+        }
+        void updateLobby(String value) {
+            int width = Math.max(1, getWidth()-48);
+            if (lobbyLayout != null && value.equals(lobby) && lobbyWidth == width) return;
+            lobby = value; lobbyWidth = width;
+            lobbyLayout = StaticLayout.Builder.obtain(lobby,0,lobby.length(),lobbyPaint,width)
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(4,1).build();
+        }
+        @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
+            super.onSizeChanged(width,height,oldWidth,oldHeight); updateLobby(lobby);
         }
         @Override protected void onDraw(Canvas canvas) {
             super.onDraw(canvas); canvas.drawColor(Color.rgb(3,7,18));
+            if (waiting) {
+                if (lobbyLayout == null) return;
+                float scale = Math.min(1, (getHeight()-48f)/Math.max(1,lobbyLayout.getHeight()));
+                canvas.save(); canvas.translate(24,24); canvas.scale(scale,scale); lobbyLayout.draw(canvas); canvas.restore();
+                return;
+            }
             float cx = getWidth()/2f, cy = getHeight()/2f;
             float radius = Math.min(getWidth()*.42f, getHeight()*.32f);
             float time = SystemClock.uptimeMillis()/35f;

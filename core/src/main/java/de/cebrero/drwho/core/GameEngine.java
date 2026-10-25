@@ -7,13 +7,15 @@ import java.util.*;
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 1, MAGIC = 0x4457484f;
+    private static final int FORMAT = 3, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private State state;
+    private final List<CharacterProfile> catalogue;
 
     private static final class Player {
         String id, token, name, joinRequest;
+        String characterId = "";
         int x, y;
     }
     private static final class State {
@@ -22,14 +24,22 @@ public final class GameEngine {
         int round = 1, current, lastRoll;
         long revision;
         List<Player> players = new ArrayList<>();
+        List<String> enemies = new ArrayList<>();
         List<String> log = new ArrayList<>();
         LinkedHashSet<String> receipts = new LinkedHashSet<>();
+        String phase = "players", helperId = "", attackId = "", attackEnemy = "", attackTarget = "", attackText = "";
+        int enemyIndex;
+        boolean movementDone, attackPending;
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
-    GameEngine(Store store, SecureRandom random) throws IOException {
+    GameEngine(Store store, SecureRandom random) throws IOException { this(store, random, CharacterProfile.known()); }
+    GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue) throws IOException {
         this.store = store;
         this.random = random;
+        this.catalogue = Collections.unmodifiableList(new ArrayList<>(catalogue));
+        Set<String> ids = new HashSet<>();
+        for (CharacterProfile profile : this.catalogue) if (!ids.add(profile.id)) throw new IllegalArgumentException("Doppelte Charakter-ID.");
         byte[] saved = store.load();
         if (saved == null) {
             State initial = new State();
@@ -42,11 +52,27 @@ public final class GameEngine {
     }
 
     public synchronized String code() { return state.code; }
+    public synchronized String lobbyText() {
+        StringBuilder b = new StringBuilder(selectedCount() + " / " + state.players.size() + " haben gewählt · " + state.players.size() + " / 4 beigetreten\n");
+        for (Player p : state.players) b.append(p.name).append(" → ").append(p.characterId.isEmpty() ? "wählt noch …" : characterName(p.characterId)).append('\n');
+        b.append(readyForPlay() ? "Alle bereit. Übrige Figuren können als Gegner hinzugefügt werden.\n" : "Alle Spieler sind Partner.\n");
+        return b.toString();
+    }
     public synchronized String hostText() {
-        StringBuilder b = new StringBuilder(state.started ? "Runde " + state.round : "Lobby");
+        StringBuilder b = new StringBuilder(playing() ? "Runde " + state.round : "Charakterauswahl");
         b.append(" · ").append(state.players.size()).append(" / 4 Spieler\n");
-        for (Player p : state.players) b.append(p.name).append(" · ").append(cell(p)).append('\n');
-        if (state.started) b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
+        b.append(selectedCount()).append(" / ").append(state.players.size()).append(" haben eine Figur gewählt\n");
+        for (Player p : state.players) b.append(p.name).append(" → ").append(p.characterId.isEmpty() ? "wählt noch …" : characterName(p.characterId))
+            .append(" · Partner").append(playing() ? " · " + cell(p) : "").append('\n');
+        for (String enemy : state.enemies) b.append("Gegner: ").append(characterName(enemy)).append('\n');
+        if (playing()) {
+            if (state.phase.equals("players")) b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
+            else {
+                b.append("Gegnerzug: ").append(characterName(state.enemies.get(state.enemyIndex))).append('\n');
+                if (!state.helperId.isEmpty()) b.append("Bewegung ausführen: ").append(playerName(state.helperId)).append('\n');
+                if (state.attackPending) b.append("Angriff bei ").append(playerName(state.attackTarget)).append(": ").append(state.attackText).append('\n');
+            }
+        }
         if (state.lastRoll > 0) b.append("Letzter W6: ").append(state.lastRoll).append('\n');
         for (int i = Math.max(0, state.log.size() - 3); i < state.log.size(); i++) b.append(state.log.get(i)).append('\n');
         return b.toString();
@@ -77,8 +103,9 @@ public final class GameEngine {
         return "{\"token\":" + quote(p.token) + ",\"sessionId\":" + quote(s.id) + "}";
     }
     public synchronized void startDemo() throws IOException {
-        if (state.started) return;
         if (state.players.isEmpty()) throw new IllegalArgumentException("Zuerst mindestens einen Spieler anmelden.");
+        if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
+        if (state.started) return;
         State next = copy(); next.started = true;
         addLog(next, "Technikdemo gestartet: pro Zug eine Bewegung ODER ein W6-Test ODER passen.");
         commit(next);
@@ -87,13 +114,35 @@ public final class GameEngine {
         Player self = authenticated(state, token);
         StringBuilder b = new StringBuilder("{\"sessionId\":" + quote(state.id));
         b.append(",\"revision\":").append(state.revision).append(",\"started\":").append(state.started)
+            .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
-            .append(",\"you\":").append(quote(self.id)).append(",\"current\":")
-            .append(state.started ? quote(state.players.get(state.current).id) : "null").append(",\"players\":[");
+            .append(",\"you\":").append(quote(self.id)).append(",\"phase\":").append(quote(state.phase))
+            .append(",\"helperId\":").append(quote(state.helperId)).append(",\"movementDone\":").append(state.movementDone)
+            .append(",\"activeEnemy\":").append(quote(state.phase.equals("enemies") ? state.enemies.get(state.enemyIndex) : ""))
+            .append(",\"attack\":{\"id\":").append(quote(state.attackId)).append(",\"enemyId\":").append(quote(state.attackEnemy))
+            .append(",\"targetId\":").append(quote(state.attackTarget)).append(",\"text\":").append(quote(state.attackText))
+            .append(",\"pending\":").append(state.attackPending).append("},\"current\":")
+            .append(playing() && state.phase.equals("players") ? quote(state.players.get(state.current).id) : "null").append(",\"players\":[");
         for (int i = 0; i < state.players.size(); i++) {
             Player p = state.players.get(i); if (i > 0) b.append(',');
             b.append("{\"id\":").append(quote(p.id)).append(",\"name\":").append(quote(p.name))
+                .append(",\"characterId\":").append(quote(p.characterId)).append(",\"team\":\"partners\"")
                 .append(",\"x\":").append(p.x).append(",\"y\":").append(p.y).append('}');
+        }
+        b.append("],\"characters\":[");
+        for (int i = 0; i < catalogue.size(); i++) {
+            CharacterProfile c = catalogue.get(i); if (i > 0) b.append(',');
+            String owner = ""; for (Player p : state.players) if (p.characterId.equals(c.id)) owner = p.id;
+            b.append("{\"id\":").append(quote(c.id)).append(",\"name\":").append(quote(c.name))
+                .append(",\"description\":").append(quote(c.description)).append(",\"endurance\":").append(quote(c.endurance))
+                .append(",\"strength\":").append(quote(c.strength)).append(",\"portrait\":").append(quote(c.portrait))
+                .append(",\"owner\":").append(quote(owner)).append(",\"enemy\":").append(state.enemies.contains(c.id)).append(",\"abilities\":[");
+            for (int j = 0; j < c.abilities.size(); j++) { if (j > 0) b.append(','); b.append(quote(c.abilities.get(j))); }
+            b.append("]}");
+        }
+        b.append("],\"enemies\":[");
+        for (int i = 0; i < state.enemies.size(); i++) {
+            if (i > 0) b.append(','); b.append("{\"characterId\":").append(quote(state.enemies.get(i))).append(",\"team\":\"enemies\"}");
         }
         b.append("],\"log\":[");
         for (int i = 0; i < state.log.size(); i++) { if (i > 0) b.append(','); b.append(quote(state.log.get(i))); }
@@ -105,7 +154,16 @@ public final class GameEngine {
         String receipt = actor.id + ":" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token); // Retry never rerolls or moves twice.
         if (revision != state.revision) throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
-        if (!state.started || !actor.id.equals(state.players.get(state.current).id))
+        if ("confirmMovement".equals(action)) {
+            if (!playing() || !state.phase.equals("enemies") || !actor.id.equals(state.helperId)) throw new IllegalArgumentException("Du wurdest nicht für diese Bewegung ausgewählt.");
+            State next = copy(); next.helperId = ""; next.movementDone = true;
+            addLog(next, actor.name + " hat die Gegnerbewegung auf dem Tisch bestätigt."); remember(next, receipt); commit(next); return snapshot(token);
+        }
+        if ("ackAttack".equals(action)) {
+            if (!state.attackPending || !actor.id.equals(state.attackTarget)) throw new IllegalArgumentException("Kein Angriff zur Bestätigung.");
+            State next = copy(); next.attackPending = false; remember(next, receipt); commit(next); return snapshot(token);
+        }
+        if (!playing() || !state.phase.equals("players") || !actor.id.equals(state.players.get(state.current).id))
             throw new IllegalArgumentException("Du bist gerade nicht am Zug.");
         State next = copy(); Player p = next.players.get(next.current);
         switch (action == null ? "" : action) {
@@ -135,11 +193,102 @@ public final class GameEngine {
         next.receipts.add(receipt);
         while (next.receipts.size() > 128) next.receipts.remove(next.receipts.iterator().next());
         next.current = (next.current + 1) % next.players.size();
-        if (next.current == 0) next.round++;
+        if (next.current == 0) {
+            if (next.enemies.isEmpty()) next.round++;
+            else { next.phase = "enemies"; next.enemyIndex = 0; next.movementDone = false; }
+        }
         commit(next);
         return snapshot(token);
     }
     private static String cell(Player p) { return "" + (char)('A' + p.x) + (p.y + 1); }
+    public synchronized int selectedCount() {
+        int n = 0; for (Player p : state.players) if (!p.characterId.isEmpty()) n++; return n;
+    }
+    public synchronized boolean readyForPlay() { return !state.players.isEmpty() && selectedCount() == state.players.size(); }
+    public synchronized boolean playing() { return state.started && readyForPlay(); }
+    private String playerName(String id) { for (Player p : state.players) if (p.id.equals(id)) return p.name; return "Spieler"; }
+    public synchronized List<String[]> playersForHost() {
+        List<String[]> result = new ArrayList<>();
+        for (Player p : state.players) result.add(new String[]{p.id, p.name, characterName(p.characterId)});
+        return result;
+    }
+    private void requireEnemyTurn() {
+        if (!playing() || !state.phase.equals("enemies")) throw new IllegalArgumentException("Gerade ist kein Gegner am Zug.");
+    }
+    public synchronized String requestEnemyMovement() throws IOException {
+        requireEnemyTurn();
+        if (!state.helperId.isEmpty()) return playerName(state.helperId);
+        if (state.movementDone) throw new IllegalArgumentException("Bewegung für diesen Gegnerzug bereits bestätigt.");
+        if (state.attackPending) throw new IllegalArgumentException("Zuerst den Angriff bestätigen lassen.");
+        State next = copy(); next.helperId = next.players.get(random.nextInt(next.players.size())).id;
+        addLog(next, playerName(next.helperId) + " wurde zufällig für die Gegnerbewegung ausgewählt."); commit(next);
+        return playerName(state.helperId);
+    }
+    public synchronized void reportAttack(String targetId, String outcome) throws IOException {
+        requireEnemyTurn();
+        if (!state.helperId.isEmpty()) throw new IllegalArgumentException("Zuerst die Bewegung bestätigen lassen.");
+        if (state.attackPending) throw new IllegalArgumentException("Der vorherige Angriff wird noch angezeigt.");
+        boolean found = false; for (Player p : state.players) if (p.id.equals(targetId)) found = true;
+        if (!found) throw new IllegalArgumentException("Unbekanntes Ziel.");
+        String text = outcome == null ? "" : outcome.trim();
+        if (text.isEmpty() || text.length() > 400 || text.codePoints().anyMatch(c -> Character.isISOControl(c) && c != '\n')) throw new IllegalArgumentException("Angriffsfolge: 1–400 Zeichen.");
+        State next = copy(); next.attackId = UUID.randomUUID().toString(); next.attackEnemy = next.enemies.get(next.enemyIndex);
+        next.attackTarget = targetId; next.attackText = text; next.attackPending = true;
+        addLog(next, characterName(next.attackEnemy) + " → " + playerName(targetId) + ": " + text); commit(next);
+    }
+    public synchronized void finishEnemyTurn() throws IOException {
+        requireEnemyTurn();
+        if (!state.helperId.isEmpty() || state.attackPending) throw new IllegalArgumentException("Bewegung oder Angriff wartet noch auf Bestätigung.");
+        State next = copy(); next.enemyIndex++; next.movementDone = false;
+        if (next.enemyIndex >= next.enemies.size()) { next.enemyIndex = 0; next.phase = "players"; next.round++; }
+        commit(next);
+    }
+    private CharacterProfile profile(String id) {
+        for (CharacterProfile p : catalogue) if (p.id.equals(id)) return p;
+        throw new IllegalArgumentException("Unbekannter Charakter.");
+    }
+    private String characterName(String id) {
+        for (CharacterProfile p : catalogue) if (p.id.equals(id)) return p.name;
+        return id; // Older saves keep their identity even if a later catalogue changes.
+    }
+    public synchronized String chooseCharacter(String token, String requestId, String characterId) throws IOException {
+        Player actor = authenticated(state, token); requireRequest(requestId); profile(characterId);
+        String receipt = actor.id + ":choose:" + requestId;
+        if (state.receipts.contains(receipt)) return snapshot(token);
+        if (playing()) throw new IllegalArgumentException("Die Charakterauswahl ist nach Spielstart geschlossen.");
+        if (state.enemies.contains(characterId)) throw new IllegalArgumentException("Diese Figur ist bereits als Gegner hinzugefügt.");
+        for (Player p : state.players) if (!p.id.equals(actor.id) && p.characterId.equals(characterId))
+            throw new IllegalArgumentException("Diese Figur wurde gerade von einem anderen Spieler gewählt.");
+        if (actor.characterId.equals(characterId)) return snapshot(token);
+        State next = copy();
+        for (Player p : next.players) if (p.id.equals(actor.id)) p.characterId = characterId;
+        remember(next, receipt);
+        addLog(next, actor.name + " wählt " + characterName(characterId) + " · Partner.");
+        commit(next); return snapshot(token);
+    }
+    public synchronized List<CharacterProfile> availableEnemies() {
+        List<CharacterProfile> result = new ArrayList<>();
+        if (!readyForPlay()) return result;
+        for (CharacterProfile c : catalogue) {
+            boolean used = state.enemies.contains(c.id);
+            for (Player p : state.players) if (p.characterId.equals(c.id)) used = true;
+            if (!used) result.add(c);
+        }
+        return result;
+    }
+    /** Host-only call. Intentionally not exposed as an HTTP route. */
+    public synchronized void addEnemy(String characterId) throws IOException {
+        profile(characterId);
+        if (!readyForPlay()) throw new IllegalArgumentException("Zuerst wählen alle Spieler ihre Figuren.");
+        if (state.enemies.contains(characterId)) return;
+        for (Player p : state.players) if (p.characterId.equals(characterId)) throw new IllegalArgumentException("Diese Figur gehört einem Partner.");
+        State next = copy(); next.enemies.add(characterId);
+        addLog(next, characterName(characterId) + " wurde am Portal als Gegner hinzugefügt."); commit(next);
+    }
+    private static void remember(State next, String receipt) {
+        next.receipts.add(receipt);
+        while (next.receipts.size() > 128) next.receipts.remove(next.receipts.iterator().next());
+    }
     private static void requireRequest(String id) {
         if (id == null || !id.matches("[A-Za-z0-9-]{16,80}")) throw new IllegalArgumentException("Ungültige Anfrage-ID.");
     }
@@ -163,26 +312,48 @@ public final class GameEngine {
         for (Player p : s.players) {
             out.writeUTF(p.id); out.writeUTF(p.token); out.writeUTF(p.name); out.writeUTF(p.joinRequest);
             out.writeInt(p.x); out.writeInt(p.y);
+            out.writeUTF(p.characterId);
         }
+        out.writeInt(s.enemies.size()); for (String id : s.enemies) out.writeUTF(id);
         out.writeInt(s.log.size()); for (String entry : s.log) out.writeUTF(entry);
         out.writeInt(s.receipts.size()); for (String id : s.receipts) out.writeUTF(id);
+        out.writeUTF(s.phase); out.writeInt(s.enemyIndex); out.writeUTF(s.helperId); out.writeBoolean(s.movementDone);
+        out.writeUTF(s.attackId); out.writeUTF(s.attackEnemy); out.writeUTF(s.attackTarget); out.writeUTF(s.attackText); out.writeBoolean(s.attackPending);
         out.flush(); return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
         if (bytes.length > 262144) throw new IOException("Spielstand zu groß.");
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
-        if (in.readInt() != MAGIC || in.readInt() != FORMAT) throw new IOException("Unbekanntes Spielstandformat.");
+        if (in.readInt() != MAGIC) throw new IOException("Unbekanntes Spielstandformat.");
+        int format = in.readInt();
+        if (format < 1 || format > FORMAT) throw new IOException("Unbekanntes Spielstandformat.");
         State s = new State(); s.id = in.readUTF(); s.code = in.readUTF(); s.started = in.readBoolean();
         s.round = in.readInt(); s.current = in.readInt(); s.lastRoll = in.readInt(); s.revision = in.readLong();
         int n = count(in, 4);
         for (int i = 0; i < n; i++) {
             Player p = new Player(); p.id = in.readUTF(); p.token = in.readUTF(); p.name = in.readUTF();
             p.joinRequest = in.readUTF(); p.x = in.readInt(); p.y = in.readInt();
+            if (format >= 2) p.characterId = in.readUTF();
             if (p.x < 0 || p.x >= 6 || p.y < 0 || p.y >= 6) throw new IOException("Ungültige Position.");
             s.players.add(p);
         }
+        if (format >= 2) { int enemies = count(in, 256); for (int i = 0; i < enemies; i++) s.enemies.add(in.readUTF()); }
+        Set<String> assigned = new HashSet<>();
+        for (Player p : s.players) if (!p.characterId.isEmpty() && (!p.characterId.matches("[a-z0-9-]{1,64}") || !assigned.add(p.characterId)))
+            throw new IOException("Doppelte oder ungültige Charaktervergabe.");
+        for (String id : s.enemies) if (!id.matches("[a-z0-9-]{1,64}") || !assigned.add(id)) throw new IOException("Ungültige Gegnervergabe.");
         int logs = count(in, 60); for (int i = 0; i < logs; i++) s.log.add(in.readUTF());
         int receipts = count(in, 128); for (int i = 0; i < receipts; i++) s.receipts.add(in.readUTF());
+        if (format >= 3) {
+            s.phase = in.readUTF(); s.enemyIndex = in.readInt(); s.helperId = in.readUTF(); s.movementDone = in.readBoolean();
+            s.attackId = in.readUTF(); s.attackEnemy = in.readUTF(); s.attackTarget = in.readUTF(); s.attackText = in.readUTF(); s.attackPending = in.readBoolean();
+        }
+        Set<String> playerIds = new HashSet<>(); for (Player p : s.players) playerIds.add(p.id);
+        if (!(s.phase.equals("players") || s.phase.equals("enemies")) || s.enemyIndex < 0 ||
+            (s.phase.equals("enemies") && (!s.started || s.enemyIndex >= s.enemies.size())) ||
+            (!s.helperId.isEmpty() && (!s.phase.equals("enemies") || !playerIds.contains(s.helperId) || s.movementDone)) ||
+            (s.attackPending && (!s.phase.equals("enemies") || !playerIds.contains(s.attackTarget) || !s.enemies.contains(s.attackEnemy) || s.attackId.isEmpty())))
+            throw new IOException("Ungültige Gegnerphase.");
         if (in.available() != 0 || s.round < 1 || s.revision < 0 || s.current < 0 ||
             s.current >= Math.max(1, n) || (s.started && n == 0) || s.lastRoll < 0 || s.lastRoll > 6 || !s.code.matches("[0-9]{6}"))
             throw new IOException("Spielstand beschädigt.");

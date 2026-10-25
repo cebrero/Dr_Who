@@ -15,3 +15,10 @@
    für importierte Spielstände. Android-Gerätetest und APK-Build ehrlich als offen markieren,
    solange sie nicht tatsächlich durchgeführt wurden.
 8. Dieses Repository ist die dauerhafte Quelle; keine parallelen Projektstatusdateien pflegen.
+9. Bestätigt: Alle beigetretenen Spieler sind Partner, unabhängig vom Seriencharakter.
+   Nur zusätzlich am Portal hinzugefügte, unbesetzte Figuren werden Gegner.
+10. Nicht beteiligte Handys zeigen TARDIS. Bei Gegnerbewegung Helfer zufällig am Host
+    bestimmen und speichern; Angriffsansicht gezielt beim betroffenen Spieler anzeigen.
+    Nicht behaupten, eine lokale Browserseite könne gesperrte Telefone fernentsperren.
+11. Charakterfotos und endgültige Ausdauer-/Kraftwerte fehlen noch. Platzhalter klar
+    kennzeichnen; keine zusätzlichen Serienfiguren oder Spielwerte ohne Abstimmung erfinden.

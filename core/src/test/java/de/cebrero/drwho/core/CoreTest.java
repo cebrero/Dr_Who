@@ -17,8 +17,12 @@ public final class CoreTest {
         public void save(byte[] value) throws IOException { if (fail) throw new IOException("disk full"); data = value.clone(); }
     }
     static final class Dice extends SecureRandom {
-        int rolls;
-        @Override public int nextInt(int bound) { if (bound == 6) { rolls++; return 3; } return 123456; }
+        int rolls, helperDraws;
+        @Override public int nextInt(int bound) {
+            if (bound == 6) { rolls++; return 3; }
+            if (bound <= 4) { helperDraws++; return bound-1; }
+            return 123456;
+        }
     }
     static void check(boolean test, String message) { checks++; if (!test) throw new AssertionError(message); }
     interface Throwing { void run() throws Exception; }
@@ -35,21 +39,32 @@ public final class CoreTest {
     }
     static String id() { return UUID.randomUUID().toString(); }
     static String join(GameEngine e, String name) throws Exception { return text(e.join(name, e.code(), id()), "token"); }
+    static GameEngine fourCharacterFixture(MemoryStore store, Dice dice) throws IOException {
+        List<CharacterProfile> catalogue = new ArrayList<>(CharacterProfile.known());
+        catalogue.add(new CharacterProfile("test-only", "Testfigur", "Nur Testdaten, keine Serienfigur", "offen", "offen", ""));
+        return new GameEngine(store, dice, catalogue);
+    }
+    static String ready(GameEngine e, String name, String character) throws Exception {
+        String token = join(e,name); e.chooseCharacter(token,id(),character); return token;
+    }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); persistence(); concurrentRetry(); http();
-        System.out.println("PASS: " + checks + " checks (lobby, turns, persistence, retries, HTTP)");
+        lobbyAndTurns(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http();
+        System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
-        MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store, dice);
+        MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = fourCharacterFixture(store, dice);
         rejects(IllegalArgumentException.class, () -> e.join("A", "wrong", id()));
         rejects(IllegalArgumentException.class, e::startDemo);
         String request = id(); String a = text(e.join("Doctor", e.code(), request), "token");
         check(a.equals(text(e.join("Doctor", e.code(), request), "token")), "join retry reserves same slot");
-        String b = join(e, "Companion"); join(e, "Player 3"); join(e, "Player 4");
+        String b = join(e, "Companion"), c = join(e, "Player 3"), d = join(e, "Player 4");
         rejects(IllegalArgumentException.class, () -> join(e, "Player 5"));
         rejects(SecurityException.class, () -> e.snapshot("invalid"));
         String snapshot = e.snapshot(a);
         check(!snapshot.contains(a) && !snapshot.contains(e.code()), "public snapshot hides tokens and join code");
+        rejects(IllegalArgumentException.class, e::startDemo);
+        e.chooseCharacter(a,id(),"doctor"); e.chooseCharacter(b,id(),"dalek");
+        e.chooseCharacter(c,id(),"weeping-angel"); e.chooseCharacter(d,id(),"test-only");
         e.startDemo();
         rejects(IllegalArgumentException.class, () -> e.command(b,id(),revision(e.snapshot(b)),"roll",""));
         rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"move","N"));
@@ -65,7 +80,7 @@ public final class CoreTest {
     }
     static void persistence() throws Exception {
         MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store, dice);
-        String a = join(e, "A"); e.startDemo(); String request = id(); long rev = revision(e.snapshot(a));
+        String a = ready(e, "A", "doctor"); e.startDemo(); String request = id(); long rev = revision(e.snapshot(a));
         e.command(a,request,rev,"roll","");
         String snapshot = e.snapshot(a), code = e.code();
         GameEngine restored = new GameEngine(store, dice);
@@ -81,7 +96,7 @@ public final class CoreTest {
     }
     static void concurrentRetry() throws Exception {
         MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store,dice);
-        String a = join(e,"A"); e.startDemo(); String req = id(); long rev = revision(e.snapshot(a));
+        String a = ready(e,"A","doctor"); e.startDemo(); String req = id(); long rev = revision(e.snapshot(a));
         ExecutorService pool = Executors.newFixedThreadPool(4);
         try {
             List<Callable<String>> jobs = new ArrayList<>();
@@ -90,6 +105,70 @@ public final class CoreTest {
             String first = results.get(0).get(); for(Future<String> r:results) check(first.equals(r.get()),"concurrent retry stable");
             check(dice.rolls == 1,"one random event under concurrent requests");
         } finally { pool.shutdownNow(); }
+    }
+    static void characterRace() throws Exception {
+        MemoryStore store = new MemoryStore(); GameEngine e = new GameEngine(store);
+        String a=join(e,"Alice"),b=join(e,"Bob");
+        rejects(IllegalArgumentException.class,()->e.addEnemy("dalek"));
+        rejects(SecurityException.class,()->e.chooseCharacter("fake",id(),"doctor"));
+        rejects(IllegalArgumentException.class,()->e.chooseCharacter(a,id(),"not-known"));
+        ExecutorService pool=Executors.newFixedThreadPool(2); CountDownLatch gate=new CountDownLatch(1);
+        List<Future<Boolean>> results=new ArrayList<>();
+        try {
+            for(String token:Arrays.asList(a,b)) results.add(pool.submit(()->{gate.await();try{e.chooseCharacter(token,id(),"doctor");return true;}catch(IllegalArgumentException taken){return false;}}));
+            gate.countDown();int successes=0;for(Future<Boolean> f:results)if(f.get())successes++;
+            check(successes==1,"simultaneous character pick has exactly one winner");
+        } finally {pool.shutdownNow();}
+        String state=e.snapshot(a);check(state.contains("\"selectedCount\":1"),"one selected character");
+        String doctorOwner=text(state.substring(state.indexOf("\"characters\"")),"owner");
+        String aliceId=text(state,"you");String winner=doctorOwner.equals(aliceId)?a:b,loser=winner.equals(a)?b:a;
+        rejects(IllegalArgumentException.class,()->e.chooseCharacter(loser,id(),"doctor"));
+        e.chooseCharacter(loser,id(),"dalek");check(e.readyForPlay(),"all ready after exclusive choices");
+        check(e.availableEnemies().size()==1,"only unused character can be added");
+        rejects(IllegalArgumentException.class,()->e.addEnemy("doctor"));
+        e.addEnemy("weeping-angel");String before=e.snapshot(a);e.addEnemy("weeping-angel");
+        check(before.equals(e.snapshot(a)),"adding enemy twice is idempotent");
+        rejects(IllegalArgumentException.class,()->e.chooseCharacter(loser,id(),"weeping-angel"));
+        check(before.contains("\"team\":\"partners\"")&&before.contains("\"team\":\"enemies\""),"allegiance stored independent from character");
+        check(before.contains("Noch festzulegen"),"unknown attributes not invented");
+        check(new GameEngine(store).snapshot(a).equals(before),"character assignments and enemy list survive restart");
+        e.startDemo();rejects(IllegalArgumentException.class,()->e.chooseCharacter(winner,id(),"doctor"));
+    }
+    static void enemyPhase() throws Exception {
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=new GameEngine(store,dice);
+        String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();
+        rejects(IllegalArgumentException.class,e::requestEnemyMovement);
+        e.command(a,id(),revision(e.snapshot(a)),"pass","");e.command(b,id(),revision(e.snapshot(b)),"pass","");
+        check(e.snapshot(a).contains("\"phase\":\"enemies\""),"enemy phase follows all partners");
+        check(e.snapshot(a).contains("\"round\":1"),"round ends after enemies");
+        String helper=e.requestEnemyMovement();check(helper.equals("Bob"),"uniform bounded draw selects helper");
+        e.requestEnemyMovement();check(dice.helperDraws==1,"repeated host request does not choose again");
+        check(text(e.snapshot(a),"helperId").equals(text(e.snapshot(b),"you")),"only assigned helper involved");
+        rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"confirmMovement",""));
+        rejects(IllegalArgumentException.class,e::finishEnemyTurn);
+        String move=id();long rev=revision(e.snapshot(b));e.command(b,move,rev,"confirmMovement","");
+        String afterMove=e.snapshot(b);e.command(b,move,rev,"confirmMovement","");check(afterMove.equals(e.snapshot(b)),"movement confirmation retry stable");
+        rejects(IllegalArgumentException.class,e::requestEnemyMovement);
+        e.reportAttack(text(e.snapshot(a),"you"),"Der Engel hat dich für 2 Runden gebannt (Testmeldung).");
+        String attacked=e.snapshot(a);check(attacked.contains("\"pending\":true")&&attacked.contains("für 2 Runden"),"target receives exact recorded outcome");
+        rejects(IllegalArgumentException.class,()->e.command(b,id(),revision(e.snapshot(b)),"ackAttack",""));
+        rejects(IllegalArgumentException.class,e::finishEnemyTurn);
+        GameEngine restored=new GameEngine(store,dice);check(attacked.equals(restored.snapshot(a)),"pending attack and phase survive restart");
+        restored.command(a,id(),revision(restored.snapshot(a)),"ackAttack","");restored.finishEnemyTurn();
+        check(restored.snapshot(a).contains("\"round\":2")&&restored.snapshot(a).contains("\"phase\":\"players\""),"next round begins after acknowledged enemy turn");
+    }
+    static void migration() throws Exception {
+        for(int format:new int[]{1,2}){
+            MemoryStore store=new MemoryStore();ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
+            out.writeInt(0x4457484f);out.writeInt(format);out.writeUTF("old-game");out.writeUTF("123456");out.writeBoolean(true);
+            out.writeInt(7);out.writeInt(0);out.writeInt(4);out.writeLong(10);out.writeInt(1);
+            out.writeUTF("old-player");out.writeUTF("old-token");out.writeUTF("Alice");out.writeUTF(id());out.writeInt(2);out.writeInt(3);
+            if(format==2){out.writeUTF("doctor");out.writeInt(1);out.writeUTF("dalek");}
+            out.writeInt(0);out.writeInt(0);store.data=bytes.toByteArray();GameEngine e=new GameEngine(store);
+            if(format==1){check(!e.readyForPlay(),"v1 requires character before resuming");e.chooseCharacter("old-token",id(),"doctor");}
+            check(e.playing(),"old game resumes after setup");check(e.snapshot("old-token").contains("\"round\":7"),"migration keeps round");
+            check(e.snapshot("old-token").contains("\"x\":2,\"y\":3"),"migration keeps position");
+        }
     }
     static final class Response {
         int status; String body;
@@ -120,6 +199,10 @@ public final class CoreTest {
             Response joined=call(server,"/api/join",form,null,true);check(joined.status==200,"HTTP join");
             String token=text(joined.body,"token");
             check(call(server,"/api/state",null,token,false).status==200,"authenticated snapshot");
+            check(call(server,"/api/character","characterId=doctor&requestId="+id(),null,true).status==401,"choice requires authentication");
+            check(call(server,"/api/character","characterId=doctor&requestId="+id(),token,true).status==200,"HTTP character choice");
+            check(call(server,"/api/enemy","characterId=dalek",token,true).status==404,"enemy administration unavailable to player API");
+            check(call(server,"/portraits/doctor.jpg",null,null,false).status==404,"missing portrait returns placeholder status");
             e.startDemo();
             String cmd="action=roll&revision="+revision(e.snapshot(token))+"&requestId="+id();
             Response roll=call(server,"/api/command",cmd,token,true);check(roll.status==200,"HTTP command");

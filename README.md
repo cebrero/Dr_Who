@@ -8,15 +8,23 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.1.0
+## Stand 0.2.0
 
-Technischer Einstieg mit Android-Host, lokalem HTTP-Server, Code-Lobby, vier Spielerplätzen,
-Browser-Steuerung, automatischem lokalem Spielstand und einer eigenen einfachen Portalanimation.
-Ein freies 6×6-Demofeld dient zum Testen von Zugfolge, Bewegung und W6-Zufall.
-Charakterregeln, Inventarverwaltung, Brettgenerator und eigentliche Kampagne sind noch geplant.
+Android-Host mit lokalem HTTP-Server, Code-Lobby und exklusiver Charakterauswahl über Steckbriefe.
+Alle Spieler sind Partner. Der Host kann übrige Figuren als Gegner hinzufügen. Nach den Partnern
+folgt eine Gegnerphase mit zufällig ausgewähltem Bewegungshelfer und einer Angriffsanzeige beim
+betroffenen Spieler. Nicht beteiligte Spieler sehen eine fliegende TARDIS. Die Portal-Lobby zeigt
+Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespeichert.
 
-Validiert am 25.10.2026: Android-Debug-Build erfolgreich, 39 Kern-/HTTP-Prüfungen bestanden,
-Android-Lint ohne Fehler (8 Hinweise). Ein realer Vier-Spieler-Hotspottest steht noch aus.
+Ein freies 6×6-Demofeld dient weiterhin zum Testen von Zugfolge, Bewegung und W6-Zufall.
+Gegnerbewegung und konkrete Angriffsfolge werden in dieser Technikdemo vom Host vorgegeben;
+automatische Gegner-KI, Charakterregeln, Inventar, Brettgenerator und Kampagne sind noch geplant.
+Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und Weinender Engel.
+Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
+Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
+
+Aktuellen Teststatus und bekannte Grenzen siehe [PROJEKT.md](PROJEKT.md).
+Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
 ## Bauen
 
@@ -40,6 +48,9 @@ Kern- und HTTP-Tests ohne Android SDK:
 bash scripts/test-core.sh
 ```
 
+Optionale Tests der Spieleransicht mit Node.js 22: `npm ci --ignore-scripts` und `npm test`.
+Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerhandys benötigt.
+
 ## Technikdemo verwenden
 
 1. APK auf dem Spielleiter-Handy installieren und App öffnen.
@@ -48,15 +59,25 @@ bash scripts/test-core.sh
 3. Spieler verbinden sich mit dem angezeigten WLAN und öffnen die angezeigte IPv4-Adresse
    samt `http://` und Port `:8080` im Browser. Es wird keine Internetverbindung benötigt.
 4. Namen und sechsstelligen Beitrittscode eingeben. Das WLAN-Passwort ist davon getrennt.
-5. Host startet die Technikdemo. Die Spieler bewegen sich abwechselnd um ein Feld,
+5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
+   der Host übrige Figuren als Gegner hinzufügen und die Technikdemo starten.
+6. Die Spieler bewegen sich abwechselnd um ein Feld,
    würfeln einen W6-Techniktest oder passen. Jede dieser Eingaben beendet in der Demo den Zug.
-6. „Portal anzeigen“ öffnet die Animation. Antippen bringt die Host-Steuerung zurück.
+7. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,
+   eine Angriffsfolge beim Ziel anzeigen und anschließend den Gegnerzug abschließen.
+   Offene Bewegungen bestätigt nur der Helfer, Angriffe nur das Ziel am eigenen Handy.
+8. „Portal anzeigen“ öffnet die Lobbyübersicht bzw. Animation. Antippen bringt die Host-Steuerung zurück.
 
 App im Vordergrund geöffnet lassen. Nach Änderungen wird automatisch gespeichert;
 beim erneuten Öffnen wird die vorhandene Partie geladen. Keine fertige Spielversion:
 Aktuell ein lokaler Spielstand, noch kein Auswahlmenü für mehrere Partien, kein Export/Import
 und kein Zurücksetzen über die Oberfläche. Browser-Anmeldungen gehören zur Host-Adresse;
 ein Adresswechsel oder gelöschte Browserdaten brauchen später eine Wiederbeitrittsfunktion.
+Die Website wechselt bei Beteiligung zur aktiven Ansicht; gesperrte Handys werden damit nicht
+fernentsperrt. Bildschirm-Timeout und Energiesparen am realen Gerät berücksichtigen.
+
+Fotos später als JPEG in `app/src/main/assets/portraits/` ergänzen: `doctor.jpg`, `dalek.jpg`
+und `weeping-angel.jpg`. Ohne Foto erscheint ein gekennzeichneter Platzhalter.
 
 ## Struktur
 

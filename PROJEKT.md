@@ -1,6 +1,6 @@
 # Dr_Who – zentrales Projektgedächtnis
 
-Stand: **25.10.2026 · Version 0.1.0 · technische Grundlage und gemeinsamer Spielentwurf**
+Stand: **25.10.2026 · Version 0.2.0 · Charakterwahl, Partner/Gegner und Gegnerphasen**
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -35,6 +35,12 @@ Keine vollständige Figurenliste und kein vollständiges Teileinventar sind bish
 | Generator | Bei neuem Spiel logischen Aufbau aus vorhandenen Teilen vorschlagen, einschließlich zusätzlichem Raum; Spieler bauen diesen auf |
 | Fortsetzung | Spielzustand und Brettaufbau speichern, später fortsetzen und physisch wieder aufbauen |
 | Figuren | Unterschiedliche Fähigkeiten und Eigenschaften pro Charakter |
+| Charakterwahl | Nach Beitritt Steckbrief mit Foto, Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten; gewählte Figur für andere gesperrt |
+| Portal-Lobby | Während der Auswahl Verbindungshilfe, Beitrittscode, Fortschritt und Zuordnung Spielername → Figur anzeigen |
+| Teams | Alle beigetretenen Spieler sind Partner. Übrige bekannte Figuren können danach ausschließlich am Portal als Gegner hinzugefügt werden |
+| Gegnerbewegung | Wenn ein Gegner bewegt werden muss, bestimmt die App zufällig einen Spieler für die physische Ausführung |
+| Warteanzeige | Handys gerade nicht beteiligter Spieler zeigen eine fliegende TARDIS |
+| Angriffsanzeige | Angegriffener Spieler sieht den eigenen Steckbrief, die Attribute des Gegners und die konkreten Folgen für seinen Charakter |
 | Beispiel Doctor | Schallschraubenzieher kann Türen öffnen |
 | Beispiel Daleks | Schießen nur bis zu drei Felder in geraden Richtungen |
 | Beispiel Weinende Engel | Gegner im Sichtfeld für zufällig ein bis drei Runden aussetzen lassen |
@@ -80,9 +86,11 @@ Mögliche Rollen der vorhandenen Geländeobjekte:
 - **Zusätzlicher Raum:** Abgeschlossener Technikraum, der einen Anker oder die Portalsteuerung enthält.
 - **Tür-/Portalhalterung:** sichtbarer Ausgang, Missionsstatus und Portalöffnung im Finale.
 
-Die Gegner könnten zuerst durch die App gesteuert werden. Ob Spieler auch Daleks/Engel spielen,
-ob es Teams oder einen Gegenspieler gibt, ist ausdrücklich offen. Alternative: asymmetrische
-Jagdmission oder konkurrierende Fraktionen statt Kooperation.
+**Bestätigt am 25.10.2026:** Alle beigetretenen Spieler spielen als Partner. Die Zuordnung richtet
+sich nach der Teilnahme, nicht nach der Rolle in der Serie: Auch ein von einem Spieler gewählter
+Dalek wäre ein Partner. Nicht gewählte Figuren sind zunächst nur verfügbar, nicht automatisch
+aktiv. Erst durch Hinzufügen am Portal werden sie zu Gegnern. Das kooperative Missionsziel
+„Der Zeitriss“ selbst ist weiterhin nur ein Vorschlag.
 
 ### Vorgeschlagener Rundenablauf
 
@@ -102,7 +110,7 @@ Noch keine implementierte Missionsschleife. In der Technikdemo gilt nur eine Ein
 | Doctor | Schallschraubenzieher öffnet Türen | Reichweite; freie Sicht; welche Türen; automatisch oder Probe; Verbrauch/Abklingzeit |
 | Dalek | Schuss bis drei Felder, nur gerade Richtungen | Vier orthogonale Richtungen? Zielauswahl, Deckung, Schaden, Trefferwurf, Türen/Wände blockieren? |
 | Weinender Engel | Gegner im Sichtfeld setzt ein bis drei Runden aus | Definition Sichtfeld/Blickrichtung; ein Ziel oder mehrere; Schutz/Resistenz; wann zählen und enden Runden? |
-| Weitere Figuren | Nutzer nennt sie später | Namen, vorhandene Anzahl, Spieler oder Gegner, gewünschte Besonderheiten |
+| Weitere Figuren | Nutzer nennt sie später | Namen, vorhandene Anzahl und gewünschte Besonderheiten; Team ergibt sich aus Spielerwahl oder Gegner-Hinzufügen |
 
 Engel: Die genannte Lähmungsfähigkeit beibehalten, nicht stillschweigend durch die Serienregel
 „Beobachten stoppt Engel“ ersetzen. Diese wäre eine zusätzliche optionale Idee. Ein bis drei
@@ -112,6 +120,49 @@ aber nur als noch unbestätigten Balancing-Vorschlag behandeln.
 Weitere offene Grundfragen: Lebenspunkte oder zeitweilige Zustände? Ausscheiden erlaubt?
 Gemeinsame Sicht oder verdeckte Informationen? Können Figuren Felder teilen? Mindestspielerzahl?
 Gewünschte Dauer und Schwierigkeitsgrad? Mehrere Figuren pro Spieler?
+
+### Bestätigter Beitritts- und Gegnerablauf (25.10.2026)
+
+1. Name und Beitrittscode eingeben, dann Charakter-Steckbriefe ansehen und genau eine freie
+   Figur wählen. Jede Figuren-ID wird ausschließlich an eine Person vergeben; gleichzeitige
+   Anfragen werden am Host nacheinander verbindlich gespeichert. Eine Netzwerkunterbrechung
+   oder wiederholte Anfrage erzeugt keine zweite Vergabe.
+2. Portal zeigt WLAN/Adresse/Code und „gewählt / beigetreten“ sowie bis zu vier Zuordnungen.
+   „Beigetreten“ und „Figur gewählt“ sind unterschiedliche Zustände.
+3. Sobald alle beigetretenen Spieler gewählt haben, kann der Host übrige bekannte Figuren
+   als Gegner hinzufügen. Keine automatische Aufnahme sämtlicher Reste. Partner sind nie
+   gegenseitig Gegner. Eine Figur kann nicht zugleich Spielerfigur und Gegner sein.
+4. Nach den Spielerzügen folgen die hinzugefügten Gegner nacheinander. Benötigt ein Gegner
+   eine physische Bewegung, bestimmt der Host aus allen Partnern zufällig einen Helfer.
+   Wiederholtes Anfordern desselben offenen Auftrags würfelt nicht neu. Der Helfer bestätigt
+   die ausgeführte Tischbewegung. Alle übrigen Handys bleiben in der TARDIS-Warteanzeige.
+5. Bei einem Angriff sieht das Ziel beide Steckbriefe und die gespeicherte Ereignisbeschreibung.
+   Nur das Ziel kann diese Anzeige bestätigen. Erst nach offenen Bestätigungen kann der Host
+   den Gegnerzug abschließen; nach dem letzten Gegner beginnt die nächste Runde.
+
+**Aktueller Ausbaugrad:** Drei Katalogeinträge (Doctor, Dalek, Weinender Engel), ausschließlich
+weil diese bereits vom Nutzer genannt wurden. Keine weiteren Serienfiguren erfunden. Daher
+können aktuell maximal drei unterschiedliche Figuren gewählt werden, obwohl vier Spielerplätze
+vorhanden sind. Für vier spielende Personen braucht es mindestens eine weitere benannte Figur;
+für zusätzliche Gegner entsprechend weitere verfügbare Figuren. Mehrere Exemplare eines Typs
+werden später nach tatsächlichem Inventar als separate Figuren-IDs modelliert.
+
+Steckbriefkarten haben Bildbereich, Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
+Fotos fehlen noch: Die Ansicht zeigt „FOTO FOLGT“ und unterstützt lokale JPEG-Dateien unter
+`app/src/main/assets/portraits/<charakter-id>.jpg`. Server und Browser benötigen dafür kein Internet.
+Ausdauer und Kraft stehen ausdrücklich auf „Noch festzulegen“; Fähigkeitstexte geben die
+bisherigen Nutzerideen wieder und sind noch keine implementierten Kampfregeln.
+
+Gegnersteuerung ist derzeit ein moderierter Technikablauf: Der Host fordert die Bewegung an,
+nennt Weg/Ziel und trägt die konkrete Angriffsfolge ein. Automatische Entscheidung, Positionen
+von Gegnern, Reichweiten, Treffer/Schaden und Statusdauer folgen mit Brettmodell und Regeln.
+Die Angriffsanzeige verändert bisher keine Ausdauer- oder Statuswerte von selbst. Das Wort
+„aktiviert“ bezeichnet den Ansichtswechsel in einer geöffneten Webseite, nicht Fernentsperren.
+
+Vorhandene 0.1.0-Spielstände behalten Runde, Positionen und Anmeldung. Vor Fortsetzung müssen
+zuerst Figuren gewählt werden; es wird keine zufällige Figur zugewiesen. 0.2.0 speichert zusätzlich
+alle oben genannten Gegneraufträge/Angriffsdaten. Die Datei heißt aus Kompatibilitätsgründen
+weiter `session-v1.drw`; maßgeblich ist die im Inhalt gespeicherte Formatnummer.
 
 ## 6. Physisches Inventar und Brettgenerator
 
@@ -168,13 +219,15 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand mit Spielern und geheimen
-Tokens, Beitrittscode, Partie-ID, Runde, aktiver Person, Demo-Koordinaten, letztem W6,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 3, ältere Formate
+1 und 2 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
+Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Demo-Koordinaten, letztem W6,
 Zustandsrevision, 60 Protokollzeilen und den letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
-**Noch nicht:** echte Karte/Inventar/Charaktere, Auswahl mehrerer Partien, Export/Import,
+**Noch nicht:** echte Karte/Inventar, verbindliche Charakterwerte und ausgeführte Spezialregeln, Auswahl mehrerer Partien, Export/Import,
 Wiederaufbauansicht, neue Partie im UI, Migration, vollwertiges Ereignisjournal oder Host-Wechsel.
 Eine Deinstallation bzw. das Löschen der App-Daten entfernt bisher den lokalen Spielstand.
 
@@ -190,18 +243,26 @@ Auflösung, sichtbare Handyfläche und Sound noch erfragen. MP4/Wiederholschleif
 mögliche technische Wahl; keine Dateien oder Lizenzrechte voraussetzen. Abspielen darf keine
 Regel erneut auslösen. Das gespeicherte Ereignis ist maßgeblich, die Animation nur Darstellung.
 
-Heute: Canvas-Ringe in Cyan/Blau, Rundenüberschrift und letzter W6 als eigener Platzhalter;
-Antippen öffnet Host-Steuerung. Noch keine Medienbibliothek oder Videoimport.
+Heute: Während der Auswahl zeigt die Portalansicht Verbindungsdaten und Auswahlfortschritt
+samt Spielernamen und Figuren. Nach Spielstart Canvas-Ringe in Cyan/Blau, Rundenüberschrift
+und letzter W6 als eigener Platzhalter. Antippen öffnet Host-Steuerung. Noch keine Medienbibliothek
+oder Videoimport. Nicht beteiligte Spieler sehen eine eigene CSS-Animation einer fliegenden blauen
+TARDIS. Das betroffene Handy schaltet innerhalb der geöffneten Webseite zur Angriffsansicht;
+ein ausgeschaltetes oder gesperrtes Telefon kann die lokale Website nicht verlässlich aufwecken.
+Bildschirm-Timeout und Energieverhalten müssen am Gerät geprüft werden.
 
-## 9. Technische Grundlage 0.1.0
+## 9. Technische Grundlage 0.2.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Keine Drittanbieter-Laufzeitbibliotheken.
 - `core`: unabhängige Java-Regellogik und HTTP-Server auf Port 8080.
 - Spieleroberfläche in `app/src/main/assets/player.html`, ohne CDNs oder Internetabhängigkeiten.
 - REST-artige API: POST `/api/join`, GET `/api/state`, POST `/api/command`; kein Websocket
-  nötig für den ersten Stand. Browser fragt Zustand alle 1,5 Sekunden ab.
-- Spieler wählen derzeit Namen, noch keine Serienfigur. Spielleiter startet die Demo lokal.
+  nötig für den ersten Stand. Zusätzlich POST `/api/character` für die exklusive Auswahl.
+  Browser fragt Zustand alle 1,5 Sekunden ab.
+- Spieler melden sich mit Namen und Code an und wählen eine Figur. Erst nach Auswahl aller
+  beigetretenen Spieler kann der Spielleiter starten. Charakterwechsel vor Start ist möglich;
+  die vorherige Figur wird erst nach erfolgreichem Speichern der neuen Wahl freigegeben.
 - Freies 6×6-Technikfeld A1–F6: orthogonale Einzelschritte, kein Stapeln, keine Wände.
 - Eine Bewegung ODER ein W6-Test ODER Passen beendet den Zug. Keine Missionswertung.
 - Zufall entsteht ausschließlich am Host; Browser präsentiert gespeichertes Ergebnis.
@@ -229,8 +290,9 @@ Antippen öffnet Host-Steuerung. Noch keine Medienbibliothek oder Videoimport.
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
-Den Zielvorschlag „Der Zeitriss“ besprechen: Kooperation gegen App-Gegner oder spielbare
-Gegnerfraktionen? Danach Figuren und Gelände aufnehmen. Als kleinster sinnvoller Inventarschritt
+Die kooperative Rollenverteilung ist geklärt. Als Nächstes Figurenliste und Fotos sowie
+Ausdauer/Kraft und gewünschte Sonderfähigkeiten erfassen; danach den Zielvorschlag „Der Zeitriss“
+konkretisieren und Gelände aufnehmen. Als kleinster sinnvoller Inventarschritt
 reichen zunächst ein Foto von jeder Plättchenform, Stückzahl und Breite×Tiefe sowie die Angabe,
 ob Wände/Türen fest oder aufsteckbar sind. Noch keine vollständige Datenerhebung erzwingen.
 
@@ -239,35 +301,41 @@ echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht
 
 ## 11. Tests und bekannte Grenzen
 
-Am 25.10.2026 tatsächlich ausgeführt:
+Für 0.2.0 am 25.10.2026 tatsächlich ausgeführt:
 
-- `bash scripts/test-core.sh` mit JDK 17: **39 Prüfungen bestanden**.
-- Gradle 8.13: `:core:smokeTest :app:assembleDebug`: **BUILD SUCCESSFUL**;
-  erneut 39 Kern-/HTTP-Prüfungen bestanden, Debug-APK erzeugt.
-- Spieler-JavaScript mit `node --check` geprüft; Manifest und Ressourcen-XML geparst.
-- `git diff --check` ohne Fehler.
+- `bash scripts/test-core.sh` und Gradle `:core:smokeTest`: **81 Prüfungen bestanden**.
+- `npm test`: **28 DOM-Verhaltenstests bestanden**, darunter exklusive Auswahlzustände,
+  Retry nach Abbruch, eigene/andere Züge, TARDIS-Warteansicht, Helferauftrag, Doppeltippen,
+  gezielte Angriffsansicht, sicheres Anzeigen des Ergebnistextes und veraltete Zustandsantworten.
+- Gradle 8.13 `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**.
+  Nach Optimierung der Portal-Lobby erneut `:app:assembleDebug :app:lintDebug` erfolgreich.
+- Android-Lint: **0 Fehler, 8 Warnungen** (deutsch fest eingetragene UI-Texte und auf älteren
+  Android-Versionen ignorierte Manifestattribute). Kompatibilitätsaufrufe teils deprecated.
+- Spieler-JavaScript mit `node --check` geprüft; Android-XML geparst; `git diff --check` sauber.
 
-Die 39 Prüfungen decken vier Plätze, Code/Token-Schutz, Zugreihenfolge, Grenzen/belegte Felder,
-Revisionen, keine doppelten Zufallsereignisse bei Retry/Parallelität, Neustart, kaputte Spielstände,
-Speicherfehler ohne Zustandsübernahme und echte HTTP-Aufrufe gegen den lokalen Server ab.
+Kernprüfungen umfassen weiterhin vier Plätze, Code/Token-Schutz, Zugreihenfolge, Grenzen,
+belegte Felder, Revisionen, idempotente und parallele Anfragen, Neustart und Speicherfehler.
+Neu geprüft: zwei gleichzeitige Bewerber um dieselbe Figur, Partner-/Gegnertrennung,
+Host-exklusive Gegnerverwaltung, Auswahl vor Spielstart, Gegnerphase, genau einmal bestimmter
+Bewegungshelfer, berechtigte Bestätigungen, Rundenwechsel nach Gegnern, gespeicherter Angriff
+und Lesen alter Spielstandformate 1/2. Der vierte Katalogeintrag im Vier-Spieler-Test ist reine
+Testdaten-Fixture und keine zusätzliche Figur im Produktkatalog.
 
-Build-Hinweise: SDK-Plattform und Build Tools standen lokal zur Verfügung, Platform-Tools waren
-nicht installiert und führten zu einer Warnung; der APK-Build war dennoch erfolgreich.
-Einige Android-Kompatibilitätsaufrufe sind deprecated; Build und Laufzeitprüfung unterscheiden.
-Nach Korrektur der Hotspot-Berechtigungsabfrage für Android 8–12 erneut
-`:app:assembleDebug :app:lintDebug` ausgeführt: **BUILD SUCCESSFUL, 0 Lint-Fehler, 8 Warnungen**.
-Verbleibende Lint-Warnungen betreffen deutsch fest eingetragene UI-Texte und auf alten
-Android-Versionen ignorierte Manifestattribute. Sprachressourcen können beim UI-Ausbau folgen.
+Build-Hinweis: SDK-Plattform und Build Tools sind lokal vorhanden. Nicht installierte Platform-Tools
+führen in dieser Umgebung zu einer Warnung, verhindern den erfolgreichen APK-Build aber nicht.
+Die optionalen npm-Abhängigkeiten dienen nur den DOM-Tests, nicht dem Offline-Spielbetrieb.
 
-Noch ausstehend unabhängig vom Build: physischer Telefon-/Hotspottest mit vier Geräten,
-Bildschirm-/Lebenszyklus-/Herstellerverhalten, App-Abbruch und Wiederbeitritt mit geänderter IP.
-Die Demo besitzt bewusst noch kein fertiges Spiel und keinen realen Aufbauplan.
+Noch ausstehend: echter Telefon-/Hotspottest mit vier Geräten, visuelle und Energie-/Lebenszyklus-
+Prüfung am Host, Bildschirm-Timeouts der Spieler, App-Abbruch und Wiederbeitritt bei geänderter IP.
+DOM-Tests ersetzen keine Sichtprüfung auf realen Handys. Fotos, verbindliche Attribute, wirkende
+Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sind noch offen.
 
 ## 12. Änderungshistorie
 
 | Datum | Version | Änderung |
 | --- | --- | --- |
 | 25.10.2026 | 0.1.0 | Repository angelegt, Originalanforderungen und offene Fragen dokumentiert; kooperatives Missionsziel vorgeschlagen; Android-/Browser-/Host-Grundlage als Technikdemo erstellt |
+| 25.10.2026 | 0.2.0 | Exklusive Steckbrief-Auswahl, Portal-Lobby, Partner-/Gegnerzuordnung, Gegnerphase mit zufälligem Bewegungshelfer, TARDIS-Warteanzeige, Angriffsansicht und rückwärts lesbares Speicherformat 3 |
 
 ## 13. Fortsetzung in einem anderen Chat
 
