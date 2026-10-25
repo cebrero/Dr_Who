@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.3.1 · Spielerdesign B und Portaldesign A**
-<!-- app-version: 0.3.1 -->
-<!-- reviewed-source-sha256: 6b39f03347e509b37b8ebcbe77801ed8952e35627e2a037371989c9e055ff008 -->
+Stand: **25.10.2026 · Version 0.4.0 · einfache Verbindung und grafische Portal-Lobby**
+<!-- app-version: 0.4.0 -->
+<!-- reviewed-source-sha256: 59d72af2607b97ed1c0ff49629c71b5ad0bfb6491dcca05e265dc86f51c5e9fb -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -59,8 +59,10 @@ Aktionsökonomie müssen gemeinsam geklärt werden.
 Technische, später änderbare Entscheidungen; nicht mit zugesagten Endfunktionen verwechseln:
 
 - Android-App ist alleinige Instanz für gültige Züge, Zufall und Speichern.
-- Standard-Android-Lokalhotspot, alternativ gemeinsames WLAN/System-Hotspot; keine Cloud und
-  kein Internet während der Partie erforderlich. WLAN-Name/Passwort zunächst von Android vorgegeben.
+- Einfaches Spiel-WLAN als Ziel: Name `Dr_Who`, Passwort `drwho123`. Die App führt zur
+  einmaligen System-Hotspot-Einrichtung und übernimmt die manuell bestätigten Daten.
+  Alternativ automatischer Android-Lokalhotspot mit tatsächlich vom System vergebenen
+  Zugangsdaten. Auch API 36 erlaubt einer gewöhnlichen App keine freien SSID-/Passwort-Setter.
 - Maximal vier registrierte Spielerplätze wird in der App erzwungen. Die Zahl technisch möglicher
   WLAN-Clients hängt zusätzlich vom Telefon ab und ist auf echter Hardware zu prüfen.
 - WLAN-Passwort und sechsstelliger Spiel-Beitrittscode sind getrennt. Jede Anmeldung erhält
@@ -105,7 +107,8 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Vor der Partie
 
-1. Portal-Handy startet lokales WLAN/Website und zeigt WLAN-Daten, Adresse und Beitrittscode.
+1. Portal-Handy zeigt eine klare Lobby mit rotierender TARDIS, WLAN-Zugang, Spielseite und
+   Beitrittscode. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg; Netzwerkdetails siehe Abschnitt 8a.
 2. Bis zu vier Spieler treten am eigenen Handy mit Namen und Code bei.
 3. Jeder wählt einen Steckbrief mit Foto/Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
@@ -222,8 +225,10 @@ für zusätzliche Gegner entsprechend weitere verfügbare Figuren. Mehrere Exemp
 werden später nach tatsächlichem Inventar als separate Figuren-IDs modelliert.
 
 Steckbriefkarten haben Bildbereich, Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
-Fotos fehlen noch: Die Ansicht zeigt „FOTO FOLGT“ und unterstützt lokale JPEG-Dateien unter
-`app/src/main/assets/portraits/<charakter-id>.jpg`. Server und Browser benötigen dafür kein Internet.
+Ab 0.4.0 sind für die drei bekannten Figuren lokale SVG-Illustrationen hinterlegt. Echte
+Figurenfotos fehlen weiterhin. Native Portal-Avatare zeigen stilisierte Charakterbilder und
+bevorzugen später vorhandene JPEGs unter `app/src/main/assets/portraits/<charakter-id>.jpg`.
+Für die Browser-Steckbriefe wird der Bildpfad im Charakterkatalog gepflegt. Alles funktioniert offline.
 Ausdauer und Kraft stehen ausdrücklich auf „Noch festzulegen“; Fähigkeitstexte geben die
 bisherigen Nutzerideen wieder und sind noch keine implementierten Kampfregeln.
 
@@ -319,19 +324,68 @@ Auflösung, sichtbare Handyfläche und Sound noch erfragen. MP4/Wiederholschleif
 mögliche technische Wahl; keine Dateien oder Lizenzrechte voraussetzen. Abspielen darf keine
 Regel erneut auslösen. Das gespeicherte Ereignis ist maßgeblich, die Animation nur Darstellung.
 
-Heute: Während der Auswahl zeigt die Portalansicht Verbindungsdaten und Auswahlfortschritt
-samt Spielernamen und Figuren. Nach Spielstart Canvas-Ringe in Cyan/Blau, Rundenüberschrift
-und letzter W6 als eigener Platzhalter. Antippen öffnet Host-Steuerung. Noch keine Medienbibliothek
-oder Videoimport. Nicht beteiligte Spieler sehen eine eigene CSS-Animation einer fliegenden blauen
+Heute: Grafische Portal-Lobby mit großer, kontinuierlich um die eigene Achse rotierender
+TARDIS, Spieleranzahl, vier übersichtlichen Plätzen, Spielernamen und Charakterporträts.
+WLAN-Name, Passwort, Spielseite und Code stehen kompakt in einer Verbindungskarte.
+Spielleitung und bisherige Test-/Verwaltungsfunktionen liegen auf einer separaten Seite.
+Eine große TARDIS-Ansicht ist über die Spielleitung verfügbar. Noch keine Medienbibliothek/Videoimport. Nicht beteiligte Spieler sehen eine eigene CSS-Animation einer fliegenden blauen
 TARDIS. Das betroffene Handy schaltet innerhalb der geöffneten Webseite zur Angriffsansicht;
 ein ausgeschaltetes oder gesperrtes Telefon kann die lokale Website nicht verlässlich aufwecken.
 Bildschirm-Timeout und Energieverhalten müssen am Gerät geprüft werden.
 
-## 9. Technische Grundlage 0.3.1
+## 8a. Verbindung und Portal ab 0.4.0
+
+**Fester Gestaltungsgrundsatz des Nutzers:** Einrichtung und Verbinden so einfach wie möglich.
+Viele passende Grafiken und Animationen sollen in das Abenteuer hineinziehen. Technik im
+Hintergrund halten; wenige klare Handlungsschritte, gut lesbare Anzeigen und keine Animation,
+die eine notwendige Eingabe verdeckt. Bestehende Designwahl Spieler B / Portal A gilt weiter.
+
+### WLAN
+
+- Gewünschter einfacher Zugang: **SSID `Dr_Who`, Passwort `drwho123`** (8 Zeichen).
+- Eine gewöhnliche App kann das feste Passwort nicht über die öffentliche Hotspot-API
+  erzwingen: `SoftApConfiguration.Builder.setSsid/setPassphrase` sind im verwendeten
+  Android-SDK 36 nicht öffentlich, trotz neuer Methode `startLocalOnlyHotspotWithConfiguration`.
+  Keine Reflection oder versteckten/System-APIs als angeblich zuverlässige Lösung einbauen.
+- Die Einrichtungshilfe versucht direkt die WLAN-Hotspot-Einstellungen zu öffnen und fällt
+  bei Herstellervarianten auf Tethering-/Netzwerk-/allgemeine Einstellungen zurück.
+  Der Nutzer richtet den System-Hotspot einmal ein und bestätigt die tatsächlichen Daten.
+- Manuell bestätigte WLAN-Daten werden privat in der App gespeichert; sie sind keine von der
+  App überprüfte Auskunft über den aktuellen System-Hotspot. Dies bleibt in der UI erkennbar.
+- Alternativ kann Android einen Lokalhotspot automatisch mit eigenen Zugangsdaten starten.
+  Dann werden ausschließlich die tatsächlichen Zugangsdaten der Reservation angezeigt.
+- „WLAN-QR“ enthält die angezeigten WLAN-Daten. Spieler scannen ihn mit ihrer Kamera.
+
+### Spielseite
+
+- Ein echter mDNS-Hostname `drwho.local` wird mit JmDNS an der bevorzugten lokalen IPv4-
+  Schnittstelle angekündigt, nicht nur ein DNS-SD-Dienst mit ähnlich klingendem Namen.
+- HTTP bindet bevorzugt Port 80: dann lautet die Adresse `http://drwho.local`. Falls der Port
+  nicht verfügbar ist, lautet sie `http://drwho.local:8080`. UI zeigt immer den tatsächlichen Port.
+- Bei Namenskonflikten kann JmDNS den Host umbenennen; den tatsächlich angekündigten Namen
+  anzeigen und als zulässigen HTTP-Host übernehmen. Nicht pauschal beliebige DNS-Namen zulassen.
+- Auf manchen Hotspots/Spielergeräten kann Multicast oder `.local`-Auflösung ausfallen. Daher
+  steht zusätzlich die direkte IP-Adresse bereit. „Seiten-QR“ verwendet bewusst diese direkte
+  Adresse und trägt den sechsstelligen Beitrittscode als URL-Parameter ein.
+- Das Öffnen eines QR-Codes meldet niemanden automatisch an: Name eingeben und beitreten.
+- Netzwerk-/Namens-/QR-Funktionen sind implementiert, aber noch nicht auf den tatsächlichen
+  Portal- und Spielerhandys geprüft. Keinen universell funktionierenden Hostnamen behaupten.
+
+### Grafische Lobby
+
+Drehende TARDIS aus eigener Canvas-Grafik mit vier projizierten Seiten; keine Internetmedien.
+Vier Spielerzeilen mit Namen, gewählter Figur und Charakterbild sowie Zähler „beigetreten/bereit“.
+Doctor, Dalek und Weinender Engel haben eigene stilisierte Illustrationen. Es sind keine echten
+Figurenfotos und beim Doctor ist keine konkrete Schauspieler-Inkarnation festgelegt.
+Verwaltung/Gegner-Teststeuerung über „Spielleitung“ statt überladener Hauptseite.
+
+## 9. Technische Grundlage 0.4.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
-- Build: AGP 8.13.2, Gradle 8.13, JDK 17. Keine Drittanbieter-Laufzeitbibliotheken.
-- `core`: unabhängige Java-Regellogik und HTTP-Server auf Port 8080.
+- Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
+  SLF4J-NOP 2.0.17 und ZXing Core 3.5.3 zum Erzeugen von QR-Codes. Keine Online-Laufzeitabhängigkeit.
+- `core`: unabhängige Java-Regellogik und HTTP-Server. Zuerst Port 80 versuchen, bei fehlender
+  Verfügbarkeit auf 8080 ausweichen. Tatsächlich gebundenen Port stets in UI/QR/Annonce verwenden.
 - Spieleroberfläche in `app/src/main/assets/player.html`, ohne CDNs oder Internetabhängigkeiten.
 - REST-artige API: POST `/api/join`, GET `/api/state`, POST `/api/command`; kein Websocket
   nötig für den ersten Stand. Zusätzlich POST `/api/character` für die exklusive Auswahl.
@@ -351,9 +405,10 @@ Bildschirm-Timeout und Energieverhalten müssen am Gerät geprüft werden.
 - HTTP im lokalen WLAN; keine TLS-Infrastruktur. Nicht ins Internet weiterleiten.
 - Vordergrundprototyp: App im Vordergrund und Bildschirm eingeschaltet lassen. Kein
   Foreground-Service. Android-/Herstellerverhalten und Energiesparen müssen real getestet werden.
-- Hotspot kann nach Neustart andere Zugangsdaten/IP haben. Token im Browser ist derzeit an
-  dessen Seitenadresse gebunden. Spielerplatz freigeben, Wiederbeitritt per neuem Gerät und
-  robuste Adresse/QR-Codes sind noch geplant; sie sind keine fertig gelösten Funktionen.
+- Automatischer Hotspot kann nach Neustart andere Zugangsdaten/IP haben. QR-Codes und
+  mDNS-Hostname sind nun vorhanden; Browser-Token bleiben jedoch an den Seitenursprung gebunden.
+  Beim Wechsel zwischen IP-Adresse und Hostnamen kann deshalb eine zweite Anmeldung entstehen.
+  Spielerplatz freigeben, Adress-/Gerätewechsel und gesicherter Wiederbeitritt bleiben noch offen.
 
 ## 10. Entwicklungsreihenfolge
 
@@ -379,6 +434,21 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.4.0 am 25.10.2026:
+
+- `bash scripts/test-core.sh`: **204 Prüfungen bestanden**. `npm test`: **35 DOM-Tests bestanden**.
+- Neue Prüfungen: QR-Verbindungsdaten/Escaping, Code-Vorbelegung ohne automatischen Beitritt,
+  lokaler HTTP-Hostname und Namenswechsel, fremde Hostnamen, sichere Portraitpfade/SVG-Ausgabe.
+- Nach Korrektur der nicht öffentlichen SSID-Setter-API: Android `:app:assembleDebug :app:lintDebug`
+  **BUILD SUCCESSFUL**, Lint **0 Fehler / 7 Warnungen**. Nach Verfeinerung von Einrichtungsdialog,
+  UTF-8-QR-Codes und Hostnamenpflege erneut `:core:smokeTest :app:assembleDebug :app:lintDebug`
+  erfolgreich (204 Kernprüfungen). Letzte APK mit aktuellem Onboarding wird ausgeliefert.
+- Stilisierte Porträts, XML und Spieler-JavaScript geparst; HTTP-Portraitpfad korrigiert und
+  durch den neuen SVG-Ausgabetest abgedeckt. Keine Behauptung eines realen Gerätetests.
+- Reale Hotspot-Einrichtung, `.local` auf verschiedenen Handys, Port-80-Bindung auf Android,
+  QR-Scan mit Systemkamera, native Lobbydarstellung und Animation bleiben Gerätetests.
+
 
 Für 0.3.1 am 25.10.2026:
 
@@ -433,6 +503,7 @@ Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sin
 | 25.10.2026 | 0.2.0 | Exklusive Steckbrief-Auswahl, Portal-Lobby, Partner-/Gegnerzuordnung, Gegnerphase mit zufälligem Bewegungshelfer, TARDIS-Warteanzeige, Angriffsansicht und rückwärts lesbares Speicherformat 3 |
 | 25.10.2026 | 0.3.0 | W6 zu Beginn jedes Spielerzugs, exakte Reststrecke, Richtungswechsel, 5/6-Wahl, Speicherformat 4; zentrale ONBOARDING.md mit Spielregeln und Build-Prüfung; drei visuelle Designvorschläge |
 | 25.10.2026 | 0.3.1 | Nutzer wählt Spielerdesign B und Portaldesign A; Spieler-CSS auf Pergament/Petrol/Messing und Serifenschrift umgestellt; Regeln unverändert |
+| 25.10.2026 | 0.4.0 | Grafische Portal-Lobby mit drehender TARDIS/Charakterporträts; einfache WLAN-Einrichtung, echter mDNS-Hostname, Port-80-Versuch mit 8080-Fallback, WLAN-/Seiten-QR und Code-Vorbelegung |
 
 ## 13. Fortsetzung in einem anderen Chat
 
@@ -487,8 +558,16 @@ nicht als App-Assets übernommen. Der aktuelle Ausbau übernimmt Farben, Typogra
 Bedienflächen; eine pixelgleiche Nachbildung des Bildes wird nicht behauptet. Charakterfotos
 und endgültige Werte folgen nach den tatsächlichen Figuren des Nutzers.
 
+Ab 0.4.0 wurde die Portal-Lobby auch strukturell überarbeitet und die drehende TARDIS sowie
+stilisierte Charakterbilder ergänzt. Der Nutzer verlangt dauerhaft einen einfachen, immersiven
+Einstieg mit vielen passenden Grafiken/Animationen; diese sollen Orientierung und Atmosphäre
+unterstützen, ohne die Bedienung zu überladen.
+
 ## 16. Technische Referenzen
 
+- Hotspot-API (SSID-/Passwort-Setter bleiben System-API): https://developer.android.com/reference/android/net/wifi/WifiManager#startLocalOnlyHotspotWithConfiguration(android.net.wifi.SoftApConfiguration,%20java.util.concurrent.Executor,%20android.net.wifi.WifiManager.LocalOnlyHotspotCallback)
+- JmDNS: https://github.com/jmdns/jmdns
+- ZXing: https://github.com/zxing/zxing
 - Android-Lokalhotspot und Berechtigungen: https://developer.android.com/develop/connectivity/wifi/localonlyhotspot
 - AGP 8.13-Kompatibilität: https://developer.android.com/build/releases/agp-8-13-0-release-notes
 - Gradle 8.13: https://docs.gradle.org/8.13/release-notes.html

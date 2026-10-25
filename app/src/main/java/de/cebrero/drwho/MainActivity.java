@@ -3,270 +3,223 @@ package de.cebrero.drwho;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.*;
-import android.net.wifi.WifiManager;
+import android.graphics.drawable.GradientDrawable;
+import android.net.wifi.*;
 import android.os.*;
+import android.provider.Settings;
 import android.util.AtomicFile;
-import android.text.Layout;
-import android.text.StaticLayout;
-import android.text.TextPaint;
 import android.view.*;
 import android.widget.*;
+import com.google.zxing.*;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import de.cebrero.drwho.core.*;
 import java.io.*;
-import java.net.*;
 import java.util.*;
 
-/** Foreground-only prototype: keep the host app open during a session. */
+/** Portal first; administration is deliberately on a separate screen. */
 public class MainActivity extends Activity {
-    private final Handler handler = new Handler(Looper.getMainLooper());
+    private static final int INK=Color.rgb(7,17,30),CYAN=Color.rgb(104,227,246),WHITE=Color.rgb(224,241,250),MUTED=Color.rgb(145,177,197);
+    private final Handler handler=new Handler(Looper.getMainLooper());
     private GameEngine engine;
     private LocalServer server;
+    private PortalNetwork network;
     private WifiManager.LocalOnlyHotspotReservation reservation;
-    private boolean hotspotPending, destroyed;
-    private TextView connections, gameStatus, networkStatus;
-    private FrameLayout root;
-    private ScrollView console;
-    private PortalView portal;
-    private final Runnable refresh = new Runnable() {
-        @Override public void run() {
-            if (engine != null) {
-                gameStatus.setText(engine.hostText()); connections.setText(addresses());
-                portal.caption = engine.hostText().split("\n")[0];
-                portal.result = engine.hostText();
-                portal.waiting = !engine.playing();
-                portal.updateLobby("VERBINDEN & FIGUR WÄHLEN\n\n" + networkStatus.getText() + "\n\n" + addresses() +
-                    "\nBEITRITTSCODE  " + engine.code() + "\n\n" + engine.lobbyText() +
-                    "\nWLAN verbinden → Webseite öffnen → Namen und Code eingeben → Figur wählen.\n\nAntippen · Spielleiter");
-                portal.invalidate();
+    private boolean hotspotPending,destroyed,confirming;
+    private FrameLayout root,stage;
+    private ScrollView lobby,director;
+    private LinearLayout playerRows;
+    private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,code,gameStatus,stageStatus;
+    private Button wifiButton,startButton;
+    private String ssid="",password="",rosterSignature="";
+    private SharedPreferences prefs;
+    private final Runnable refresh=new Runnable(){public void run(){updatePortal();handler.postDelayed(this,1500);}};
+
+    @Override public void onCreate(Bundle saved){
+        super.onCreate(saved);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        root=new FrameLayout(this);root.setBackgroundColor(INK);
+        root.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
+        setContentView(root);prefs=getSharedPreferences("portal-wifi",MODE_PRIVATE);
+        if(prefs.getBoolean("manualConfirmed",false)){ssid=prefs.getString("ssid",ConnectionLinks.SSID);password=prefs.getString("password",ConnectionLinks.PASSWORD);}
+        try{
+            engine=new GameEngine(new AndroidStore(new File(getFilesDir(),"session-v1.drw")));
+            byte[] page=asset("player.html");
+            try{server=new LocalServer(engine,page,80,this::portrait);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait);}
+            network=new PortalNetwork(this,name->{if(server!=null)server.setLocalHostname(name);});
+        }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
+        buildLobby();buildDirector();buildStage();showLobby();updatePortal();
+    }
+    private byte[] asset(String path)throws IOException{
+        try(InputStream in=getAssets().open(path);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+            byte[] buffer=new byte[4096];int n;while((n=in.read(buffer))!=-1)bytes.write(buffer,0,n);return bytes.toByteArray();
+        }
+    }
+    private byte[] portrait(String filename)throws IOException{try{return asset("portraits/"+filename);}catch(FileNotFoundException missing){return null;}}
+    private int dp(float value){return Math.round(value*getResources().getDisplayMetrics().density);}
+    private LinearLayout column(){LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.VERTICAL);return v;}
+    private LinearLayout row(){LinearLayout v=new LinearLayout(this);v.setOrientation(LinearLayout.HORIZONTAL);v.setGravity(Gravity.CENTER_VERTICAL);return v;}
+    private TextView text(String value,int size,int color){TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(color);v.setPadding(0,dp(3),0,dp(3));return v;}
+    private Button button(String label,Runnable action){Button b=new Button(this);b.setAllCaps(false);b.setText(label);b.setTextColor(CYAN);b.setTextSize(14);b.setOnClickListener(v->action.run());return b;}
+    private LinearLayout card(LinearLayout parent){
+        LinearLayout c=column();c.setPadding(dp(17),dp(15),dp(17),dp(15));
+        GradientDrawable bg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(14,38,60),Color.rgb(9,25,44)});
+        bg.setCornerRadius(dp(18));bg.setStroke(dp(1),Color.rgb(35,77,101));c.setBackground(bg);
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(14);parent.addView(c,lp);return c;
+    }
+    private ScrollView screen(LinearLayout content){ScrollView s=new ScrollView(this);s.setFillViewport(true);s.addView(content);root.addView(s,new FrameLayout.LayoutParams(-1,-1));return s;}
+    private LinearLayout padded(){LinearLayout c=column();c.setPadding(dp(18),dp(14),dp(18),dp(20));return c;}
+    private void buildLobby(){
+        LinearLayout content=padded();lobby=screen(content);
+        LinearLayout heading=row();LinearLayout titles=column();titles.addView(text("DR_WHO",29,CYAN));titles.addView(text("DEIN PORTAL INS ABENTEUER",10,MUTED));
+        heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));countBadge=text("0 / 4",22,WHITE);heading.addView(countBadge);content.addView(heading);
+        TardisView tardis=new TardisView(this);content.addView(tardis,new LinearLayout.LayoutParams(-1,dp(165)));
+        LinearLayout connection=card(content);connection.addView(text("1  MIT DEM WLAN VERBINDEN",11,MUTED));
+        wifiName=text("WLAN starten",22,WHITE);connection.addView(wifiName);wifiName.setTextIsSelectable(true);
+        wifiPassword=text("",18,CYAN);wifiPassword.setTextIsSelectable(true);connection.addView(wifiPassword);
+        wifiStatus=text("",12,MUTED);connection.addView(wifiStatus);
+        wifiButton=button("Spiel-WLAN einrichten",this::wifiOptions);connection.addView(wifiButton);
+        connection.addView(text("2  SPIELSEITE ÖFFNEN",11,MUTED));website=text("Warte auf WLAN …",22,CYAN);website.setTextIsSelectable(true);connection.addView(website);
+        fallback=text("",12,MUTED);fallback.setTextIsSelectable(true);connection.addView(fallback);
+        LinearLayout qrButtons=row();qrButtons.addView(button("WLAN-QR",()->showQr(true)),new LinearLayout.LayoutParams(0,-2,1));qrButtons.addView(button("Seiten-QR",()->showQr(false)),new LinearLayout.LayoutParams(0,-2,1));connection.addView(qrButtons);
+        code=text("BEITRITTSCODE  "+engine.code(),18,WHITE);connection.addView(code);
+        LinearLayout players=card(content);playerCount=text("DEIN TEAM · 0 / 4",16,CYAN);players.addView(playerCount);playerRows=column();players.addView(playerRows);
+        startButton=button("Abenteuer starten",()->{if(engine.playing())showDirector();else startGame();});content.addView(startButton);
+        content.addView(button("Spielleitung",this::showDirector));
+    }
+    private void buildDirector(){
+        LinearLayout content=padded();director=screen(content);director.setVisibility(View.GONE);
+        content.addView(button("← Zur Portal-Lobby",this::showLobby));content.addView(text("Spielleitung",27,CYAN));
+        gameStatus=text("",17,WHITE);content.addView(gameStatus);
+        content.addView(button("Übrige Figur als Gegner hinzufügen",this::enemyDialog));
+        content.addView(button("Partie starten / fortsetzen",this::startGame));
+        content.addView(button("TARDIS groß anzeigen",()->{lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.VISIBLE);}));
+        content.addView(text("Gegnerzug",20,CYAN));content.addView(text("Bewegung und Angriffsfolgen werden bis zur fertigen Gegnersteuerung hier vorgegeben.",14,MUTED));
+        content.addView(button("Bewegungshelfer bestimmen",()->{try{toast(engine.requestEnemyMovement()+" bewegt die Gegnerfigur.");updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
+        content.addView(button("Angriff auf Spieler anzeigen",this::attackDialog));
+        content.addView(button("Gegnerzug abschließen",()->{try{engine.finishEnemyTurn();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
+        content.addView(button("WLAN einrichten / ändern",this::wifiOptions));
+        content.addView(button("Automatischen Hotspot beenden",()->{if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}updatePortal();}));
+        content.addView(text("Dr_Who · 0.4.0",12,MUTED));
+    }
+    private void buildStage(){
+        stage=new FrameLayout(this);stage.setBackgroundColor(INK);root.addView(stage,new FrameLayout.LayoutParams(-1,-1));stage.setVisibility(View.GONE);
+        stage.addView(new TardisView(this),new FrameLayout.LayoutParams(-1,-1));
+        TextView title=text("DR_WHO",32,CYAN);title.setGravity(Gravity.CENTER);FrameLayout.LayoutParams top=new FrameLayout.LayoutParams(-1,-2,Gravity.TOP);top.topMargin=dp(32);stage.addView(title,top);
+        stageStatus=text("",20,WHITE);stageStatus.setGravity(Gravity.CENTER);stageStatus.setPadding(dp(20),0,dp(20),dp(35));stage.addView(stageStatus,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
+        stage.setContentDescription("Drehende TARDIS. Antippen öffnet die Portal-Lobby.");stage.setOnClickListener(v->showLobby());
+    }
+    private void showLobby(){lobby.setVisibility(View.VISIBLE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);}
+    private void showDirector(){lobby.setVisibility(View.GONE);director.setVisibility(View.VISIBLE);stage.setVisibility(View.GONE);updatePortal();}
+    private void updatePortal(){
+        if(engine==null||network==null||playerRows==null)return;
+        network.update(server.port());
+        String ip=network.address,host=network.hostname;
+        wifiName.setText(ssid.isEmpty()?"Spiel-WLAN noch nicht eingerichtet":ssid);
+        wifiPassword.setText(password.isEmpty()?"":("Passwort  "+password));
+        wifiStatus.setText(hotspotPending?"WLAN startet …":reservation!=null?"Hotspot läuft · ohne Internet verbunden bleiben":prefs.getBoolean("manualConfirmed",false)?"WLAN-Daten aus deiner Einrichtung": "Einrichten oder automatisch starten");
+        website.setText(ip.isEmpty()?"WLAN zuerst starten":ConnectionLinks.site(host.isEmpty()?ip:host,server.port()));
+        fallback.setText(ip.isEmpty()?"Danach erscheint hier deine Spielseite.":host.isEmpty()?network.status:"Alternativ: "+ConnectionLinks.site(ip,server.port()));
+        java.util.List<String[]> players=engine.playersForHost();countBadge.setText(players.size()+" / 4");
+        playerCount.setText("DEIN TEAM · "+players.size()+" / 4 · "+engine.selectedCount()+" bereit");
+        String signature=Arrays.deepToString(players.toArray());
+        if(!signature.equals(rosterSignature)){
+            rosterSignature=signature;playerRows.removeAllViews();
+            for(int slot=0;slot<4;slot++){
+                LinearLayout r=row();r.setPadding(0,dp(9),0,dp(9));CharacterAvatarView avatar=new CharacterAvatarView(this);
+                String[] p=slot<players.size()?players.get(slot):null;String id=p==null?"":p[3];avatar.setCharacter(id,p==null?"Freier Platz":p[2]);
+                r.addView(avatar,new LinearLayout.LayoutParams(dp(52),dp(52)));LinearLayout labels=column();labels.setPadding(dp(12),0,0,0);
+                labels.addView(text(p==null?"Platz "+(slot+1)+" frei":p[1],18,p==null?MUTED:WHITE));labels.addView(text(p==null?"Bereit für einen Mitreisenden":id.isEmpty()?"Wählt noch eine Figur …":p[2],13,MUTED));
+                r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));r.addView(text(id.isEmpty()?"○":"✓",21,id.isEmpty()?MUTED:CYAN));playerRows.addView(r);
             }
-            handler.postDelayed(this, 1000);
         }
-    };
-    @Override public void onCreate(Bundle state) {
-        super.onCreate(state);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        root = new FrameLayout(this); root.setBackgroundColor(Color.rgb(7,13,27));
-        root.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom()); return insets;
-        });
-        setContentView(root);
-        try {
-            engine = new GameEngine(new AndroidStore(new File(getFilesDir(), "session-v1.drw")));
-            byte[] page;
-            try (InputStream in = getAssets().open("player.html"); ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[4096]; int n;
-                while ((n = in.read(buffer)) != -1) b.write(buffer, 0, n);
-                page = b.toByteArray();
-            }
-            server = new LocalServer(engine, page, 8080, id -> {
-                try (InputStream in = getAssets().open("portraits/" + id + ".jpg"); ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
-                    byte[] buffer = new byte[4096]; int n;
-                    while ((n = in.read(buffer)) != -1) bytes.write(buffer, 0, n);
-                    return bytes.toByteArray();
-                } catch (FileNotFoundException e) { return null; }
-            });
-        } catch (IOException e) {
-            TextView error = text("Start fehlgeschlagen. Der vorhandene Spielstand wurde nicht überschrieben.\n" + e.getMessage(), 20);
-            root.addView(error); return;
-        }
-        console = new ScrollView(this); LinearLayout panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL); panel.setPadding(28,24,28,24); console.addView(panel); root.addView(console);
-        panel.addView(text("DR_WHO", 34));
-        panel.addView(text("LOKALER SPIELLEITER · 0.3.1", 13));
-        panel.addView(text("Charakterwahl & Gegnerzüge · Werte, Fotos und Kampfregeln folgen.", 15));
-        panel.addView(text("BEITRITTSCODE  " + engine.code(), 28));
-        networkStatus = text("Hotspot starten oder alle Handys mit demselben WLAN verbinden.", 16); panel.addView(networkStatus);
-        button(panel, "Lokalen Hotspot starten", this::requestHotspot);
-        button(panel, "Hotspot beenden", () -> {
-            if (reservation != null) { reservation.close(); reservation = null; }
-            networkStatus.setText("Hotspot beendet. Bestehender Spielstand bleibt erhalten.");
-        });
-        connections = text(addresses(), 18); connections.setTextIsSelectable(true); panel.addView(connections);
-        panel.addView(text("Spieler: WLAN verbinden → IP-Adresse im Browser öffnen → Name und Code eingeben. Bei mehreren Adressen die WLAN-/Hotspot-Adresse verwenden. Ohne Internet im WLAN bleiben.", 15));
-        gameStatus = text(engine.hostText(), 18); panel.addView(gameStatus);
-        button(panel, "Übrige Figur als Gegner hinzufügen", () -> {
-            java.util.List<CharacterProfile> available = engine.availableEnemies();
-            if (available.isEmpty()) { toast(engine.readyForPlay() ? "Keine übrige bekannte Figur verfügbar." : "Zuerst müssen alle Spieler eine Figur wählen."); return; }
-            String[] names = new String[available.size()]; for (int i = 0; i < names.length; i++) names[i] = available.get(i).name;
-            new AlertDialog.Builder(this).setTitle("Gegner hinzufügen").setItems(names, (dialog, which) -> {
-                try { engine.addEnemy(available.get(which).id); gameStatus.setText(engine.hostText()); }
-                catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
-            }).setNegativeButton("Abbrechen", null).show();
-        });
-        button(panel, "Technikdemo starten / fortsetzen", () -> {
-            try { engine.startDemo(); gameStatus.setText(engine.hostText()); }
-            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
-        });
-        button(panel, "Portal anzeigen", () -> { console.setVisibility(View.GONE); portal.setVisibility(View.VISIBLE); });
-        panel.addView(text("GEGNERPHASE · TECHNIKTEST", 16));
-        panel.addView(text("Nach allen Partnern folgen hinzugefügte Gegner. Ziel, Weg und konkrete Angriffsfolgen legt vorerst der Spielleiter fest. Automatische Gegnerregeln folgen.", 15));
-        button(panel, "Bewegungshelfer zufällig bestimmen", () -> {
-            try { toast(engine.requestEnemyMovement() + " bewegt die Figur auf dem Tisch."); }
-            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
-        });
-        button(panel, "Angriff auf Spieler anzeigen", this::attackDialog);
-        button(panel, "Gegnerzug abschließen", () -> {
-            try { engine.finishEnemyTurn(); gameStatus.setText(engine.hostText()); }
-            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
-        });
-        panel.addView(text("Automatisches Speichern nach jeder Änderung. Host-App geöffnet lassen. Portal antippen, um hierher zurückzukehren.", 15));
-        portal = new PortalView(); portal.setVisibility(View.GONE); root.addView(portal);
-        portal.setOnClickListener(v -> { portal.setVisibility(View.GONE); console.setVisibility(View.VISIBLE); });
+        startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielleitung öffnen":"Abenteuer starten");
+        gameStatus.setText(engine.hostText());stageStatus.setText(summary());
     }
-    private TextView text(String value, int size) {
-        TextView v = new TextView(this); v.setText(value); v.setTextSize(size);
-        v.setTextColor(Color.rgb(210,235,245)); v.setPadding(0,10,0,12); return v;
+    private String summary(){StringBuilder b=new StringBuilder(engine.hostText().split("\n")[0]);for(String line:engine.hostText().split("\n"))if(line.startsWith("Am Zug:")||line.startsWith("Gegnerzug:")||line.startsWith("Noch ")||line.startsWith("Wurf "))b.append('\n').append(line);return b.append("\n\nAntippen · Portal-Lobby").toString();}
+    private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing())toast("Das Abenteuer läuft.");}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
+    private void enemyDialog(){
+        java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
+        String[] names=new String[available.size()];for(int i=0;i<names.length;i++)names[i]=available.get(i).name;
+        new AlertDialog.Builder(this).setTitle("Gegner hinzufügen").setItems(names,(d,which)->{try{engine.addEnemy(available.get(which).id);updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}).setNegativeButton("Abbrechen",null).show();
     }
-    private void button(LinearLayout panel, String label, Runnable action) {
-        Button button = new Button(this); button.setText(label); button.setAllCaps(false);
-        button.setOnClickListener(v -> action.run()); panel.addView(button);
+    private void attackDialog(){
+        java.util.List<String[]> players=engine.playersForHost();if(players.isEmpty()){toast("Zuerst Spieler anmelden.");return;}
+        LinearLayout content=padded();Spinner target=new Spinner(this);String[] names=new String[players.size()];for(int i=0;i<names.length;i++)names[i]=players.get(i)[1]+" · "+players.get(i)[2];
+        target.setAdapter(new ArrayAdapter<>(this,android.R.layout.simple_spinner_dropdown_item,names));content.addView(target);
+        EditText outcome=new EditText(this);outcome.setHint("Was ist mit dem Charakter passiert?");outcome.setMinLines(3);outcome.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(400)});content.addView(outcome);
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Angriffsfolge anzeigen").setView(content).setPositiveButton("Beim Ziel anzeigen",null).setNegativeButton("Abbrechen",null).create();
+        dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{try{engine.reportAttack(players.get(target.getSelectedItemPosition())[0],outcome.getText().toString());dialog.dismiss();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));dialog.show();
     }
-    private void toast(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
-    private void attackDialog() {
-        java.util.List<String[]> players = engine.playersForHost();
-        if (players.isEmpty()) { toast("Zuerst Spieler anmelden."); return; }
-        LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(24,12,24,12);
-        Spinner target = new Spinner(this); String[] names = new String[players.size()];
-        for (int i = 0; i < names.length; i++) names[i] = players.get(i)[1] + " · " + players.get(i)[2];
-        target.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, names)); content.addView(target);
-        EditText outcome = new EditText(this); outcome.setHint("Was ist mit dem Charakter passiert?"); outcome.setMinLines(3);
-        outcome.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(400)}); content.addView(outcome);
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Angriffsfolge anzeigen").setView(content)
-            .setPositiveButton("Beim Ziel anzeigen", null).setNegativeButton("Abbrechen", null).create();
-        dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button -> {
-            try { engine.reportAttack(players.get(target.getSelectedItemPosition())[0], outcome.getText().toString()); dialog.dismiss(); }
-            catch (IOException | IllegalArgumentException e) { toast(e.getMessage()); }
-        })); dialog.show();
+    private void wifiOptions(){
+        if(hotspotPending){toast("Das WLAN wird gerade gestartet.");return;}
+        String message="Einfacher Zugang für deine Runde:\n\nWLAN: "+ConnectionLinks.SSID+"\nPasswort: "+ConnectionLinks.PASSWORD+"\n\nFür dieses Passwort einmal in Android einrichten. Automatisches Starten nutzt dagegen die Zugangsdaten von Android.";
+        new AlertDialog.Builder(this).setTitle("Spiel-WLAN").setMessage(message)
+            .setPositiveButton("So einrichten",(d,w)->openWifiSettings())
+            .setNeutralButton("Automatisch starten",(d,w)->startAutomaticHotspot())
+            .setNegativeButton("Abbrechen",null).show();
     }
-    private void requestHotspot() {
-        if (reservation != null || hotspotPending) { toast("Hotspot läuft oder wird gestartet."); return; }
-        String permission = Build.VERSION.SDK_INT >= 33 ? Manifest.permission.NEARBY_WIFI_DEVICES : Manifest.permission.ACCESS_FINE_LOCATION;
-        if (checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(Build.VERSION.SDK_INT >= 33 ? new String[]{permission} :
-                new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 7);
-            return;
-        }
-        hotspotPending = true;
-        try {
-            WifiManager wifi = (WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);
-            wifi.startLocalOnlyHotspot(new WifiManager.LocalOnlyHotspotCallback() {
-                @Override public void onStarted(WifiManager.LocalOnlyHotspotReservation r) {
-                    hotspotPending = false;
-                    if (destroyed) { r.close(); return; }
-                    reservation = r;
-                    String ssid, password;
-                    if (Build.VERSION.SDK_INT >= 30) { ssid = r.getSoftApConfiguration().getSsid(); password = r.getSoftApConfiguration().getPassphrase(); }
-                    else { ssid = r.getWifiConfiguration().SSID; password = r.getWifiConfiguration().preSharedKey; }
-                    networkStatus.setText("WLAN: " + ssid + "\nWLAN-Passwort: " + password + "\nDanach Webseite öffnen und Beitrittscode eingeben.");
-                }
-                @Override public void onStopped() { hotspotPending = false; reservation = null; networkStatus.setText("Hotspot gestoppt. Zum Fortsetzen erneut starten."); }
-                @Override public void onFailed(int reason) {
-                    hotspotPending = false; networkStatus.setText("Hotspot nicht verfügbar (" + reason + "). Gemeinsames WLAN oder Android-Hotspot aus den Systemeinstellungen verwenden. Bei Android 8–12 ggf. Standortfunktion einschalten.");
-                }
-            }, handler);
-        } catch (SecurityException | IllegalStateException | UnsupportedOperationException e) {
-            hotspotPending = false; toast("Hotspot nicht möglich: " + e.getMessage());
-        }
+    private void openWifiSettings(){
+        if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}
+        prefs.edit().putBoolean("setupPending",true).apply();
+        String[] actions={"com.android.settings.WIFI_TETHER_SETTINGS","android.settings.TETHER_SETTINGS",Settings.ACTION_WIRELESS_SETTINGS,Settings.ACTION_SETTINGS};
+        for(String action:actions)try{startActivity(new Intent(action));return;}catch(ActivityNotFoundException|SecurityException unavailable){}
+        prefs.edit().putBoolean("setupPending",false).apply();toast("Bitte Android-Einstellungen und den mobilen Hotspot öffnen.");
     }
-    @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
-        super.onRequestPermissionsResult(request, permissions, results);
-        if (request == 7) {
-            String permission = Build.VERSION.SDK_INT >= 33 ? Manifest.permission.NEARBY_WIFI_DEVICES : Manifest.permission.ACCESS_FINE_LOCATION;
-            if (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) requestHotspot();
-            else toast("Ohne Hotspot-Berechtigung bitte gemeinsames WLAN oder System-Hotspot nutzen.");
-        }
+    private void confirmManualWifi(){
+        if(confirming)return;confirming=true;
+        LinearLayout content=padded();content.addView(text("In Android den mobilen Hotspot einschalten und diese Daten einstellen:",16,WHITE));
+        EditText name=new EditText(this);name.setSingleLine(true);name.setHint("WLAN-Name");name.setText(prefs.getString("ssid",ConnectionLinks.SSID));content.addView(name);
+        EditText pass=new EditText(this);pass.setSingleLine(true);pass.setHint("Passwort");pass.setText(prefs.getString("password",ConnectionLinks.PASSWORD));content.addView(pass);
+        content.addView(text("Wenn du andere Daten eingestellt hast, trage sie hier ein. Danach zurück zur Lobby.",13,MUTED));
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Hotspot bereit?").setView(content).setPositiveButton("Ist eingerichtet",null)
+            .setNeutralButton("Automatisch starten",(d,w)->{prefs.edit().putBoolean("setupPending",false).apply();startAutomaticHotspot();})
+            .setNegativeButton("Später",(d,w)->prefs.edit().putBoolean("setupPending",false).apply()).create();
+        dialog.setOnDismissListener(d->confirming=false);dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String n=name.getText().toString().trim(),p=pass.getText().toString();if(n.isEmpty()||p.length()<8||p.length()>63){toast("WLAN-Name und Passwort mit 8–63 Zeichen eingeben.");return;}
+            ssid=n;password=p;prefs.edit().putString("ssid",n).putString("password",p).putBoolean("manualConfirmed",true).putBoolean("setupPending",false).apply();dialog.dismiss();updatePortal();
+        }));dialog.show();
     }
-    private String addresses() {
-        StringBuilder b = new StringBuilder("SPIELER-WEBSEITE\n");
-        try {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces != null && interfaces.hasMoreElements()) {
-                NetworkInterface net = interfaces.nextElement(); if (!net.isUp()) continue;
-                Enumeration<InetAddress> addresses = net.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    InetAddress a = addresses.nextElement();
-                    if (a instanceof Inet4Address && a.isSiteLocalAddress() && !a.isLoopbackAddress())
-                        b.append("http://").append(a.getHostAddress()).append(":8080\n");
-                }
-            }
-        } catch (SocketException e) { b.append("Adresse noch nicht verfügbar.\n"); }
-        return b.toString();
+    private void startAutomaticHotspot(){
+        if(reservation!=null){toast("Der automatische Hotspot läuft bereits.");return;}if(hotspotPending)return;
+        String permission=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;
+        if(checkSelfPermission(permission)!=PackageManager.PERMISSION_GRANTED){requestPermissions(Build.VERSION.SDK_INT>=33?new String[]{permission}:new String[]{permission,Manifest.permission.ACCESS_COARSE_LOCATION},7);return;}
+        hotspotPending=true;
+        WifiManager.LocalOnlyHotspotCallback callback=new WifiManager.LocalOnlyHotspotCallback(){
+            @Override public void onStarted(WifiManager.LocalOnlyHotspotReservation r){hotspotPending=false;if(destroyed){r.close();return;}reservation=r;prefs.edit().putBoolean("manualConfirmed",false).putBoolean("setupPending",false).apply();
+                if(Build.VERSION.SDK_INT>=30){ssid=clean(r.getSoftApConfiguration().getSsid());password=clean(r.getSoftApConfiguration().getPassphrase());}
+                else{ssid=clean(r.getWifiConfiguration().SSID);password=clean(r.getWifiConfiguration().preSharedKey);}updatePortal();}
+            @Override public void onStopped(){hotspotPending=false;reservation=null;ssid="";password="";updatePortal();}
+            @Override public void onFailed(int reason){hotspotPending=false;toast("WLAN konnte nicht gestartet werden. Bitte Android-Hotspot einrichten.");updatePortal();}
+        };
+        try{
+            WifiManager wifi=(WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);
+            wifi.startLocalOnlyHotspot(callback,handler);
+        }catch(SecurityException|IllegalStateException|UnsupportedOperationException e){hotspotPending=false;toast("Bitte den Android-Hotspot über WLAN einrichten aktivieren.");updatePortal();}
     }
-    @Override protected void onStart() { super.onStart(); if (engine != null && gameStatus != null) handler.post(refresh); }
-    @Override protected void onStop() { handler.removeCallbacks(refresh); super.onStop(); }
-    @Override protected void onDestroy() {
-        destroyed = true; handler.removeCallbacks(refresh);
-        if (reservation != null) reservation.close(); if (server != null) server.close(); super.onDestroy();
+    private String clean(String value){if(value==null)return "";return value.length()>1&&value.startsWith("\"")&&value.endsWith("\"")?value.substring(1,value.length()-1):value;}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7){String p=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;if(checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED)startAutomaticHotspot();else toast("Bitte den Android-Hotspot verwenden.");}}
+    private void showQr(boolean wifi){
+        String value;
+        try{value=wifi?ConnectionLinks.wifiQr(ssid,password):ConnectionLinks.join(network.address,server.port(),engine.code());}
+        catch(IllegalArgumentException error){toast("Zuerst das WLAN einrichten und auf die Adresse warten.");return;}
+        try{
+            Map<EncodeHintType,Object> hints=new EnumMap<>(EncodeHintType.class);hints.put(EncodeHintType.CHARACTER_SET,"UTF-8");
+            BitMatrix bits=new QRCodeWriter().encode(value,BarcodeFormat.QR_CODE,720,720,hints);int[] pixels=new int[720*720];for(int y=0;y<720;y++)for(int x=0;x<720;x++)pixels[y*720+x]=bits.get(x,y)?Color.BLACK:Color.WHITE;
+            Bitmap bitmap=Bitmap.createBitmap(pixels,720,720,Bitmap.Config.ARGB_8888);ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setAdjustViewBounds(true);image.setPadding(dp(14),dp(14),dp(14),dp(14));image.setContentDescription(wifi?"QR-Code zum Spiel-WLAN":"QR-Code zur Spielseite mit ausgefülltem Beitrittscode");
+            new AlertDialog.Builder(this).setTitle(wifi?"1 · Mit dem WLAN verbinden":"2 · Spielseite öffnen").setView(image).setMessage(wifi?"Mit der Kamera des Spielerhandys scannen.":"Zuerst mit dem WLAN verbinden, dann scannen. Der Beitrittscode wird ausgefüllt.").setPositiveButton("Fertig",null).show();
+        }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
-    private static final class AndroidStore implements GameEngine.Store {
-        private final AtomicFile file;
-        AndroidStore(File path) { file = new AtomicFile(path); }
-        @Override public byte[] load() throws IOException {
-            try { return file.readFully(); } catch (FileNotFoundException e) { return null; }
-        }
-        @Override public void save(byte[] data) throws IOException {
-            FileOutputStream out = file.startWrite();
-            try { out.write(data); file.finishWrite(out); }
-            catch (IOException e) { file.failWrite(out); throw e; }
-        }
-    }
-    private final class PortalView extends View {
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final int[] colors = new int[18];
-        private final TextPaint lobbyPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private StaticLayout lobbyLayout;
-        private int lobbyWidth;
-        String caption = "PORTAL BEREIT", result = "";
-        String lobby = "Verbindung wird vorbereitet …";
-        boolean waiting = true;
-        PortalView() {
-            super(MainActivity.this);
-            for (int i = 0; i < colors.length; i++) colors[i] = Color.HSVToColor(110+i*7, new float[]{185+i*2, .75f, 1f});
-            lobbyPaint.setColor(Color.rgb(190,237,249));
-            lobbyPaint.setTextSize(17*getResources().getDisplayMetrics().scaledDensity);
-            setContentDescription("Animiertes Portal. Antippen öffnet Spielleitersteuerung.");
-        }
-        void updateLobby(String value) {
-            int width = Math.max(1, getWidth()-48);
-            if (lobbyLayout != null && value.equals(lobby) && lobbyWidth == width) return;
-            lobby = value; lobbyWidth = width;
-            lobbyLayout = StaticLayout.Builder.obtain(lobby,0,lobby.length(),lobbyPaint,width)
-                .setAlignment(Layout.Alignment.ALIGN_NORMAL).setLineSpacing(4,1).build();
-        }
-        @Override protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-            super.onSizeChanged(width,height,oldWidth,oldHeight); updateLobby(lobby);
-        }
-        @Override protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas); canvas.drawColor(Color.rgb(3,7,18));
-            if (waiting) {
-                if (lobbyLayout == null) return;
-                float scale = Math.min(1, (getHeight()-48f)/Math.max(1,lobbyLayout.getHeight()));
-                canvas.save(); canvas.translate(24,24); canvas.scale(scale,scale); lobbyLayout.draw(canvas); canvas.restore();
-                return;
-            }
-            float cx = getWidth()/2f, cy = getHeight()/2f;
-            float radius = Math.min(getWidth()*.42f, getHeight()*.32f);
-            float time = SystemClock.uptimeMillis()/35f;
-            paint.setStyle(Paint.Style.STROKE);
-            for (int i = 0; i < 18; i++) {
-                float r = radius*(.16f+i*.047f); paint.setStrokeWidth(2+i*.35f);
-                paint.setColor(colors[i]);
-                canvas.drawArc(cx-r,cy-r,cx+r,cy+r,time*(i%2 == 0 ? 1 : -1)+i*21,245,false,paint);
-            }
-            paint.setStyle(Paint.Style.FILL); paint.setColor(Color.rgb(126,237,255));
-            paint.setTextAlign(Paint.Align.CENTER); paint.setTextSize(23*getResources().getDisplayMetrics().scaledDensity);
-            canvas.drawText("DR_WHO",cx,cy-radius-35,paint);
-            paint.setTextSize(15*getResources().getDisplayMetrics().scaledDensity);
-            canvas.drawText(caption,cx,cy+radius+38,paint);
-            String roll = "";
-            for (String line : result.split("\n")) if (line.startsWith("Letzter W6:")) roll = line;
-            canvas.drawText(roll,cx,cy+10,paint);
-            paint.setTextSize(12*getResources().getDisplayMetrics().scaledDensity);
-            canvas.drawText("Antippen · Spielleiter",cx,getHeight()-30,paint);
-            if (getWindowVisibility() == VISIBLE && getVisibility() == VISIBLE) postInvalidateDelayed(40);
-        }
+    private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
+    @Override protected void onStart(){super.onStart();if(engine!=null&&playerRows!=null)handler.post(refresh);}
+    @Override protected void onResume(){super.onResume();if(prefs!=null&&prefs.getBoolean("setupPending",false)&&playerRows!=null)handler.post(this::confirmManualWifi);}
+    @Override protected void onStop(){handler.removeCallbacks(refresh);super.onStop();}
+    @Override protected void onDestroy(){destroyed=true;handler.removeCallbacks(refresh);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
+    private static final class AndroidStore implements GameEngine.Store{
+        private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}
+        @Override public byte[] load()throws IOException{try{return file.readFully();}catch(FileNotFoundException missing){return null;}}
+        @Override public void save(byte[] data)throws IOException{FileOutputStream out=file.startWrite();try{out.write(data);file.finishWrite(out);}catch(IOException error){file.failWrite(out);throw error;}}
     }
 }

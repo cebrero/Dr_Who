@@ -17,11 +17,11 @@ public final class CharacterProfile {
     public static List<CharacterProfile> known() {
         return Arrays.asList(
             new CharacterProfile("doctor", "Der Doctor", "Löst Probleme mit Einfallsreichtum und seinem Schallschraubenzieher.",
-                "Noch festzulegen", "Noch festzulegen", "/portraits/doctor.jpg", "Schallschraubenzieher: Türen öffnen. Reichweite und Probe noch offen."),
+                "Noch festzulegen", "Noch festzulegen", "/portraits/doctor.svg", "Schallschraubenzieher: Türen öffnen. Reichweite und Probe noch offen."),
             new CharacterProfile("dalek", "Dalek", "Ein gepanzerter Charakter mit einem geradlinigen Fernangriff.",
-                "Noch festzulegen", "Noch festzulegen", "/portraits/dalek.jpg", "Schießen: bis zu 3 Felder in geraden Richtungen. Trefferwirkung noch offen."),
+                "Noch festzulegen", "Noch festzulegen", "/portraits/dalek.svg", "Schießen: bis zu 3 Felder in geraden Richtungen. Trefferwirkung noch offen."),
             new CharacterProfile("weeping-angel", "Weinender Engel", "Kann ein Ziel im Sichtfeld zeitweilig aus dem Geschehen nehmen.",
-                "Noch festzulegen", "Noch festzulegen", "/portraits/weeping-angel.jpg", "Gegner im Sichtfeld setzen 1–3 Runden aus. Sicht- und Statusregeln noch offen.")
+                "Noch festzulegen", "Noch festzulegen", "/portraits/weeping-angel.svg", "Gegner im Sichtfeld setzen 1–3 Runden aus. Sicht- und Statusregeln noch offen.")
         );
     }
 }

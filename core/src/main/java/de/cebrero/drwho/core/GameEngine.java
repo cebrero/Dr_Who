@@ -236,7 +236,7 @@ public final class GameEngine {
     private String playerName(String id) { for (Player p : state.players) if (p.id.equals(id)) return p.name; return "Spieler"; }
     public synchronized List<String[]> playersForHost() {
         List<String[]> result = new ArrayList<>();
-        for (Player p : state.players) result.add(new String[]{p.id, p.name, characterName(p.characterId)});
+        for (Player p : state.players) result.add(new String[]{p.id, p.name, characterName(p.characterId), p.characterId});
         return result;
     }
     private void requireEnemyTurn() {

@@ -15,7 +15,7 @@ const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
  let next=copy(base),requests=[],fail=false;
  const html=fs.readFileSync('app/src/main/assets/player.html','utf8');
- const dom=new JSDOM(html,{url:'http://192.168.4.1:8080',runScripts:'dangerously',beforeParse(w){
+ const dom=new JSDOM(html,{url:'http://192.168.4.1:8080/?code=123456',runScripts:'dangerously',beforeParse(w){
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
@@ -26,6 +26,8 @@ async function main(){
  const w=dom.window,$=id=>w.document.getElementById(id);
  try{
   await tick();
+  check($('code').value==='123456','connection QR prefills code');
+  check(requests.length===0,'QR code never joins a player without entering a name');
   check(!$('selection').hidden,'lobby shows selection');
   check($('characters').children.length===3,'three known dossiers');
   const buttons=[...w.document.querySelectorAll('.choose')];

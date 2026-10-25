@@ -48,7 +48,7 @@ public final class CoreTest {
         String token = join(e,name); e.chooseCharacter(token,id(),character); return token;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -249,6 +249,37 @@ public final class CoreTest {
             check(call(server,"/api/command",cmd,token,true).body.equals(roll.body),"HTTP retry idempotent");
             for(int i=0;i<8;i++)call(server,"/api/join","name=B&code=wrong&requestId="+id(),null,true);
             check(call(server,"/api/join",form,null,true).status==429,"bad-code attempts throttled");
+        }
+    }
+    static Response raw(LocalServer server,String host,String path)throws IOException{
+        try(Socket socket=new Socket("127.0.0.1",server.port())){
+            socket.setSoTimeout(3000);
+            socket.getOutputStream().write(("GET "+path+" HTTP/1.1\r\nHost: "+host+"\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+            String response=new String(socket.getInputStream().readAllBytes(),StandardCharsets.UTF_8);
+            return new Response(Integer.parseInt(response.split(" ")[1]),response.substring(response.indexOf("\r\n\r\n")+4));
+        }
+    }
+    static void connections()throws Exception{
+        check(ConnectionLinks.site("drwho.local",80).equals("http://drwho.local"),"default HTTP port omitted");
+        check(ConnectionLinks.site("drwho.local",8080).equals("http://drwho.local:8080"),"fallback port explicit");
+        check(ConnectionLinks.join("192.168.43.1",80,"123456").equals("http://192.168.43.1/?code=123456"),"direct QR includes prefill code");
+        check(ConnectionLinks.wifiQr("Dr_Who","drwho123").equals("WIFI:T:WPA;S:Dr_Who;P:drwho123;;"),"Wi-Fi QR payload");
+        check(ConnectionLinks.wifiQr("a;b:c","p;q:r").contains("a\\;b\\:c;P:p\\;q\\:r"),"QR separators escaped");
+        rejects(IllegalArgumentException.class,()->ConnectionLinks.site("example.com",80));
+        rejects(IllegalArgumentException.class,()->ConnectionLinks.join("drwho.local",80,"<code>"));
+        GameEngine engine=new GameEngine(new MemoryStore());
+        try(LocalServer server=new LocalServer(engine,"Player".getBytes(StandardCharsets.UTF_8),0,name->name.equals("doctor.svg")?"<svg/>".getBytes(StandardCharsets.UTF_8):null)){
+            check(raw(server,"drwho.local","/").status==200,"advertised hostname accepted by HTTP server");
+            check(raw(server,"evil.local","/").status==400,"other DNS names rejected");
+            check(raw(server,"drwho.local.evil","/").status==400,"hostname suffix attack rejected");
+            check(raw(server,"drwho.local","/?code=123456").body.equals("Player"),"QR URL serves player page");
+            check(raw(server,"drwho.local","/?code=invalid").status==404,"unexpected query rejected");
+            check(raw(server,"drwho.local","/portraits/doctor.svg").body.equals("<svg/>"),"local SVG portrait served");
+            check(raw(server,"drwho.local","/portraits/../session-v1.drw").status==404,"portrait traversal rejected");
+            server.setLocalHostname("drwho-2.local");
+            check(raw(server,"drwho-2.local","/").status==200,"renamed hostname after conflict accepted");
+            check(raw(server,"drwho.local","/").status==400,"old hostname no longer accepted after rename");
+            rejects(IllegalArgumentException.class,()->server.setLocalHostname("other.example.com"));
         }
     }
 }

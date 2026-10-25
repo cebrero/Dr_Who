@@ -8,11 +8,13 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.3.1
+## Stand 0.4.0
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
-und Typografiegrundlage ist umgesetzt; Charakterfotos und dekorative Medien folgen noch.
+und Typografiegrundlage ist umgesetzt. Die Portal-Lobby zeigt eine drehende TARDIS, vier
+Spielerplätze mit Charakterporträts, Spieleranzahl und kompakte Zugangsdaten. Echte Figurenfotos
+folgen noch; Doctor, Dalek und Engel besitzen bereits stilisierte Offline-Illustrationen.
 
 Android-Host mit lokalem HTTP-Server, Code-Lobby und exklusiver Charakterauswahl über Steckbriefe.
 Alle Spieler sind Partner. Der Host kann übrige Figuren als Gegner hinzufügen. Nach den Partnern
@@ -31,8 +33,8 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 187 Kern-/HTTP-Prüfungen und 33 DOM-Prüfungen bestanden; Android-Build erfolgreich,
-Lint ohne Fehler (8 Hinweise). Details und bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
+Validiert: 204 Kern-/HTTP-Prüfungen und 35 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
 ## Bauen
@@ -68,10 +70,13 @@ Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerha
 ## Technikdemo verwenden
 
 1. APK auf dem Spielleiter-Handy installieren und App öffnen.
-2. „Lokalen Hotspot starten“ und die Android-Berechtigung erteilen.
-   Alternativ alle Geräte mit demselben WLAN oder dem manuell gestarteten System-Hotspot verbinden.
-3. Spieler verbinden sich mit dem angezeigten WLAN und öffnen die angezeigte IPv4-Adresse
-   samt `http://` und Port `:8080` im Browser. Es wird keine Internetverbindung benötigt.
+2. „Spiel-WLAN einrichten“ wählen. Für das einfache Passwort einmal den Android-System-Hotspot
+   mit **Dr_Who / drwho123** einrichten und die tatsächlichen Daten in der App bestätigen.
+   Alternativ „Automatisch starten“: Android vergibt dafür eigene Zugangsdaten.
+3. Spieler scannen zuerst „WLAN-QR“, danach „Seiten-QR“. Der Seiten-QR enthält die direkte
+   Adresse mit vorausgefülltem Beitrittscode. Alternativ die angezeigte `http://drwho.local`-
+   Adresse öffnen; wenn Port 80 nicht verfügbar ist, erscheint zusätzlich `:8080`.
+   Die direkte IP bleibt als Ausweichweg sichtbar. `.local` muss am echten Gerät geprüft werden.
 4. Namen und sechsstelligen Beitrittscode eingeben. Das WLAN-Passwort ist davon getrennt.
 5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
    der Host übrige Figuren als Gegner hinzufügen und die Technikdemo starten.
@@ -81,7 +86,8 @@ Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerha
 7. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,
    eine Angriffsfolge beim Ziel anzeigen und anschließend den Gegnerzug abschließen.
    Offene Bewegungen bestätigt nur der Helfer, Angriffe nur das Ziel am eigenen Handy.
-8. „Portal anzeigen“ öffnet die Lobbyübersicht bzw. Animation. Antippen bringt die Host-Steuerung zurück.
+8. Verwaltung ist hinter „Spielleitung“ verborgen. Dort öffnet „TARDIS groß anzeigen“ die
+   große Animation; Antippen bringt die Portal-Lobby zurück.
 
 App im Vordergrund geöffnet lassen. Nach Änderungen wird automatisch gespeichert;
 beim erneuten Öffnen wird die vorhandene Partie geladen. Keine fertige Spielversion:
@@ -92,7 +98,8 @@ Die Website wechselt bei Beteiligung zur aktiven Ansicht; gesperrte Handys werde
 fernentsperrt. Bildschirm-Timeout und Energiesparen am realen Gerät berücksichtigen.
 
 Fotos später als JPEG in `app/src/main/assets/portraits/` ergänzen: `doctor.jpg`, `dalek.jpg`
-und `weeping-angel.jpg`. Ohne Foto erscheint ein gekennzeichneter Platzhalter.
+und `weeping-angel.jpg`. Die nativen Avatare bevorzugen diese Fotos. Die Browser-Steckbriefe
+verwenden zunächst die mitgelieferten SVG-Illustrationen; ihr Bildpfad steht im Charakterkatalog.
 
 ## Struktur
 

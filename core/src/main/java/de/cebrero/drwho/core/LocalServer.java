@@ -8,7 +8,7 @@ import java.util.concurrent.*;
 
 /** Small HTTP/1.1 demo server. No remote administration and no external assets. */
 public final class LocalServer implements Closeable {
-    public interface Portraits { byte[] load(String id) throws IOException; }
+    public interface Portraits { byte[] load(String filename) throws IOException; }
     private final GameEngine engine;
     private final byte[] page;
     private final Portraits portraits;
@@ -18,6 +18,12 @@ public final class LocalServer implements Closeable {
     private final Map<String, long[]> failures = new LinkedHashMap<>();
     private final Set<Socket> sockets = ConcurrentHashMap.newKeySet();
     private volatile boolean closed;
+    private volatile String localHostname = ConnectionLinks.HOSTNAME;
+    public void setLocalHostname(String hostname) {
+        String value = hostname == null ? "" : hostname.toLowerCase(Locale.ROOT);
+        if (!value.matches("[a-z0-9-]+\\.local")) throw new IllegalArgumentException("Ungültiger lokaler Hostname.");
+        localHostname = value;
+    }
 
     public LocalServer(GameEngine engine, byte[] page, int port) throws IOException {
         this(engine, page, port, id -> null);
@@ -26,7 +32,8 @@ public final class LocalServer implements Closeable {
         this.engine = engine; this.page = page.clone();
         this.portraits = portraits;
         listener = new ServerSocket(); listener.setReuseAddress(true);
-        listener.bind(new InetSocketAddress("0.0.0.0", port), 16);
+        try { listener.bind(new InetSocketAddress("0.0.0.0", port), 16); }
+        catch (IOException error) { listener.close(); workers.shutdownNow(); throw error; }
         Thread acceptor = new Thread(this::accept, "drwho-listener"); acceptor.setDaemon(true); acceptor.start();
     }
     public int port() { return listener.getLocalPort(); }
@@ -56,18 +63,20 @@ public final class LocalServer implements Closeable {
                     if (headers.put(key, h.substring(colon + 1).trim()) != null) throw new IllegalArgumentException("Doppelter Header.");
                 }
                 String host = headers.getOrDefault("host", "");
-                // Only numeric IPv4/loopback Host values: rejects DNS rebinding hostnames.
-                if (!host.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(?::[0-9]{1,5})?"))
-                    throw new IllegalArgumentException("Bitte die angezeigte IP-Adresse öffnen.");
+                // Numeric addresses or our exact advertised local hostname, never arbitrary DNS names.
+                String hostname = host.replaceFirst(":[0-9]{1,5}$", "").toLowerCase(Locale.ROOT);
+                if (!host.matches("(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(?::[0-9]{1,5})?") &&
+                    !(hostname.equals(localHostname) && host.matches("(?i)[a-z0-9-]+\\.local(?::[0-9]{1,5})?")))
+                    throw new IllegalArgumentException("Bitte die am Portal angezeigte Adresse öffnen.");
                 if (headers.containsKey("transfer-encoding")) throw new IllegalArgumentException("Transfer-Encoding nicht unterstützt.");
                 String origin = headers.get("origin");
                 if (origin != null && !origin.equals("http://" + host)) throw new SecurityException("Fremder Ursprung.");
                 String method = parts[0], path = parts[1];
-                if (method.equals("GET") && path.equals("/")) { reply(out, 200, "text/html; charset=utf-8", page); return; }
-                if (method.equals("GET") && path.matches("/portraits/[a-z0-9-]{1,64}\\.jpg")) {
-                    byte[] photo = portraits.load(path.substring(10, path.length() - 4));
+                if (method.equals("GET") && (path.equals("/") || path.matches("/\\?code=[0-9]{6}"))) { reply(out, 200, "text/html; charset=utf-8", page); return; }
+                if (method.equals("GET") && path.matches("/portraits/[a-z0-9-]{1,64}\\.(jpg|svg)")) {
+                    byte[] photo = portraits.load(path.substring("/portraits/".length()));
                     if (photo == null) json(out, 404, "{\"error\":\"Foto noch nicht hinterlegt.\"}");
-                    else reply(out, 200, "image/jpeg", photo);
+                    else reply(out, 200, path.endsWith(".svg") ? "image/svg+xml" : "image/jpeg", photo);
                     return;
                 }
                 String authorization = headers.getOrDefault("authorization", "");

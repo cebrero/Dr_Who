@@ -31,3 +31,11 @@
     Ein Quellhash ersetzt keine inhaltliche Dokumentationspflege. Testergebnisse ehrlich halten.
 14. Bestätigte Designwahl: B „Zeitreise-Archiv“ für die Spielerhandys (Pergament/Petrol/Messing),
     A „TARDIS-Konsole“ für das Portal-Handy (Dunkelblau/Cyan). Nicht wieder zur Auswahl stellen.
+15. Fester Nutzergrundsatz: Einrichtung/Verbinden so einfach wie möglich. Mit passenden
+    Grafiken und Animationen ins Abenteuer hineinziehen. Technik und Verwaltung im Hintergrund,
+    wenige klare Schritte und gut lesbare Anzeigen. Eine Animation darf keine Eingabe verdecken.
+16. Einfaches WLAN: Dr_Who / drwho123. Die App führt zur einmaligen System-Hotspot-
+    Einrichtung. Auch SDK 36 hat keine öffentlichen SSID-/Passwort-Setter für gewöhnliche
+    Apps. Keine versteckten APIs/Reflection und kein frei konfigurierbares Passwort versprechen.
+    drwho.local wird echt per mDNS angekündigt; IP-/QR-Ausweichweg und tatsächlichen Port zeigen.
+    Namensauflösung und Hotspotverhalten erst nach echtem Gerätetest als bestätigt bezeichnen.
