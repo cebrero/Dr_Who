@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dr_Who · Spieler</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui;background:#070d1b;color:#e1f1fa}*{box-sizing:border-box}body{max-width:620px;margin:auto;padding:24px 18px 42px}h1{font-size:34px;letter-spacing:.08em;margin:6px 0}h2{font-size:20px}small,.muted{color:#9cb5c9}header{margin-bottom:22px}.card{padding:20px;border:1px solid #234158;border-radius:18px;background:#0e1a2c;margin:16px 0}label{display:block;margin:16px 0 6px}input,button{font:inherit;border-radius:10px;padding:14px;border:1px solid #31536d}input{width:100%;background:#071220;color:inherit}button{background:#133c52;color:#c9f7ff;cursor:pointer;min-height:48px}button:disabled{opacity:.4;cursor:default}.primary{background:#67def2;color:#061421;font-weight:700;width:100%;margin-top:18px}.controls{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.controls button:nth-child(1){grid-column:2}.controls button:nth-child(2){grid-column:1}.wide{width:100%;margin-top:10px}#message{color:#ffdb9a;min-height:25px;white-space:pre-wrap}#grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:18px 0}.cell{aspect-ratio:1;border:1px solid #27435a;border-radius:7px;padding:4px;font-size:10px;color:#94b0c3;overflow:hidden}.piece{display:block;color:#99f1ff;font-size:11px;overflow-wrap:anywhere}.mine{border-color:#72e6f5;background:#124154}li{margin-bottom:10px;overflow-wrap:anywhere}#roll{font-size:48px;text-align:center;color:#85eeff;margin:12px}#turn{font-size:23px;color:#8fe8ff}p{line-height:1.5}[hidden]{display:none!important}
+</style>
+<header><small>DEIN TABLETOP-BEGLEITER</small><h1>DR_WHO</h1><small>Technikdemo 0.1.0 · lokal &amp; ohne Konto</small></header>
+<div id="message" role="status" aria-live="polite"></div>
+<form id="join" class="card"><h2>Der Runde beitreten</h2>
+<label for="name">Dein Name</label><input id="name" maxlength="24" required autocomplete="nickname">
+<label for="code">Code vom Spielleiter-Handy</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
+<button class="primary" id="joinButton">Beitreten</button><p class="muted">Bis zu vier Spieler. Das WLAN-Passwort und dieser Beitrittscode sind zwei verschiedene Dinge.</p></form>
+<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><div id="roll" aria-live="polite"></div>
+<p class="muted">Techniktest: pro Zug eine Bewegung um ein Feld ODER ein W6-Test ODER passen. Figuren auf dem Tisch selbst entsprechend versetzen. Noch keine Wände oder Charakterfähigkeiten.</p>
+<div class="controls" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div>
+<button type="button" id="rollButton" class="primary">W6-Test würfeln</button><button type="button" id="passButton" class="wide">Passen</button><button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button></section>
+<section class="card"><h2>Was passiert ist</h2><ol id="log"></ol></section><p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const key='drwho.v1';
+let saved={},state=null,pending=null,busy=false,joining=false;
+try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+let token=saved.token||'';pending=saved.pending||null;
+function persist(){saved.token=token;saved.pending=pending;localStorage.setItem(key,JSON.stringify(saved))}
+function uuid(){const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
+async function api(path,data){
+ const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),6000);
+ try{
+  const response=await fetch(path,{method:data?'POST':'GET',headers:{'X-Dr-Who':'1',...(data?{'Content-Type':'application/x-www-form-urlencoded'}:{}),...(token?{'Authorization':'Bearer '+token}:{})},body:data?new URLSearchParams(data):undefined,cache:'no-store',signal:abort.signal});
+  const value=await response.json();if(!response.ok){const e=new Error(value.error||'Anfrage fehlgeschlagen.');e.status=response.status;throw e}return value;
+ }finally{clearTimeout(timeout)}
+}
+function controls(){
+ const active=state&&state.started&&state.current===state.you&&!busy&&!pending;
+ document.querySelectorAll('#controls button,#rollButton,#passButton').forEach(b=>b.disabled=!active);
+ $('retry').hidden=!pending;$('retry').disabled=busy;
+}
+function render(s){
+ if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
+ state=s;$('join').hidden=true;$('game').hidden=false;
+ $('round').textContent=s.started?'RUNDE '+s.round:'LOBBY · '+s.players.length+' / 4';
+ const actor=s.players.find(p=>p.id===s.current);
+ $('turn').textContent=!s.started?'Warte auf Spielleiter …':s.current===s.you?'Du bist am Zug':(actor?actor.name:'Spieler')+' ist am Zug';
+ $('players').textContent=s.players.map(p=>p.name+(p.id===s.you?' (du)':'')).join(' · ');
+ $('grid').replaceChildren();
+ for(let y=0;y<6;y++)for(let x=0;x<6;x++){
+  const cell=document.createElement('div');cell.className='cell';cell.textContent=String.fromCharCode(65+x)+(y+1);
+  for(const p of s.players.filter(p=>p.x===x&&p.y===y)){
+   const figure=document.createElement('span');figure.className='piece';figure.textContent=p.name;cell.append(figure);if(p.id===s.you)cell.classList.add('mine');
+  }$('grid').append(cell);
+ }
+ $('roll').textContent=s.lastRoll?'W6 · '+s.lastRoll:'';$('log').replaceChildren();
+ for(const event of s.log.slice(-8).reverse()){const li=document.createElement('li');li.textContent=event;$('log').append(li)}controls();
+}
+async function poll(){
+ if(!token||busy)return;
+ try{render(await api('/api/state'));if(!pending)$('message').textContent=''}
+ catch(e){$('message').textContent=e.status===401?'Diese Anmeldung gehört nicht zu dieser Partie. Host oder Browseradresse prüfen.':'Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#passButton').forEach(b=>b.disabled=true)}
+}
+$('join').addEventListener('submit',async event=>{
+ event.preventDefault();if(joining)return;joining=true;$('joinButton').disabled=true;
+ try{
+  const name=$('name').value.trim(),code=$('code').value;
+  if(!saved.join||saved.join.name!==name||saved.join.code!==code)saved.join={name,code,requestId:uuid()};persist();
+  const credentials=await api('/api/join',saved.join);token=credentials.token;saved.sessionId=credentials.sessionId;pending=null;persist();await poll();
+ }catch(e){$('message').textContent=e.message||'Anmeldung fehlgeschlagen.'}
+ finally{joining=false;$('joinButton').disabled=false}
+});
+async function send(){
+ if(!pending||busy)return;busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
+ try{const s=await api('/api/command',pending);pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
+ catch(e){
+  if(e.status===400||e.status===401){pending=null;persist();$('message').textContent=e.message}
+  else $('message').textContent='Keine Bestätigung erhalten. Gleiche Anfrage erneut senden; sie wird nicht doppelt ausgeführt.';
+ }finally{busy=false;controls()}
+}
+function command(action,direction=''){
+ if(!state||busy||pending)return;
+ pending={requestId:uuid(),revision:String(state.revision),action,direction};
+ try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicher nicht verfügbar. Bitte Speicherung für diese Seite erlauben.';controls()}
+}
+document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
+$('rollButton').addEventListener('click',()=>command('roll'));$('passButton').addEventListener('click',()=>command('pass'));$('retry').addEventListener('click',send);
+if(token){$('join').hidden=true;$('game').hidden=false;poll()}setInterval(poll,1500);
+</script></html>
