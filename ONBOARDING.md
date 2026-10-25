@@ -424,6 +424,11 @@ Verwaltung/Gegner-Teststeuerung über „Spielleitung“ statt überladener Haup
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
+**Verbindlich für den nächsten Build (Nutzerwunsch 25.10.2026):** Eine erkennbare blaue
+TARDIS als App-/Launcher-Icon verwenden, sichtbar auf Android-Startbildschirm und in der
+App-Liste. Das derzeitige abstrakte Portal-Icon ersetzen. Noch nicht in APK 0.4.0 umgesetzt;
+wegen dieser Vormerkung allein keinen neuen Build erzeugen.
+
 Die kooperative Rollenverteilung ist geklärt. Als Nächstes Figurenliste und Fotos sowie
 Ausdauer/Kraft und gewünschte Sonderfähigkeiten erfassen; danach den Zielvorschlag „Der Zeitriss“
 konkretisieren und Gelände aufnehmen. Als kleinster sinnvoller Inventarschritt

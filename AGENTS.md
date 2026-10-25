@@ -39,3 +39,5 @@
     Apps. Keine versteckten APIs/Reflection und kein frei konfigurierbares Passwort versprechen.
     drwho.local wird echt per mDNS angekündigt; IP-/QR-Ausweichweg und tatsächlichen Port zeigen.
     Namensauflösung und Hotspotverhalten erst nach echtem Gerätetest als bestätigt bezeichnen.
+17. Für den nächsten Build vorgemerkt: TARDIS als App-/Launcher-Icon statt abstraktem Portal.
+    In der nächsten Umsetzung vor dem Build berücksichtigen; Wunsch allein löst keinen Build aus.
