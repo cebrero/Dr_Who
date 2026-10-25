@@ -7,7 +7,7 @@ import java.util.*;
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 3, MAGIC = 0x4457484f;
+    private static final int FORMAT = 4, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private State state;
@@ -30,6 +30,8 @@ public final class GameEngine {
         String phase = "players", helperId = "", attackId = "", attackEnemy = "", attackTarget = "", attackText = "";
         int enemyIndex;
         boolean movementDone, attackPending;
+        String turnStage = "roll";
+        int turnRoll, remaining;
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
@@ -66,7 +68,11 @@ public final class GameEngine {
             .append(" · Partner").append(playing() ? " · " + cell(p) : "").append('\n');
         for (String enemy : state.enemies) b.append("Gegner: ").append(characterName(enemy)).append('\n');
         if (playing()) {
-            if (state.phase.equals("players")) b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
+            if (state.phase.equals("players")) {
+                b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
+                b.append(state.turnStage.equals("roll") ? "Zuerst am eigenen Handy würfeln." : state.turnStage.equals("choice") ?
+                    "Wurf " + state.turnRoll + ": Bewegung oder Aktion wählen." : "Noch " + state.remaining + " Felder ziehen.").append('\n');
+            }
             else {
                 b.append("Gegnerzug: ").append(characterName(state.enemies.get(state.enemyIndex))).append('\n');
                 if (!state.helperId.isEmpty()) b.append("Bewegung ausführen: ").append(playerName(state.helperId)).append('\n');
@@ -107,7 +113,7 @@ public final class GameEngine {
         if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
         if (state.started) return;
         State next = copy(); next.started = true;
-        addLog(next, "Technikdemo gestartet: pro Zug eine Bewegung ODER ein W6-Test ODER passen.");
+        addLog(next, "Spiel gestartet: zuerst würfeln; 1–4 ziehen, bei 5/6 Bewegung oder Aktion wählen.");
         commit(next);
     }
     public synchronized String snapshot(String token) {
@@ -116,6 +122,8 @@ public final class GameEngine {
         b.append(",\"revision\":").append(state.revision).append(",\"started\":").append(state.started)
             .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
+            .append(",\"turn\":{\"stage\":").append(quote(state.turnStage)).append(",\"roll\":").append(state.turnRoll)
+            .append(",\"remaining\":").append(state.remaining).append("}")
             .append(",\"you\":").append(quote(self.id)).append(",\"phase\":").append(quote(state.phase))
             .append(",\"helperId\":").append(quote(state.helperId)).append(",\"movementDone\":").append(state.movementDone)
             .append(",\"activeEnemy\":").append(quote(state.phase.equals("enemies") ? state.enemies.get(state.enemyIndex) : ""))
@@ -166,8 +174,10 @@ public final class GameEngine {
         if (!playing() || !state.phase.equals("players") || !actor.id.equals(state.players.get(state.current).id))
             throw new IllegalArgumentException("Du bist gerade nicht am Zug.");
         State next = copy(); Player p = next.players.get(next.current);
+        boolean finished = false;
         switch (action == null ? "" : action) {
             case "move":
+                if (!next.turnStage.equals("move") || next.remaining < 1) throw new IllegalArgumentException("Zuerst würfeln und gegebenenfalls Bewegung wählen.");
                 int dx = 0, dy = 0;
                 switch (direction == null ? "" : direction) {
                     case "N": dy = -1; break;
@@ -181,24 +191,41 @@ public final class GameEngine {
                 for (Player other : next.players) if (other != p && other.x == x && other.y == y)
                     throw new IllegalArgumentException("Dieses Feld ist belegt.");
                 p.x = x; p.y = y;
-                addLog(next, p.name + " → " + cell(p) + ". Figur auf dem Tisch entsprechend versetzen.");
+                next.remaining--;
+                addLog(next, p.name + " → " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.");
+                finished = next.remaining == 0;
                 break;
             case "roll":
+                if (!next.turnStage.equals("roll")) throw new IllegalArgumentException("Du hast in diesem Zug bereits gewürfelt.");
                 next.lastRoll = random.nextInt(6) + 1;
-                addLog(next, p.name + " würfelt " + next.lastRoll + " (W6-Techniktest, noch keine Ereignistabelle).");
+                next.turnRoll = next.lastRoll; next.remaining = next.turnRoll;
+                next.turnStage = next.turnRoll >= 5 ? "choice" : "move";
+                addLog(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."));
                 break;
-            case "pass": addLog(next, p.name + " passt."); break;
+            case "chooseMove":
+                if (!next.turnStage.equals("choice")) throw new IllegalArgumentException("Keine Bewegungswahl offen.");
+                next.turnStage = "move";
+                addLog(next, p.name + " wählt Bewegung um genau " + next.turnRoll + " Felder.");
+                break;
+            case "action":
+                if (!next.turnStage.equals("choice") || next.turnRoll < 5) throw new IllegalArgumentException("Eine Aktion steht nur statt Bewegung bei einer 5 oder 6 zur Wahl.");
+                addLog(next, p.name + " wählt eine Charakteraktion (Techniktest: Auswahl gespeichert, Wirkung noch nicht berechnet).");
+                finished = true;
+                break;
             default: throw new IllegalArgumentException("Unbekannte Aktion.");
         }
-        next.receipts.add(receipt);
-        while (next.receipts.size() > 128) next.receipts.remove(next.receipts.iterator().next());
+        remember(next, receipt);
+        if (finished) endPlayerTurn(next);
+        commit(next);
+        return snapshot(token);
+    }
+    private static void endPlayerTurn(State next) {
+        next.turnStage = "roll"; next.turnRoll = 0; next.remaining = 0;
         next.current = (next.current + 1) % next.players.size();
         if (next.current == 0) {
             if (next.enemies.isEmpty()) next.round++;
             else { next.phase = "enemies"; next.enemyIndex = 0; next.movementDone = false; }
         }
-        commit(next);
-        return snapshot(token);
     }
     private static String cell(Player p) { return "" + (char)('A' + p.x) + (p.y + 1); }
     public synchronized int selectedCount() {
@@ -319,6 +346,7 @@ public final class GameEngine {
         out.writeInt(s.receipts.size()); for (String id : s.receipts) out.writeUTF(id);
         out.writeUTF(s.phase); out.writeInt(s.enemyIndex); out.writeUTF(s.helperId); out.writeBoolean(s.movementDone);
         out.writeUTF(s.attackId); out.writeUTF(s.attackEnemy); out.writeUTF(s.attackTarget); out.writeUTF(s.attackText); out.writeBoolean(s.attackPending);
+        out.writeUTF(s.turnStage); out.writeInt(s.turnRoll); out.writeInt(s.remaining);
         out.flush(); return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -348,6 +376,11 @@ public final class GameEngine {
             s.phase = in.readUTF(); s.enemyIndex = in.readInt(); s.helperId = in.readUTF(); s.movementDone = in.readBoolean();
             s.attackId = in.readUTF(); s.attackEnemy = in.readUTF(); s.attackTarget = in.readUTF(); s.attackText = in.readUTF(); s.attackPending = in.readBoolean();
         }
+        if (format >= 4) { s.turnStage = in.readUTF(); s.turnRoll = in.readInt(); s.remaining = in.readInt(); }
+        boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
+            s.turnStage.equals("choice") && s.turnRoll >= 5 && s.turnRoll <= 6 && s.remaining == s.turnRoll ||
+            s.turnStage.equals("move") && s.turnRoll >= 1 && s.turnRoll <= 6 && s.remaining >= 1 && s.remaining <= s.turnRoll;
+        if (!validTurn || s.phase.equals("enemies") && !s.turnStage.equals("roll")) throw new IOException("Ungültiger Würfel-/Bewegungszustand.");
         Set<String> playerIds = new HashSet<>(); for (Player p : s.players) playerIds.add(p.id);
         if (!(s.phase.equals("players") || s.phase.equals("enemies")) || s.enemyIndex < 0 ||
             (s.phase.equals("enemies") && (!s.started || s.enemyIndex >= s.enemies.size())) ||

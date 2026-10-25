@@ -1,1 +1,48 @@
 plugins { id 'com.android.application' version '8.13.2' apply false }
+
+// A build must use onboarding reviewed against the exact production sources.
+def sourceHash = {
+    def digest = java.security.MessageDigest.getInstance('SHA-256')
+    def sources = fileTree(projectDir) {
+        include 'app/src/main/**', 'core/src/main/**'
+        include 'build.gradle', 'app/build.gradle', 'core/build.gradle', 'settings.gradle', 'gradle.properties'
+    }.files.sort { a, b -> projectDir.toPath().relativize(a.toPath()).toString().replace('\\', '/') <=> projectDir.toPath().relativize(b.toPath()).toString().replace('\\', '/') }
+    sources.each { source ->
+        def relative = projectDir.toPath().relativize(source.toPath()).toString().replace('\\', '/')
+        digest.update(relative.getBytes('UTF-8')); digest.update((byte) 0)
+        def bytes = relative ==~ /.*\.(java|gradle|properties|html|xml)$/ ? source.getText('UTF-8').replace('\r\n', '\n').getBytes('UTF-8') : source.bytes
+        digest.update(bytes); digest.update((byte) 0)
+    }
+    digest.digest().encodeHex().toString()
+}
+tasks.register('updateOnboardingStamp') {
+    group = 'documentation'
+    description = 'After reviewing/updating ONBOARDING.md, record the current source hash.'
+    doLast {
+        def doc = file('ONBOARDING.md')
+        def text = doc.getText('UTF-8')
+        if (!text.contains('<!-- reviewed-source-sha256:')) throw new GradleException('ONBOARDING.md: Prüfmarkierung fehlt.')
+        doc.setText(text.replaceFirst(/<!-- reviewed-source-sha256: [^>]* -->/, "<!-- reviewed-source-sha256: ${sourceHash()} -->"), 'UTF-8')
+    }
+}
+tasks.register('verifyOnboarding') {
+    group = 'verification'
+    description = 'Reject stale onboarding versions or unreviewed production-source changes.'
+    doLast {
+        def text = file('ONBOARDING.md').getText('UTF-8')
+        def version = providers.gradleProperty('drWhoVersionName').get()
+        if (!text.contains("<!-- app-version: ${version} -->") || !text.contains('Spielablauf und Spielregeln'))
+            throw new GradleException('ONBOARDING.md: App-Version oder Regelabschnitt fehlt/ist veraltet.')
+        if (!text.contains("<!-- reviewed-source-sha256: ${sourceHash()} -->"))
+            throw new GradleException('Spielcode geändert: ONBOARDING.md inhaltlich prüfen/aktualisieren, dann updateOnboardingStamp ausführen. Danach erneut bauen.')
+    }
+}
+tasks.register('generateOnboardingAsset') {
+    dependsOn tasks.named('verifyOnboarding')
+    def target = layout.buildDirectory.dir('generated/onboardingAssets')
+    inputs.file(file('ONBOARDING.md')); outputs.dir(target)
+    doLast {
+        def directory = target.get().asFile; directory.mkdirs()
+        new File(directory, 'ONBOARDING.md').setText(file('ONBOARDING.md').getText('UTF-8'), 'UTF-8')
+    }
+}

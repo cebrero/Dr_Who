@@ -6,9 +6,11 @@ android {
         applicationId 'de.cebrero.drwho'
         minSdk 26
         targetSdk 36
-        versionCode 2
-        versionName '0.2.0'
+        versionCode providers.gradleProperty('drWhoVersionCode').get().toInteger()
+        versionName providers.gradleProperty('drWhoVersionName').get()
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+    sourceSets.main.assets.srcDir(rootProject.layout.buildDirectory.dir('generated/onboardingAssets'))
 }
 dependencies { implementation project(':core') }
+tasks.named('preBuild') { dependsOn rootProject.tasks.named('generateOnboardingAsset') }

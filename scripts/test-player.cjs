@@ -9,7 +9,7 @@ const characters=[
  {id:'dalek',name:'Dalek',description:'Gepanzert',endurance:'Noch festzulegen',strength:'Noch festzulegen',portrait:'/portraits/dalek.jpg',abilities:['Schuss bis 3 Felder'],owner:'B',enemy:false},
  {id:'weeping-angel',name:'Weinender Engel',description:'Zeitversetzung',endurance:'Noch festzulegen',strength:'Noch festzulegen',portrait:'/portraits/weeping-angel.jpg',abilities:['1–3 Runden aussetzen'],owner:'',enemy:false}
 ];
-const base={sessionId:'session',revision:1,started:false,ready:true,selectedCount:2,round:1,lastRoll:0,you:'A',current:null,phase:'players',helperId:'',movementDone:false,activeEnemy:'',attack:{id:'',enemyId:'',targetId:'',text:'',pending:false},players:[{id:'A',name:'Alice',characterId:'doctor',team:'partners',x:0,y:0},{id:'B',name:'Bob',characterId:'dalek',team:'partners',x:1,y:0}],characters,enemies:[],log:[]};
+const base={sessionId:'session',revision:1,started:false,ready:true,selectedCount:2,round:1,lastRoll:0,turn:{stage:'roll',roll:0,remaining:0},you:'A',current:null,phase:'players',helperId:'',movementDone:false,activeEnemy:'',attack:{id:'',enemyId:'',targetId:'',text:'',pending:false},players:[{id:'A',name:'Alice',characterId:'doctor',team:'partners',x:0,y:0},{id:'B',name:'Bob',characterId:'dalek',team:'partners',x:1,y:0}],characters,enemies:[],log:[]};
 const copy=o=>JSON.parse(JSON.stringify(o));
 const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
@@ -47,6 +47,7 @@ async function main(){
   const active=copy(base);active.revision=3;active.started=true;active.current='A';w.render(active);
   check(!$('game').hidden&&$('idle').hidden,'active partner sees controls');
   check(!$('rollButton').disabled,'active partner may act');
+  check($('controls').hidden&&$('turnChoices').hidden,'first roll required before moving or acting');
   const waiting=copy(active);waiting.revision=4;waiting.current='B';w.render(waiting);
   check(!$('idle').hidden&&$('game').hidden,'uninvolved partner sees TARDIS');
   check($('idle').querySelector('.tardis'),'TARDIS animation exists');
@@ -70,6 +71,12 @@ async function main(){
   const other=copy(attack);other.revision=10;other.attack.targetId='B';w.render(other);
   check($('battle').hidden&&!$('idle').hidden,'attack on someone else leaves player idle');
   w.render(active);check($('game').hidden,'late stale snapshot cannot reactivate wrong view');
+  const choice=copy(active);choice.revision=11;choice.turn={stage:'choice',roll:5,remaining:5};w.render(choice);
+  check(!$('turnChoices').hidden&&$('rollButton').hidden&&$('controls').hidden,'five exposes exactly movement/action choice');
+  check($('moveChoiceButton').textContent==='5 Felder ziehen','movement option uses actual die count');
+  const moving=copy(choice);moving.revision=12;moving.turn={stage:'move',roll:5,remaining:3};w.render(moving);
+  check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');
+  check($('turnPrompt').textContent.includes('3 von 5'),'remaining distance shown');
   console.log('PASS: '+checks+' player-page behavior checks');
  }finally{w.close()}
 }

@@ -7,3 +7,4 @@ tasks.register('smokeTest', JavaExec) {
     enableAssertions = true
 }
 check.dependsOn smokeTest
+tasks.named('smokeTest') { dependsOn rootProject.tasks.named('verifyOnboarding') }

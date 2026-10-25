@@ -17,9 +17,9 @@ public final class CoreTest {
         public void save(byte[] value) throws IOException { if (fail) throw new IOException("disk full"); data = value.clone(); }
     }
     static final class Dice extends SecureRandom {
-        int rolls, helperDraws;
+        int rolls, helperDraws, face = 4;
         @Override public int nextInt(int bound) {
-            if (bound == 6) { rolls++; return 3; }
+            if (bound == 6) { rolls++; return face-1; }
             if (bound <= 4) { helperDraws++; return bound-1; }
             return 123456;
         }
@@ -48,7 +48,7 @@ public final class CoreTest {
         String token = join(e,name); e.chooseCharacter(token,id(),character); return token;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); http();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -74,9 +74,46 @@ public final class CoreTest {
         check(result.contains("\"lastRoll\":4"), "host rolls die");
         check(result.equals(e.command(a,command,before,"roll","")), "duplicate does not mutate");
         check(dice.rolls == 1, "no reroll on retry");
+        rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"roll",""));
+        rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"action",""));
         rejects(IllegalArgumentException.class, () -> e.command(b,id(),before,"pass",""));
+        for (int step = 0; step < 4; step++) e.command(a,id(),revision(e.snapshot(a)),"move","S");
+        e.command(b,id(),revision(e.snapshot(b)),"roll","");
         e.command(b,id(),revision(e.snapshot(b)),"move","S");
         check(e.snapshot(b).contains("\"x\":1,\"y\":1"), "movement recorded");
+    }
+    static void diceRules() throws Exception {
+        for (int face = 1; face <= 6; face++) {
+            MemoryStore store = new MemoryStore(); Dice dice = new Dice(); dice.face = face;
+            GameEngine e = new GameEngine(store,dice); String a = ready(e,"A","doctor"),b=ready(e,"B","dalek");e.startDemo();
+            rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"action",""));
+            e.command(a,id(),revision(e.snapshot(a)),"roll","");
+            String rolled=e.snapshot(a);check(rolled.contains("\"roll\":"+face),"die value saved for each face");
+            if(face>=5){
+                check(rolled.contains("\"stage\":\"choice\""),"5/6 enable movement/action choice");
+                rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"move","S"));
+                e.command(a,id(),revision(e.snapshot(a)),"chooseMove","");
+            } else check(rolled.contains("\"stage\":\"move\""),"1–4 require movement");
+            for(int step=0;step<face;step++){
+                // S then E then S... exercises right-angle changes without diagonal movement.
+                String direction=step%2==0?"S":"E",request=id();long rev=revision(e.snapshot(a));
+                String moved=e.command(a,request,rev,"move",direction);
+                check(moved.equals(e.command(a,request,rev,"move",direction)),"movement retry never consumes two steps");
+                if(step+1<face) {
+                    check(moved.contains("\"remaining\":"+(face-step-1)),"remaining steps exact");
+                    GameEngine restored=new GameEngine(store,dice);check(restored.snapshot(a).equals(moved),"mid-movement restart exact");
+                    rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"action",""));
+                }
+            }
+            check(e.snapshot(a).contains("\"current\":"+GameEngine.quote(text(e.snapshot(b),"you"))),"turn ends after exact die count");
+            check(e.snapshot(a).contains("\"stage\":\"roll\""),"next player starts with a new die roll");
+        }
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;GameEngine e=new GameEngine(store,dice);
+        String a=ready(e,"A","doctor");e.startDemo();e.command(a,id(),revision(e.snapshot(a)),"roll","");
+        GameEngine restored=new GameEngine(store,dice);check(restored.snapshot(a).contains("\"stage\":\"choice\""),"5/6 choice survives reload without reroll");
+        restored.command(a,id(),revision(restored.snapshot(a)),"action","");
+        check(restored.snapshot(a).contains("\"round\":2"),"action replaces movement and ends turn");
+        check(restored.snapshot(a).contains("Wirkung noch nicht berechnet"),"unfinished character effects explicitly marked");
     }
     static void persistence() throws Exception {
         MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store, dice);
@@ -136,9 +173,10 @@ public final class CoreTest {
     }
     static void enemyPhase() throws Exception {
         MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=new GameEngine(store,dice);
+        dice.face=5;
         String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();
         rejects(IllegalArgumentException.class,e::requestEnemyMovement);
-        e.command(a,id(),revision(e.snapshot(a)),"pass","");e.command(b,id(),revision(e.snapshot(b)),"pass","");
+        for(String token:Arrays.asList(a,b)){e.command(token,id(),revision(e.snapshot(token)),"roll","");e.command(token,id(),revision(e.snapshot(token)),"action","");}
         check(e.snapshot(a).contains("\"phase\":\"enemies\""),"enemy phase follows all partners");
         check(e.snapshot(a).contains("\"round\":1"),"round ends after enemies");
         String helper=e.requestEnemyMovement();check(helper.equals("Bob"),"uniform bounded draw selects helper");
@@ -158,13 +196,15 @@ public final class CoreTest {
         check(restored.snapshot(a).contains("\"round\":2")&&restored.snapshot(a).contains("\"phase\":\"players\""),"next round begins after acknowledged enemy turn");
     }
     static void migration() throws Exception {
-        for(int format:new int[]{1,2}){
+        for(int format:new int[]{1,2,3}){
             MemoryStore store=new MemoryStore();ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
             out.writeInt(0x4457484f);out.writeInt(format);out.writeUTF("old-game");out.writeUTF("123456");out.writeBoolean(true);
             out.writeInt(7);out.writeInt(0);out.writeInt(4);out.writeLong(10);out.writeInt(1);
             out.writeUTF("old-player");out.writeUTF("old-token");out.writeUTF("Alice");out.writeUTF(id());out.writeInt(2);out.writeInt(3);
-            if(format==2){out.writeUTF("doctor");out.writeInt(1);out.writeUTF("dalek");}
-            out.writeInt(0);out.writeInt(0);store.data=bytes.toByteArray();GameEngine e=new GameEngine(store);
+            if(format>=2){out.writeUTF("doctor");out.writeInt(1);out.writeUTF("dalek");}
+            out.writeInt(0);out.writeInt(0);
+            if(format>=3){out.writeUTF("players");out.writeInt(0);out.writeUTF("");out.writeBoolean(false);out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeBoolean(false);}
+            store.data=bytes.toByteArray();GameEngine e=new GameEngine(store);
             if(format==1){check(!e.readyForPlay(),"v1 requires character before resuming");e.chooseCharacter("old-token",id(),"doctor");}
             check(e.playing(),"old game resumes after setup");check(e.snapshot("old-token").contains("\"round\":7"),"migration keeps round");
             check(e.snapshot("old-token").contains("\"x\":2,\"y\":3"),"migration keeps position");

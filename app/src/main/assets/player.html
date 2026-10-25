@@ -7,7 +7,7 @@
 <style>
 .characters{display:grid;gap:18px}.dossier{overflow:hidden;padding:0}.portrait{height:210px;background:radial-gradient(ellipse at 50% 30%,#265c7e,#122844 60%,#0b1427);display:grid;place-items:center;position:relative;color:#81cee1;letter-spacing:.12em}.portrait img{position:absolute;width:100%;height:100%;object-fit:cover}.portrait span{font-size:15px}.details{padding:18px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{padding:12px;background:#081423;border-radius:10px}.stat small{display:block;margin-bottom:5px}.chosen{border-color:#79e0ee}.tag{font-size:12px;letter-spacing:.08em;color:#7ee5ef}.choose{width:100%;margin-top:14px}.battle{border-color:#8f455c}.battle h2{color:#ffb3bf}.outcome{font-size:20px;white-space:pre-wrap;line-height:1.6}.flight{height:300px;position:relative;overflow:hidden;border-radius:18px;background:radial-gradient(ellipse at center,#173756,#070d1b 70%)}.star{position:absolute;width:3px;height:3px;background:#c5e5ff;border-radius:50%;box-shadow:90px 60px #82acdb,190px 210px #82acdb,270px 100px white,40px 220px white,140px 130px white;left:10%;top:10%}.tardis{position:absolute;width:84px;height:142px;left:calc(50% - 42px);top:70px;background:linear-gradient(90deg,#173c70,#23568b 55%,#153968);border:4px solid #2c5a8b;box-shadow:0 0 45px #5bbde74a;animation:tardisFly 9s ease-in-out infinite}.tardis:before{content:'POLICE BOX';position:absolute;top:4px;left:1px;right:1px;background:#0a1933;color:#fff;text-align:center;font-size:8px;letter-spacing:1px;padding:3px 0}.lamp{position:absolute;top:-18px;left:29px;width:17px;height:14px;background:#a6e9ff;box-shadow:0 0 22px #82d9ff}.windows{position:absolute;left:7px;right:7px;top:29px;height:36px;background:repeating-linear-gradient(90deg,transparent 0 9px,#23568b 9px 12px),linear-gradient(#b4e6ed 0 45%,#23568b 45% 55%,#b4e6ed 55%);border:2px solid #12315a}.panels{position:absolute;left:7px;right:7px;top:73px;bottom:5px;background:linear-gradient(90deg,transparent 46%,#14335d 46% 54%,transparent 54%);border:2px solid #13365e}.idletext{text-align:center}.compare{display:grid;gap:16px}@keyframes tardisFly{0%,100%{transform:translate(-55px,25px) rotate(-17deg) scale(.85)}35%{transform:translate(60px,-25px) rotate(18deg) scale(1.1)}70%{transform:translate(15px,45px) rotate(340deg) scale(.72)}}@media(prefers-reduced-motion:reduce){.tardis{animation:none}}
 </style>
-<header><small>DEIN TABLETOP-BEGLEITER</small><h1>DR_WHO</h1><small>Technikdemo 0.2.0 · lokal &amp; ohne Konto</small></header>
+<header><small>DEIN TABLETOP-BEGLEITER</small><h1>DR_WHO</h1><small>Technikdemo 0.3.0 · lokal &amp; ohne Konto</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <form id="join" class="card"><h2>Der Runde beitreten</h2>
@@ -18,10 +18,13 @@
 <section id="idle" class="card" hidden><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 class="idletext">Unterwegs durch Raum und Zeit</h2><p id="idleStatus" class="idletext"></p></section>
 <section id="helper" class="card" hidden><small>DU WURDEST ZUFÄLLIG AUSGEWÄHLT</small><h2>Bewege die Gegnerfigur</h2><div id="helperProfile"></div><p>Der Spielleiter nennt Ziel und Weg. Versetze die Figur auf dem Tisch und bestätige anschließend die Bewegung.</p><button id="confirmMovement" class="primary">Figur bewegt · bestätigen</button></section>
 <section id="battle" class="card battle" hidden aria-live="polite"><small>DEIN CHARAKTER WIRD ANGEGRIFFEN</small><h2 id="battleTitle"></h2><p id="outcome" class="outcome"></p><div class="compare"><div><h2>Dein Charakter</h2><div id="defenderProfile"></div></div><div><h2>Dein Gegner</h2><div id="attackerProfile"></div></div></div><button id="ackAttack" class="primary">Verstanden · weiter</button></section>
-<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="myProfile"></div><div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><div id="roll" aria-live="polite"></div>
-<p class="muted">Techniktest: pro Zug eine Bewegung um ein Feld ODER ein W6-Test ODER passen. Figuren auf dem Tisch selbst entsprechend versetzen. Noch keine Wände oder Charakterfähigkeiten.</p>
+<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><details><summary>Dein Charakter-Steckbrief</summary><div id="myProfile"></div></details><div id="roll" aria-live="polite"></div>
+<p id="turnPrompt" class="outcome"></p>
+<button type="button" id="rollButton" class="primary">Jetzt würfeln</button>
+<div id="turnChoices" hidden><button id="moveChoiceButton" class="primary" type="button">Bewegen</button><button id="actionChoiceButton" class="wide" type="button">Aktion wählen · Techniktest</button><p class="muted">Die Aktionswahl wird gespeichert. Ihre konkrete Wirkung folgt mit den Charakterregeln.</p></div>
+<p class="muted">Genau die gewürfelte Anzahl Felder ziehen. Nur Nord, Ost, Süd und West; Richtungswechsel sind erlaubt. Bestätige jeden Schritt am eigenen Handy und versetze die echte Figur entsprechend.</p>
 <div class="controls" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div>
-<button type="button" id="rollButton" class="primary">W6-Test würfeln</button><button type="button" id="passButton" class="wide">Passen</button></section>
+<div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><p class="muted">Freies 6×6-Testfeld. Wände, Türzustände und Regeln für blockierte Wege folgen noch.</p></section>
 <section class="card"><h2>Was passiert ist</h2><ol id="log"></ol></section><p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main>
 <script>
 'use strict';
@@ -41,7 +44,10 @@ async function api(path,data){
 }
 function controls(){
  const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!busy&&!pending&&!state.attack.pending;
- document.querySelectorAll('#controls button,#rollButton,#passButton').forEach(b=>b.disabled=!active);
+ document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
+ $('rollButton').disabled=!active||state.turn.stage!=='roll';
+ $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
+ $('actionChoiceButton').disabled=!active||state.turn.stage!=='choice';
  $('retry').hidden=!pending;$('retry').disabled=busy;
  $('confirmMovement').disabled=busy||!!pending;
  $('ackAttack').disabled=busy||!!pending;
@@ -89,13 +95,16 @@ function render(s){
    const figure=document.createElement('span');figure.className='piece';figure.textContent=p.name;cell.append(figure);if(p.id===s.you)cell.classList.add('mine');
   }$('grid').append(cell);
  }
- $('roll').textContent=s.lastRoll?'W6 · '+s.lastRoll:'';$('log').replaceChildren();
+ $('roll').textContent=s.turn.roll?'W6 · '+s.turn.roll:'?';$('log').replaceChildren();
+ $('rollButton').hidden=s.turn.stage!=='roll';$('turnChoices').hidden=s.turn.stage!=='choice';$('controls').hidden=s.turn.stage!=='move';
+ $('turnPrompt').textContent=s.turn.stage==='roll'?'Dein Zug beginnt: zuerst würfeln.':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
+ $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
  for(const event of s.log.slice(-8).reverse()){const li=document.createElement('li');li.textContent=event;$('log').append(li)}controls();
 }
 async function poll(){
  if(!token||busy)return;
  try{render(await api('/api/state'));if(!pending)$('message').textContent=''}
- catch(e){$('message').textContent=e.status===401?'Diese Anmeldung gehört nicht zu dieser Partie. Host oder Browseradresse prüfen.':'Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#passButton').forEach(b=>b.disabled=true)}
+ catch(e){$('message').textContent=e.status===401?'Diese Anmeldung gehört nicht zu dieser Partie. Host oder Browseradresse prüfen.':'Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true)}
 }
 $('join').addEventListener('submit',async event=>{
  event.preventDefault();if(joining)return;joining=true;$('joinButton').disabled=true;
@@ -124,7 +133,8 @@ function choose(characterId){
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
 }
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
-$('rollButton').addEventListener('click',()=>command('roll'));$('passButton').addEventListener('click',()=>command('pass'));$('retry').addEventListener('click',send);
+$('rollButton').addEventListener('click',()=>command('roll'));$('retry').addEventListener('click',send);
+$('moveChoiceButton').addEventListener('click',()=>command('chooseMove'));$('actionChoiceButton').addEventListener('click',()=>command('action'));
 $('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
 if(token){$('join').hidden=true;$('game').hidden=false;poll()}setInterval(poll,1500);
 </script></html>
