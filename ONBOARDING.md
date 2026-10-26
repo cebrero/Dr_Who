@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.8.0 · Raummeister, physischer 20×20-Aufbau und Portalereignisse**
-<!-- app-version: 0.8.0 -->
-<!-- reviewed-source-sha256: 10f2b1720a0ebbe74571aef5cd90410ac66521da4ed3e4d6ab027e79918186a5 -->
+Stand: **26.10.2026 · Version 0.8.1 · Portalcode korrigieren und sichere Rückkehr zur Anmeldung**
+<!-- app-version: 0.8.1 -->
+<!-- reviewed-source-sha256: cd94372af81b2e445ec2a5b0ff7f838d0dda9c6b21831aa86c178945dc68c81a -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.8.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.8.1
 
 ### Vor der Partie
 
@@ -125,7 +125,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.8.0 |
+| Schritt | Regel | Umsetzung 0.8.1 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -709,7 +709,33 @@ Inventar und Stückzahlen für einen solchen Generator fehlen weiterhin.
   Quittungsprüfung am Host. Verlorene Antwort nur mit gleicher Anfrage-ID erneut senden. Keine
   gesamte Karte aus dem Browser blind übernehmen. Größenlimits gelten weiter.
 
-## 9. Technische Grundlage 0.8.0
+## 8c. Falscher Portalcode und Rückkehr zur Anmeldung ab 0.8.1
+
+Nutzer meldet: Nach einem falsch eingegebenen Portalcode kommt der Client nicht zurück und
+muss den Code prüfen können. Der Host hat falsche Codes schon zuvor vor Vergabe eines Platzes
+abgewiesen. Die bisherige Oberfläche meldete Fehler nur allgemein; der Rücksprung aus 0.8.0
+räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die Anmeldung verdecken.
+
+- Vor dem Senden Namen und genau sechs Ziffern prüfen. Fehlender/zu kurzer Code wird direkt
+  am Codefeld erklärt. Während der Hostprüfung genau eine Anfrage, Felder vorübergehend gesperrt.
+- Falscher sechsstelliger Code: Hostantwort HTTP 400 mit `errorCode=invalid_portal_code`, weiterhin
+  keine Vergabe eines Spielerplatzes und keine Ausgabe des richtigen Codes. Anmeldedrosselung bleibt.
+- Client bleibt bei der Anmeldung, markiert das Codefeld und wählt den Inhalt zum Überschreiben.
+  Name bleibt erhalten, alle Felder und Beitreten werden wieder bedienbar. Sichtbare Fehlermeldung
+  direkt im Formular; normale Belegungsabfragen löschen sie nicht. Bearbeiten entfernt alte Markierung.
+- Abgelaufene Anmeldung räumt alle vier Popups, Aufbauansicht, feste Editor-/Spielklassen und
+  sämtliche Hintergrundsperren auf. Auch ein Versionswechsel verlässt den alten Editor vollständig,
+  bevor der Neuladen-Hinweis erscheint. Keine History-Zurück-Navigation und keine Partie zurücksetzen.
+- Erfolgreiche Anmeldeanfrage zusätzlich als `saved.registration` behalten; bestehende Browser
+  übernehmen ihren bisherigen Nachweis. Falsche Korrekturversuche überschreiben diesen Nachweis
+  nicht. Stimmen Name und richtiger Code wieder, wird der ursprüngliche Anfrage-Nachweis benutzt:
+  derselbe registrierte Platz kann auch nach Spielstart wieder geöffnet werden. Kein Token-Bypass.
+- Netzwerkfehler melden Verbindung/Übertragung statt fälschlich einen ungültigen Code zu markieren.
+  Wiederholung derselben unbestätigten Anmeldung verwendet weiterhin dieselbe Anfrage-ID.
+- App/Client **0.8.1 / Code 11**; API-Protokoll **3** und Speicherformat **7** bleiben gleich.
+  Keine Spielregeländerung. Bestehende Partien, Raumgefüge, Figuren und Züge werden erhalten.
+
+## 9. Technische Grundlage 0.8.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -773,6 +799,24 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.8.1 am 26.10.2026:
+
+- Kern-/HTTP-Prüfung: **415 Prüfungen bestanden**; neu eindeutiger Codefehler, keine Preisgabe des
+  richtigen Codes, kein belegter Platz bei falschem Code sowie korrigierter Wiederbeitritt während
+  einer bereits gestarteten Partie mit demselben ursprünglichen Nachweis.
+- `npm test`: **155 bisherige + 46 neue = 201 DOM-Prüfungen bestanden**. Lokales Format, echte
+  Hostablehnung, Fokus/Markierung, erhaltene Eingaben, keine doppelten Anfragen, sichere Korrektur,
+  Netzwerk-Retry, Anmelderückkehr aus Raummeister-/erzwungenem-/Go-/Richtungspopup und Editor,
+  erhaltene Wiederbeitritts-Nachweise trotz zwischenzeitlich falschem Code sowie Versionswechsel.
+- Zwei echte mobile Chromium-Browser am Java-HTTP-Server: vor beiden Beitritten falscher Code,
+  sofort korrigierbares Formular, unveränderte Platzbelegung und danach erfolgreiche Anmeldung.
+  Zusätzlich alte Anmeldung aus offenem Raummeister-Popup verworfen, falscher Code, richtiger
+  Code und derselbe Spielerplatz mit ursprünglichem Nachweis während gestarteter Partie.
+  Anschließend kompletter bisheriger Aufbau-/Go-/Zugablauf weiterhin bestanden.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, nochmals
+  **415 Kernprüfungen**, Lint **0 Fehler / 16 Warnungen**. App 0.8.1 / Code 11; Signatur und finale
+  eingebettete Anleitung vor Übergabe abgleichen. Echter Telefon-/WLAN-Test weiterhin offen.
 
 Für 0.8.0 am 26.10.2026:
 
@@ -975,6 +1019,7 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 25.10.2026 | 0.6.0 | Drei Spieler-Tabs und aufklappbarer Verlauf; sichtbare Zughinweise, Steckbrief als Warteansicht mit vollständigem Bild; sechs feste Würfelseiten und Landedrehung passend zum gespeicherten Ergebnis ohne Zahlentausch |
 | 26.10.2026 | 0.7.0 | Gespeicherter Zugstart Your move... / Go mit Portal-Charakterkarte, gerichtete Aktionen per Popup, Story mit Host-Zeitstempeln und Sprecher in erster Person sowie einmalig gespeicherter Dalek-Klangtext; Format 6 / Protokoll 2 |
 | 26.10.2026 | 0.8.0 | Raummeister-Auswahl mit Ja/Nein und verbindlicher Portalwahl, gespeicherter 20×20-Kacheleditor mit zweifeldrigem Portal/Startfiguren, Live-Aufbau am Portal, Startfilm, sparse Karte und Wandprüfung, große 3-Sekunden-Ereignisse, Altpartien-Aufbau nachtragen; Format 7 / Protokoll 3 |
+| 26.10.2026 | 0.8.1 | Eindeutige Portalcode-Prüfung mit Inlinefehler/Fokus, Korrektur ohne Sackgasse, vollständig aufgeräumte alte Popups und Editoransicht, erhaltene ursprüngliche Anmeldenachweise für sicheren Wiederbeitritt; Spielregeln/Format/Protokoll unverändert |
 
 ## 13. Fortsetzung in einem anderen Chat
 

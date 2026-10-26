@@ -9,6 +9,9 @@ import java.nio.charset.StandardCharsets;
 
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
+    public static final class InvalidPortalCodeException extends IllegalArgumentException {
+        public InvalidPortalCodeException(){super("Portalcode falsch.");}
+    }
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
     private static final int FORMAT = 7, MAGIC = 0x4457484f;
     private final Store store;
@@ -151,7 +154,7 @@ public final class GameEngine {
         return b.toString();
     }
     public synchronized String join(String name, String code, String requestId) throws IOException {
-        if (!state.code.equals(code)) throw new IllegalArgumentException("Portalcode falsch.");
+        if (!state.code.equals(code)) throw new InvalidPortalCodeException();
         name = name == null ? "" : name.trim();
         if (name.isEmpty() || name.length() > 24 || name.codePoints().anyMatch(Character::isISOControl))
             throw new IllegalArgumentException("Name: 1–24 Zeichen ohne Steuerzeichen.");

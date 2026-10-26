@@ -1,10 +1,10 @@
 {
   "name": "dr-who-ui-tests",
   "private": true,
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Optional DOM tests for the Android-hosted player page; no browser runtime dependencies.",
   "scripts": {
-    "test": "node scripts/test-player.cjs",
+    "test": "node scripts/test-player.cjs && node scripts/test-join.cjs",
     "test:browser": "node scripts/test-browser.cjs"
   },
   "devDependencies": {

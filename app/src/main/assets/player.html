@@ -46,14 +46,16 @@ body.building{max-width:980px;padding-top:12px}body.building>header{padding:4px 
 /* Keep the palette in its own row so it never covers the last map rows. */
 body.editing-board{height:100svh;max-height:100svh;overflow:hidden;padding:8px 10px;display:flex;flex-direction:column}body.editing-board>header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 4px;padding:0;flex-shrink:0}body.editing-board>header h1{font-size:23px}body.editing-board>header small{font-size:10px}body.editing-board #message{font-size:12px;flex-shrink:0;min-height:20px;height:20px;line-height:20px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}body.editing-board #setupArea{flex:1;min-height:0;display:flex;flex-direction:column}#boardEditor{flex:1;min-height:0;display:flex;flex-direction:column}#boardEditor>.setup-heading,#boardEditor>.setup-copy,#boardEditor>.board-tools,#boardStatus,#spawnList,#boardLegend,#buildPalette{flex-shrink:0}#boardEditor .setup-copy{font-size:12px;line-height:1.4;margin:5px 0}#boardEditor h2{font-size:25px}.board-tools{margin:4px 0;flex-wrap:nowrap}.board-tools button{font-size:11px;min-width:0;min-height:36px;padding:7px 5px}#boardStatus{margin:4px 0;min-height:18px;font-size:11px;line-height:1.35}#boardViewport{height:auto;flex:1;min-height:140px}#boardLegend{font-size:11px;margin:5px 0}#buildPalette{position:static;padding:7px;margin-top:2px;border-radius:10px}.palette-tile{min-height:64px;font-size:9px}.palette-tile svg{height:32px}.palette-bottom{margin-top:5px}.palette-bottom p{font-size:10px;line-height:1.35}#boardTrash{min-height:36px;padding:7px 9px;font-size:11px}.spawn-list button{min-height:34px;padding:5px 8px}#boardEditor .setup-kicker{font-size:10px}#saveBoard{font-size:12px;padding:9px;min-height:44px}
 
+#joinError{padding:12px;border-left:3px solid #9b3d32;background:#f7ddd2;color:#792b22;border-radius:5px;line-height:1.5}#join input[aria-invalid=true]{border:2px solid #9b3d32;box-shadow:0 0 0 2px #a7463220}
 </style>
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.8.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.8.1</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
-<form id="join" class="card"><h2>Der Runde beitreten</h2>
+<form id="join" class="card" novalidate><h2>Der Runde beitreten</h2>
 <label for="name">Dein Name</label><input id="name" maxlength="24" required autocomplete="nickname">
-<label for="code">Portalcode</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
+<label for="code">Portalcode</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off" aria-describedby="joinError">
+<p id="joinError" role="alert" hidden></p>
 <button class="primary" id="joinButton">Beitreten</button><p id="joinOccupancy" class="muted" role="status" aria-live="polite">Spielerplätze werden geladen …</p></form>
 <section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
 <section id="setupArea" hidden>
@@ -99,19 +101,20 @@ body.editing-board{height:100svh;max-height:100svh;overflow:hidden;padding:8px 1
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.8.0',PROTOCOL_VERSION=3;
+const CLIENT_VERSION='0.8.1',PROTOCOL_VERSION=3;
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 let directionPicking=false,shownModal='',previousFocus=null,modalError='';
 try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
 let token=saved.token||'';pending=saved.pending||null;
+if(token&&saved.join&&!saved.registration)saved.registration={...saved.join};
 function persist(){saved.token=token;saved.pending=pending;localStorage.setItem(key,JSON.stringify(saved))}
 function uuid(){const bytes=new Uint8Array(16);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}
 async function api(path,data){
  const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),6000);
  try{
   const response=await fetch(path,{method:data?'POST':'GET',headers:{'X-Dr-Who':'1',...(data?{'Content-Type':'application/x-www-form-urlencoded'}:{}),...(token?{'Authorization':'Bearer '+token}:{})},body:data?new URLSearchParams(data):undefined,cache:'no-store',signal:abort.signal});
-  const value=await response.json();if(!response.ok){const e=new Error(value.error||'Anfrage fehlgeschlagen.');e.status=response.status;throw e}return value;
+  const value=await response.json();if(!response.ok){const e=new Error(value.error||'Anfrage fehlgeschlagen.');e.status=response.status;e.code=value.errorCode;throw e}return value;
  }finally{clearTimeout(timeout)}
 }
 function controls(){
@@ -288,20 +291,35 @@ function returnToJoin(){
  delete saved.sessionId;delete saved.revealedRoll;
  let storageFailed=false;try{persist()}catch(e){storageFailed=true}
  $('name').value=name;$('join').hidden=false;
- document.body.classList.remove('in-game');viewMode='';attentionKey='';
- for(const id of ['playerArea','selection','game','idle','helper','battle'])$(id).hidden=true;
+ resetJoinPresentation();viewMode='';attentionKey='';
  $('roll').classList.remove('rolling','revealed');$('characters').replaceChildren();delete $('characters').dataset.signature;cardIndex=0;
  $('message').textContent='Die gespeicherte Anmeldung passt nicht zu diesem Portal. Gib den aktuellen Portalcode ein und tritt erneut bei.'+(storageFailed?' Browser-Speicherung bitte erlauben.':'');
  controls();
+ $('code').focus();$('code').select();
+}
+function resetJoinPresentation(){
+ document.body.classList.remove('in-game','building','editing-board');
+ for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog'])$(id).hidden=true;
+ shownModal='';previousFocus=null;directionPicking=false;toolTap=null;
+ if(drag)finishDrag({pointerId:drag.pointer},true);
+ document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>{e.inert=false;e.removeAttribute('inert')});
+ $('join').hidden=false;
+}
+function clearJoinError(){
+ $('joinError').hidden=true;$('joinError').textContent='';$('code').removeAttribute('aria-invalid');$('name').removeAttribute('aria-invalid');
+}
+function joinError(message,field){
+ resetJoinPresentation();$('joinError').textContent=message;$('joinError').hidden=false;
+ if(field){$(field).setAttribute('aria-invalid','true');$(field).focus();$(field).select()}
 }
 function requireReload(message){
  compatibilityBlocked=true;state=null;
- document.body.classList.remove('in-game');
+ resetJoinPresentation();
  for(const id of ['playerArea','join','selection','game','idle','helper','battle'])$(id).hidden=true;
  $('reloadPage').hidden=false;$('message').textContent=message;controls();
 }
 async function poll(){
- if(busy||compatibilityBlocked)return;
+ if(busy||joining||compatibilityBlocked)return;
  if(Date.now()-portalCheckedAt>=10000){
   const accessBeforeCheck=token;
   try{
@@ -333,14 +351,24 @@ async function poll(){
  }
 }
 $('join').addEventListener('submit',async event=>{
- event.preventDefault();if(joining)return;joining=true;$('joinButton').disabled=true;
+ event.preventDefault();if(joining||compatibilityBlocked)return;clearJoinError();
+ const name=$('name').value.trim(),code=$('code').value.trim();
+ if(!name||name.length>24){joinError('Bitte gib deinen Namen ein (höchstens 24 Zeichen).','name');return}
+ if(!/^[0-9]{6}$/.test(code)){joinError('Bitte gib den sechsstelligen Portalcode ein.','code');return}
+ joining=true;$('joinButton').disabled=true;$('name').disabled=true;$('code').disabled=true;$('joinButton').textContent='Portalcode wird geprüft …';
  try{
-  const name=$('name').value.trim(),code=$('code').value;
-  if(!saved.join||saved.join.name!==name||saved.join.code!==code)saved.join={name,code,requestId:uuid()};persist();
-  const credentials=await api('/api/join',saved.join);token=credentials.token;saved.sessionId=credentials.sessionId;pending=null;persist();await poll();
- }catch(e){$('message').textContent=e.message||'Anmeldung fehlgeschlagen.'}
- finally{joining=false;$('joinButton').disabled=false}
+  if(saved.registration?.name===name&&saved.registration.code===code)saved.join={...saved.registration};
+  else if(!saved.join||saved.join.name!==name||saved.join.code!==code)saved.join={name,code,requestId:uuid()};persist();
+  const credentials=await api('/api/join',saved.join);token=credentials.token;saved.sessionId=credentials.sessionId;saved.registration={...saved.join};pending=null;persist();$('join').hidden=true;
+ }catch(e){
+  $('name').disabled=false;$('code').disabled=false;
+  if(e.code==='invalid_portal_code'||e.status===400&&e.message==='Portalcode falsch.')joinError('Der Portalcode ist falsch. Prüfe den Code am Portal und versuche es erneut.','code');
+  else joinError(e.message||'Anmeldung fehlgeschlagen. Bitte erneut versuchen.');
+ }
+ finally{joining=false;$('joinButton').disabled=false;$('name').disabled=false;$('code').disabled=false;$('joinButton').textContent='Beitreten'}
+ if(token)await poll();
 });
+$('code').addEventListener('input',clearJoinError);$('name').addEventListener('input',clearJoinError);
 async function send(){
  if(!pending||busy)return;const access=token,request=pending;modalError='';busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
  try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();if(request.action==='tileMove')selectedTile=request.direction.split(',').slice(2).join(',');render(s);$('message').textContent='Gespeichert.'}

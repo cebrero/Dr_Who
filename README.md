@@ -8,7 +8,11 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.8.0
+## Stand 0.8.1
+
+Neu in 0.8.1: Falscher Portalcode wird direkt im Formular markiert und ist sofort korrigierbar.
+Name und ursprüngliche Anmeldung bleiben erhalten. Alte Popups und Aufbauansichten werden
+beim Rücksprung vollständig geschlossen. Eine Korrektur erzeugt keinen zweiten Spielerplatz.
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
@@ -58,7 +62,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 411 Kern-/HTTP-Prüfungen und 155 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 415 Kern-/HTTP-Prüfungen und 201 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 

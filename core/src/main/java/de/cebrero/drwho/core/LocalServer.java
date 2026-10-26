@@ -113,6 +113,7 @@ public final class LocalServer implements Closeable {
                 } else if (path.equals("/api/character")) json(out, 200, engine.chooseCharacter(token, form.get("requestId"), form.get("characterId")));
                 else json(out, 200, engine.command(token, form.get("requestId"), Long.parseLong(form.getOrDefault("revision", "-1")), form.get("action"), form.get("direction")));
             } catch (SecurityException e) { json(out, 401, "{\"error\":" + GameEngine.quote(e.getMessage()) + "}"); }
+            catch (GameEngine.InvalidPortalCodeException e) { json(out, 400, "{\"error\":\"Portalcode falsch.\",\"errorCode\":\"invalid_portal_code\"}"); }
             catch (IllegalArgumentException e) { json(out, 400, "{\"error\":" + GameEngine.quote(e.getMessage() == null ? "Ungültige Eingabe." : e.getMessage()) + "}"); }
             catch (IOException e) { json(out, 503, "{\"error\":\"Speichern oder Übertragung fehlgeschlagen. Gleiche Anfrage erneut senden.\"}"); }
         } catch (IOException ignored) { /* A disconnect never rolls back an already committed action. */ }

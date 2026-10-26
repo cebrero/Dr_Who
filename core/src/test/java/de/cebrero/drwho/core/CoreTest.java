@@ -404,6 +404,9 @@ public final class CoreTest {
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");
+            Response wrong=call(server,"/api/join","name=A&code=654321&requestId="+id(),null,true);
+            check(wrong.status==400&&wrong.body.contains("\"errorCode\":\"invalid_portal_code\""),"wrong code has explicit machine-readable error");
+            check(!wrong.body.contains(e.code())&&call(server,"/api/lobby",null,null,false).body.contains("\"occupied\":0"),"wrong code reveals no correct code and occupies no player slot");
             String form="name=A&code="+e.code()+"&requestId="+id();
             check(call(server,"/api/join",form,null,false).status==401,"cross-site form blocked");
             Response joined=call(server,"/api/join",form,null,true);check(joined.status==200,"HTTP join");
@@ -416,6 +419,10 @@ public final class CoreTest {
             check(call(server,"/api/enemy","characterId=dalek",token,true).status==404,"enemy administration unavailable to player API");
             check(call(server,"/portraits/doctor.jpg",null,null,false).status==404,"missing portrait returns placeholder status");
             start(e);
+            Response rejectedRetry=call(server,"/api/join",form.replace(e.code(),"654321"),null,true);
+            check(rejectedRetry.status==400,"wrong code cannot reclaim even with a known join proof");
+            Response reclaimed=call(server,"/api/join",form,null,true);
+            check(reclaimed.status==200&&text(reclaimed.body,"token").equals(token)&&call(server,"/api/lobby",null,null,false).body.contains("\"occupied\":1"),"corrected proof reclaims same existing slot during started game");
             check(call(server,"/api/command","action=roll&revision="+revision(e.snapshot(token))+"&requestId="+id(),token,true).status==400,"HTTP roll requires Go first");
             check(call(server,"/api/command","action=beginTurn&revision="+revision(e.snapshot(token))+"&requestId="+id(),token,true).status==200,"HTTP active player starts turn with Go");
             String cmd="action=roll&revision="+revision(e.snapshot(token))+"&requestId="+id();

@@ -93,3 +93,9 @@
 31. Massive Kachelwände blockieren beidseitig Bewegung, leere Stellen existieren nicht. Türen
     vorläufig passierbar; Kerker/Brunnen/Portal sind noch ohne Sonderwirkung. Blockierte volle
     Würfelstrecke, Türzustände und Szenariostart sind offene Regeln. Kein neues Passen erfinden.
+
+32. Seit 0.8.1 Codefehler inline am Codefeld, Format lokal und Richtigkeit am Host prüfen.
+    Felder nach Fehler/Timeout freigeben; Name und ursprünglichen erfolgreichen Anmeldenachweis
+    (`saved.registration`) trotz falscher Korrektur erhalten. Nie neuen Platz still belegen.
+    Beim Rücksprung alle vier Modals, inert und Aufbau-/Editor-/Spielansichten vollständig lösen.
+    Versionswechsel ebenfalls aus altem Editor befreien. Netzwerkfehler ist kein Codefehler.
