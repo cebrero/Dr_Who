@@ -19,7 +19,7 @@ async function main(){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.0',protocolVersion:5,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.1',protocolVersion:5,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
    if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
    if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
@@ -66,18 +66,18 @@ async function main(){
   const active=copy(base);active.revision=3;active.started=true;active.current='A';w.render(active);
   check(!$('game').hidden&&$('idle').hidden,'active partner sees controls');
   check(!$('playerArea').hidden&&!$('playPanel').hidden&&$('tabPlay').getAttribute('aria-selected')==='true','own turn opens play tab');
-  check($('turnNoticeTitle').textContent==='Du bist am Zug!'&&$('turnNotice').classList.contains('is-active'),'own-turn notice is prominent above tabs');
+  check($('turnNotice').hidden&&!$('roll').disabled,'accepted own turn removes redundant banner and enables the die');
   $('tabProfile').click();check(!$('profilePanel').hidden&&$('playPanel').hidden&&$('myProfile').textContent.includes('Der Doctor'),'profile tab exposes own dossier during own turn');
   $('tabHistory').click();check(!$('historyPanel').hidden&&$('historyDetails').open,'history tab opens collapsible event log');
   $('historyDetails').open=false;w.render(copy(active));check(!$('historyPanel').hidden&&!$('historyDetails').open,'polling preserves selected tab and collapsed history');
   $('tabHistory').dispatchEvent(new w.KeyboardEvent('keydown',{key:'Home',bubbles:true}));
   check(!$('playPanel').hidden&&w.document.activeElement===$('tabPlay'),'tab keyboard navigation selects and focuses play');
-  check(!$('rollButton').disabled,'active partner may act');
+  check(!$('roll').disabled,'active partner may act');
   check($('controls').hidden&&$('turnChoices').hidden,'first roll required before moving or acting');
   const waiting=copy(active);waiting.revision=4;waiting.current='B';w.render(waiting);
   check(!$('idle').hidden&&$('game').hidden,'uninvolved partner gets waiting status');
   check(!$('profilePanel').hidden&&$('myProfile').textContent.includes('Der Doctor'),'waiting partner sees own dossier by default');
-  check($('rollButton').disabled,'uninvolved controls disabled');
+  check($('roll').disabled,'uninvolved controls disabled');
   check($('turnNoticeTitle').textContent==='Bob ist am Zug.','notice identifies active partner');
   $('tabHistory').click();w.render(copy(waiting));check(!$('historyPanel').hidden,'waiting player may inspect history without polling forcing a tab');
   const enemy=copy(waiting);enemy.revision=5;enemy.current=null;enemy.phase='enemies';enemy.activeEnemy='weeping-angel';enemy.helperId='B';w.render(enemy);
@@ -102,10 +102,10 @@ async function main(){
   check($('battle').hidden&&!$('idle').hidden,'attack on someone else leaves player idle');
   w.render(active);check($('game').hidden,'late stale snapshot cannot reactivate wrong view');
   const choice=copy(active);choice.revision=11;choice.turn={accepted:true,stage:'choice',roll:5,remaining:5};w.render(choice);
-  check(!$('turnChoices').hidden&&$('rollButton').hidden&&$('controls').hidden,'five exposes exactly movement/action choice');
+  check(!$('turnChoices').hidden&&$('roll').disabled&&$('controls').hidden,'five exposes exactly movement/action choice');
   check($('moveChoiceButton').textContent==='5 Felder ziehen','movement option uses actual die count');
   const moving=copy(choice);moving.revision=12;moving.turn={accepted:true,stage:'move',roll:5,remaining:3};w.render(moving);
-  check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');
+  check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');check($('turnConsole').classList.contains('with-compass')&&$('controls').parentElement===$('roll').closest('.turn-console'),'die and compass share compact row');check($('turnMapField').textContent==='A1','personal map identifies own current field');
   check($('turnPrompt').textContent.includes('3 von 5'),'remaining distance shown');
   const cube=$('roll').querySelector('.dice-cube'),fixedFaces=cube.innerHTML;
   const revealing=copy(choice);revealing.revision=13;revealing.rollEvent={id:'roll-1',playerId:'A',value:5};revealing.log=['Alice würfelt 5'];w.render(revealing);
@@ -124,7 +124,7 @@ async function main(){
   const goWaiting=copy(active);goWaiting.revision=15;goWaiting.round=2;goWaiting.turn={accepted:false,stage:'roll',roll:0,remaining:0};
   const goCount=requests.length;w.render(goWaiting);
   check(!$('turnDialog').hidden&&$('yourMoveTitle').textContent==='Your move...'&&$('goButton').textContent==='Go','new own turn opens exact Your move... / Go popup');
-  check($('rollButton').disabled&&$('playerArea').inert&&w.document.activeElement===$('goButton'),'Go popup blocks and focuses before any roll');
+  check($('roll').disabled&&$('playerArea').inert&&w.document.activeElement===$('goButton'),'Go popup blocks and focuses before any roll');
   w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));check(!$('turnDialog').hidden,'Go cannot be dismissed without beginning turn');
   w.render(copy(goWaiting));check(requests.length===goCount,'polling Go prompt never begins turn automatically');
   fail=true;$('goButton').click();await tick();const goRequest=requests.at(-1).body.get('requestId');
@@ -132,14 +132,14 @@ async function main(){
   check(!$('goButton').disabled&&$('goStatus').textContent.includes('Bestätigung fehlt'),'unconfirmed Go can be retried from inside popup');
   next=copy(goWaiting);next.revision=16;next.turn.accepted=true;fail=false;$('goButton').click();await tick();
   check(requests.at(-1).body.get('requestId')===goRequest,'Go retry reuses request identity');
-  check($('turnDialog').hidden&&!$('playerArea').inert&&!$('rollButton').disabled,'confirmed Go releases own turn controls');
+  check($('turnDialog').hidden&&!$('playerArea').inert&&!$('roll').disabled,'confirmed Go releases own turn controls');
   w.render(copy(next));check($('turnDialog').hidden,'accepted turn never reopens Go on polling');
   const story=copy(next);story.revision=17;story.story=[{id:'story-1',timestampMillis:1774024440000,dateTime:'20.03.2026 17:34 Uhr',speaker:'Dr WHO',playerName:'Alice',text:'Ich gehe von Feld A1 zu Feld A2. <img src=x onerror=alert(1)>',direction:'S'}];w.render(story);
   $('tabHistory').click();const text=$('log').textContent;
   check($('tabHistory').textContent==='Story'&&$('historyDetails').querySelector('summary').textContent==='Story','history renamed to Story in tab and foldout');
   check(text.startsWith('20.03.2026 17:34 Uhr - Dr WHO:')&&text.includes('Ich gehe von Feld A1'),'Story starts with host date/time and speaker');
   check(!$('log').querySelector('img')&&text.includes('<img src=x'),'Story speech uses safe text rendering');
-  w.render(copy(story));check($('log').textContent===text,'Story time and speech never change on repeated rendering');
+  w.render(copy(story));check($('log').textContent===text,'Story time and speech never change on repeated rendering');check($('log').firstChild.classList.contains('story-bubble')&&$('log').firstChild.classList.contains('own-story'),'own story is a speech bubble');const history=copy(story);history.story.push({...story.story[0],id:'story-2',text:'Neuester Eintrag'});w.render(history);check($('log').children.length===2&&$('log').firstChild.textContent.includes('Neuester Eintrag')&&Array.from($('log').children).every(e=>!e.hidden),'all Story bubbles scroll in newest-first order without paging');
   const aiming=copy(story);aiming.revision=18;aiming.turn={accepted:true,stage:'choice',roll:6,remaining:6};aiming.characters[0].actionNeedsDirection=true;w.render(aiming);$('tabPlay').click();
   const beforeAim=requests.length;$('actionChoiceButton').click();
   check(!$('directionDialog').hidden&&w.document.querySelectorAll('[data-action-dir]').length===4,'directional action opens four compass buttons');
@@ -167,7 +167,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.0',protocolVersion:5,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.1',protocolVersion:5,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -193,7 +193,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
    w.setInterval=callback=>{recoveryPoll=callback;return 0};
    w.fetch=async(path,options)=>{
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.0',protocolVersion:5,sessionId:'old-session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.1',protocolVersion:5,sessionId:'old-session'})};
     if(path==='/api/state'){
      if(!valid)return await new Promise(resolve=>held.push(resolve));
      return {ok:true,status:200,json:async()=>copy(base)};
@@ -228,7 +228,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
    w.fetch=async(path,options)=>{
     if(options.method==='POST')postRequests++;
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.10.1':'0.10.0',protocolVersion:mismatch==='protocol'?6:5,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.10.2':'0.10.1',protocolVersion:mismatch==='protocol'?6:5,sessionId:mismatch==='party'?'new-party':'session'})};
     if(path==='/api/state')stateRequests++;
     return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
    };
@@ -253,7 +253,7 @@ async function main(){
   current.setup={stage:'selecting',id:'selection-one',roomMaster:'',candidate:'',forced:false,saved:false,legacy:false};current.board={size:20,tiles:[]};current.players.forEach(p=>{p.x=-1;p.y=-1});
   const editor=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
    w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token',sessionId:'session'}));
-   w.fetch=async(path,options)=>{if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.0',protocolVersion:5,sessionId:'session'})};
+   w.fetch=async(path,options)=>{if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.1',protocolVersion:5,sessionId:'session'})};
     if(options.method==='POST'){posts.push(new URLSearchParams(String(options.body)));if(offline)throw new Error('offline');if(bad)return {ok:false,status:400,json:async()=>({error:'Dort liegt bereits eine Kachel.'})};}
     return {ok:true,status:200,json:async()=>copy(current)};};
   }});
@@ -270,9 +270,9 @@ async function main(){
    current.revision++;current.setup.roomMaster='A';current.setup.forced=true;w.render(copy(current));check(!$('forcedDialog').hidden&&$('forcedDialog').textContent.includes('Alle haben abgelehnt'),'forced player sees portal decision popup');
    $('openBoard').click();$('northConfirm').click();check($('forcedDialog').hidden&&!$('boardEditor').hidden,'forced roommaster opens editor explicitly');w.render(copy(current));check($('forcedDialog').hidden,'polling does not repeat acknowledged forced popup');
    check($('tilePalette').children.length===11&&$('editorGrid').querySelectorAll('.board-empty').length===400,'eleven tile types and exactly twenty by twenty empty locations');
-   $('tilePalette').querySelector('[data-kind="corner"]').click();check($('boardStatus').textContent.includes('Eckwände gewählt'),'palette supports tap-to-place alternative');
+   $('tilePalette').querySelector('[data-kind="corner"]').click();check($('boardStatus').textContent.includes('Eckwände gewählt'),'palette selection describes drag placement');
    current.revision++;current.board.tiles=[{x:0,y:0,kind:'corner',rotation:0}];current.players[0].x=0;current.players[0].y=0;
-   $('editorGrid').querySelector('[data-cell="0,0"]').click();await tick();check(posts.at(-1).get('action')==='tilePlace'&&posts.at(-1).get('direction')==='0,0,corner,0','tap placement sends only authoritative tile operation');
+   const beforeEmptyTap=posts.length;$('editorGrid').querySelector('[data-cell="0,0"]').click();await tick();check(posts.length===beforeEmptyTap,'empty tap cannot place selected tile');w.render(copy(current));
    check($('editorGrid').querySelectorAll('[data-tile]').length===1&&$('boardLegend').textContent.includes('Alice · A1'),'committed tile and automatic start field visible');
    current.revision++;current.board.tiles[0].rotation=1;$('editorGrid').querySelector('[data-tile]').click();await tick();check(posts.at(-1).get('action')==='tileRotate'&&posts.at(-1).get('direction')==='0,0','tile tap requests exact 90 degree turn');
    const displayed=$('editorGrid').querySelector('[data-tile]');check(displayed.querySelector('g').getAttribute('transform')==='rotate(90 50 50)','rotation uses saved orientation');
@@ -286,7 +286,7 @@ async function main(){
    $('spawnMode').click();check(!$('spawnList').hidden&&$('boardStatus').textContent.includes('Startfeld'),'explicit mode avoids confusing start placement with tile rotation');
    current.revision++;current.players[0].x=4;current.players[0].y=4;$('editorGrid').querySelector('[data-cell="4,4"]').click();await tick();check(posts.at(-1).get('action')==='setSpawn'&&posts.at(-1).get('direction')==='A,4,4','start marker set on selected player cell');
    $('clearPalette').click();const existing=$('editorGrid').querySelector('[data-cell="0,0"]');current.revision++;current.board.tiles[0].rotation=2;existing.click();await tick();current.revision++;current.board.tiles.shift();$('boardTrash').click();await tick();check(posts.at(-1).get('action')==='tileRemove'&&posts.at(-1).get('direction')==='0,0','trash button provides accessible removal alternative');
-   current.revision++;current.setup.forced=false;w.render(copy(current));offline=true;$('tilePalette').querySelector('[data-kind="well"]').click();$('editorGrid').querySelector('[data-cell="2,2"]').click();await tick();const placeId=posts.at(-1).get('requestId');check(!$('retry').hidden&&$('saveBoard').disabled,'unconfirmed placement blocks saving and allows retry');
+   current.revision++;current.setup.forced=false;w.render(copy(current));offline=true;w.command('tilePlace','2,2,well,0');await tick();const placeId=posts.at(-1).get('requestId');check(!$('retry').hidden&&$('saveBoard').disabled,'unconfirmed placement blocks saving and allows retry');
    offline=false;current.revision++;current.board.tiles.push({x:2,y:2,kind:'well',rotation:0});$('retry').click();await tick();check(posts.at(-1).get('requestId')===placeId&&$('editorGrid').querySelector('[data-cell="2,2"][data-tile]'),'retry confirms same tile without duplicate placement');
    bad=true;$('editorGrid').querySelector('[data-cell="2,2"]').click();await tick();check($('boardStatus').textContent.includes('bereits eine Kachel')&&$('retry').hidden,'host rejection visible without speculative board change');bad=false;
    current.revision++;current.setup.stage='launching';current.setup.saved=true;$('saveBoard').click();await tick();check(posts.at(-1).get('action')==='boardSave'&&$('boardEditor').hidden&&$('setupTitle').textContent.includes('Abenteuer beginnt'),'save starts launch screen rather than immediate die controls');

@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.10.0 · Portal-Sounds, geheimer Portalschlüssel und Tasche**
-<!-- app-version: 0.10.0 -->
-<!-- reviewed-source-sha256: c2e3a58183ddee3f9b33696e4c81258b92f314b0a3a275ee24e61f2fd3e719cb -->
+Stand: **26.10.2026 · Version 0.10.1 · kompakte Spieleransicht, Story-Sprechblasen und klare Feldlabels**
+<!-- app-version: 0.10.1 -->
+<!-- reviewed-source-sha256: 159171dfae6e3deda37be5b8391e325f131fec602edeca507bbbe6076f2f3295 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.1
 
 ### Vor der Partie
 
@@ -123,16 +123,16 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
    vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
    dann drei Sekunden Startanimation und erster Spielerzug. Vorher wird ein Portalschlüssel geheim auf
    einem freien erreichbaren Feld versteckt. Beim Betreten Fund-Popup, Portalanimation und Tasche.
-   Aktuelle Details siehe Abschnitte 8d–8h.
+   Aktuelle Details siehe Abschnitte 8d–8i.
 8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
    erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.10.0 |
+| Schritt | Regel | Umsetzung 0.10.1 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
-| 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
+| 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host würfelt und speichert verbindlich; kein erneutes Würfeln bei Retry |
 | 2a | Bei 1, 2, 3 oder 4: genau diese Zahl Felder ziehen | Direkt zur Bewegung; dies ist die aus der Nutzerregel abgeleitete Interpretation |
 | 2b | Bei 5 oder 6: Bewegung ODER Charakteraktion wählen | Zwei Auswahlmöglichkeiten; kein Bewegen plus Aktion |
 | 3a | Bewegung immer genau um die Augenzahl, nicht nur bis zu dieser Zahl | Reststrecke wird nach jedem gespeicherten Schritt reduziert |
@@ -658,9 +658,9 @@ Inventar und Stückzahlen für einen solchen Generator fehlen weiterhin.
    Antippen einer platzierten Kachel dreht 90°. Ziehen innerhalb der Matrix verschiebt sie;
    in den Mülleimer ziehen entfernt sie. Portal immer als ein Teil über beide Felder behandeln.
    Rand, Überlappungen und versperrte Drehungen lehnt der Host ohne Änderung ab.
-7. Alternative Bedienung: Palettenkachel auswählen und leeres Feld antippen. Eine platzierte
+7. Seit 0.10.1 keine Kachelplatzierung per Antippen eines leeren Felds; nur Ziehen aus der Palette. Eine platzierte
    Kachel antippen und per Mülleimer-Taste entfernen; auf fokussierter Kachel auch Entf/Rücktaste.
-   Pfeiltasten verschieben eine fokussierte Kachel. Raster ist scrollbar, am Rand nach kurzem Halten beim Ziehen
+   Seit 0.10.1 verschieben Pfeiltasten keine Kacheln mehr. Raster ist scrollbar, am Rand nach kurzem Halten beim Ziehen
    mitlaufend; **Ganzes Raster / Vergrößern** wechselt die Übersicht. Keine diagonalen Spielzüge.
 8. Startfiguren bekommen zunächst die ersten freien vorhandenen Felder als sichtbare Vorschläge.
    **Startfiguren setzen** erlaubt dem Raummeister pro Spieler ein anderes belegtes Feld. Die
@@ -760,7 +760,7 @@ automatisches Einpassen des Portal-Plans; je Spieler drehbarer Himmelsrichtungsk
 - Diese Vereinfachung vertraut auf das private Spiel-WLAN. Keine Freigabe ins Internet. Namen
   müssen eindeutig sein. Normale laufende Partie lässt keine neue fremde Person nachrücken.
 - Clientseiten sind als feste Handyansichten angelegt: Auswahlkarussell, Spiel, Steckbrief,
-  separate Karte und Story. Story blättert einen Eintrag pro Seite; lange Texte und Dialoge dürfen
+  separate Karte und Story. Seit 0.10.1 zeigt Story alle Einträge als scrollende Sprechblasen; lange Texte und Dialoge dürfen
   intern scrollen. Die Brettansicht selbst ist ausdrücklich verschiebbar. Keine vollständige
   Scrollfreiheit für beliebige Schriftvergrößerung/kleinste Geräte behaupten.
 - Portal-Lobby mit Umschaltung **WLAN & Zugang / Spieler** statt aller langen Karten übereinander;
@@ -1011,7 +1011,45 @@ Neuester verbindlicher Nutzerwunsch, umgesetzt:
   Lobbys wird er beim neuen Aufbau angelegt. Aktuelle Figurenpositionen und Feldnamen bleiben erhalten.
   Für den neuen Schlüssel eine neue Partie starten; Clientseiten nach APK-Update neu laden.
 
-## 9. Technische Grundlage 0.10.0
+## 8i. Kompakter Client und gut lesbare Kacheln ab 0.10.1
+
+Neue verbindliche Wünsche vom 26.10.2026, umgesetzt:
+
+- **Feldkoordinaten mittig in jedem Teilfeld**, größer und fett (Gewicht 900), ohne deckenden
+  Fußstreifen. Die roten Wände bleiben auch an der unteren Kante sichtbar. Gemeinsames CSS
+  gilt für Aufbau, Portal und alle Spielerkarten. Figurennummern kleiner in der Teilfeldecke.
+- **Neue Kacheln ausschließlich ins Raster ziehen.** Auswahl einer Palettenkachel und anschließendes
+  Antippen eines leeren Felds platziert nichts. Zoom/Scrollen erzeugen keine Kacheln. Bestehende
+  Kacheln weiterhin durch Antippen um 90° drehen, durch Ziehen verschieben/entfernen. Entf/Backspace
+  und Mülleimer-Taste erhalten; Pfeiltasten verschieben keine Kacheln. Expliziter Modus Startfiguren
+  bleibt per Feldtippen bedienbar. Palettennavigation/Kerker-Taste reagieren auch direkt nach Drag.
+- **Story** enthält alle gespeicherten Einträge als Sprechblasen, neueste oben. Innerhalb der
+  Story nach unten scrollen, keine Einzel-Eintrag-Seiten mehr. Datum/Uhrzeit/Sprecher bleiben am
+  Anfang, eigene Beiträge anders getönt. Unverändertes Polling behält DOM/Scrollposition; neue
+  Einträge erhalten beim Lesen älterer Beiträge den sichtbaren Ausschnitt. Während der Wurfanimation
+  keine neue Ergebnis-Story verraten. Der Tab öffnet den weiterhin aufklappbaren Verlauf.
+- **Eigener Steckbrief als hohe Bildkarte:** Porträt nutzt den gesamten Kartenbereich, vollständiges
+  Bild mit contain und Ausrichtung oben; Informationen liegen in der unteren Hälfte auf hellem
+  Pergament. Lange Eigenschaften scrollen in dieser Hälfte. Kein zusätzliches Bild beschaffen,
+  keine Attribute erfinden. Auswahlkarussell und Angriffssteckbriefe bleiben eigenständige Karten.
+- Nach bestätigtem **Go** entfällt beim aktiven Client der redundante obere Hinweis „Du bist am
+  Zug / Würfle am eigenen Handy“. Im Spiel keine zweite Spielerüberschrift/Teamzeile. Wartende,
+  angegriffene und helfende Spieler behalten ihren gezielten Hinweis und bisherigen Ablauf.
+- **Direkt auf den Würfel tippen** (auch Tastatur/Screenreader über echte Schaltfläche). Separater
+  Würfeln-Button entfällt. Nur im erlaubten Wurfstadium aktiv; während Übertragung/2,6-Sekunden-
+  Animation und danach gesperrt. Ergebnis bleibt hostgespeichert, keine neue Zufallsentscheidung.
+- Nach Aufdeckung der Bewegung **Würfel links und Bewegungskompass rechts** in einer kompakten
+  Reihe. Die gespeicherten Augen bleiben sichtbar; bei 5/6 zuerst Bewegung oder Aktion wählen.
+  Nebel/Blitz und feste sechs Würfelseiten mit passender Landung bleiben unverändert.
+- Darunter **Dein Umfeld** als vergrößerter, verschiebbarer Kartenausschnitt um die eigene Figur.
+  Vierer-Kacheln 128 px / Teilfelder 64 px, mit lesbaren Koordinaten und eigener Feldanzeige.
+  Folgt bestätigten Schritten, Sitzdrehung und Größenwechsel; auch Randfelder zentrierbar. Kein
+  Tippen zum Bewegen auf der Karte. Separater Tab Karte behält seinen unabhängigen Zoom 50–300 %.
+  Kompass, Ausschnitt und große Karte verwenden dieselbe lokale Orientierung; Weltpositionen bleiben.
+- **App 0.10.1 / Code 16, Speicherformat 9 / Protokoll 5 unverändert.** Normales Update mit
+  bisherigem Signierschlüssel und Clientseiten neu laden. Keine neue Partie für diese UI-Änderungen nötig.
+
+## 9. Technische Grundlage 0.10.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1076,6 +1114,24 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.10.1 am 26.10.2026:
+
+- DOM-/Grafikprüfungen: **213 bestanden**; direkt antippbarer W6 mit Go-/Wurf-/Retry-Sperren,
+  entfernte Zugbox, Würfel/Kompass-Reihe, eigener Kartenausschnitt, Sprechblasen/Neueste-zuerst,
+  keine Kachelplatzierung bei leerem Feldtippen und unverändertes Drehen bestehender Kacheln.
+- **532 Kern-/HTTP-Prüfungen bestanden**; Regellogik unverändert.
+- Zwei mobile Browser-Kontexte (390×844, 320×740) am echten Java-Host: keine Kacheln durch
+  Leerfeld-Tipp, echte Touch-Drag-Platzierung einschließlich Zweikachel-Portal; direkter Würfel,
+  Folgehandlungen nach Animation, eigener Kartenausschnitt/Feldname nach Bewegung, synchrone
+  Karten-/Kompassdrehung, Zoom/Pinch/Pan/Reload, Reset/Laden und Schlüssel-Fund weiterhin bestanden.
+- Steckbriefhöhe, Bildfläche, untere Infohälfte und Story mit 30 sichtbaren Sprechblasen,
+  neuester zuerst, tatsächlich scrollbarem Innenbereich ohne Dokument-Seitenlauf geprüft.
+  Screenshots von Zug, Steckbrief und Story visuell geprüft. Native Telefonprüfung bleibt offen.
+- Android `:app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, Lint **0 Fehler / 20 Warnungen**.
+  App **0.10.1 / Code 16**, bestehender Signierschlüssel seit 0.5.0 per Zertifikat bestätigt.
+  Finale Anleitung und alle gemeinsamen Grafik-/Client-Assets sowie beide unkomprimierten
+  Originalaudios vor Ausgabe bytegenau mit der APK abgleichen. Kein echter Telefon-/WLAN-Test.
 
 Für 0.10.0 am 26.10.2026:
 
@@ -1383,6 +1439,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.9.1 | Drei Resetoptionen/ohne Archiv, vollständiger Portal-Hotspotreset, gemeinsame Lobby und rotes Spieler-×, direkter WLAN-Start, reduzierte Einstellungen, große Quartettbilder ohne Beschnitt, kurzer Nord-Hinweis, je Client synchrone Karten-/Kompassrotation |
 | 26.10.2026 | 0.9.2 | Kleine/Große Kacheln, identische lokale Vektorgrafiken auf Portal/Client samt Kompassdrehung, globale Koordinaten A1/B1/A2/B2 bis AN40 an jedem Teilfeld, Client-Kartenzoom per Tasten und Zwei-Finger-Geste sowie Sprung zur eigenen Figur, Format/Protokoll kompatibel |
 | 26.10.2026 | 0.10.0 | Private Portal-Musik/Beitrittssound mit einmaligen Cues, geheimer zufälliger erreichbarer Portalschlüssel, Finder-Popup, native Schlüsselanimation, gespeicherte Tasche, Zweikachel-Portal wieder in Palette; Format 9 / Protokoll 5 |
+| 26.10.2026 | 0.10.1 | Mittige fette Teilfeldkoordinaten, neue Kacheln nur per Drag, scrollende Story-Sprechblasen, hohe Bild-Steckbriefkarte mit Infos unten, direkt antippbarer W6 und Kompass daneben, mitlaufender vergrößerter Kartenausschnitt |
 
 ## 13. Fortsetzung in einem anderen Chat
 

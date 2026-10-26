@@ -8,11 +8,16 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.10.0
+## Stand 0.10.1
 
-Neu in 0.10.0: bereitgestellter Themensong beim Abenteuerstart, TARDIS-Sound bei neuem Beitritt
-am Portal. Geheimer Portalschlüssel auf zufälligem erreichbarem Feld, Fund-Popup, goldene
-Portalanimation und gespeicherte Tasche. Portal über zwei Kacheln wieder in der elfteiligen Palette.
+Neu in 0.10.1: mittige fette Feldlabels und neue Kacheln nur per Ziehen. Clients zeigen Story
+als scrollende Sprechblasen, einen bildgroßen Steckbrief mit Infos unten und direkt antippbaren
+W6. Würfel und Kompass stehen bei Bewegung nebeneinander; darunter folgt ein vergrößerter
+Kartenausschnitt der eigenen Figur. Details in ONBOARDING.md, Abschnitt 8i.
+
+Seit 0.10.0: Themensong beim Abenteuerstart, TARDIS-Sound bei neuem Beitritt am Portal,
+geheimer zufälliger erreichbarer Portalschlüssel, Fund-Popup, goldene Portalanimation und
+Tasche. Portal über zwei Kacheln in der elfteiligen Palette.
 
 Seit 0.9.2: identische lokale Kachelgrafiken auf Portal und Clients, Kompassdrehung am Portal,
 Koordinaten auf jedem Teilfeld (A1/B1/A2/B2, global bis AN40), Kartenzoom per +/− und Zwei-Finger-Geste sowie
@@ -119,7 +124,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.10.0
+## Installationshinweis 0.10.1
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:

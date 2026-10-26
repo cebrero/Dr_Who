@@ -140,3 +140,11 @@
 43. Portal wieder in neuer Palette (11 Typen, 5/5/1), zwei Kacheln, zusammenhängend drehen/verschieben.
     Inventar-/Schlüssel-Recovery bei Spielerentfernung und Umbau erhalten; echte Telefon-Audio- und
     native Animationstests offen halten, solange nur Build/Browser/Core geprüft wurden.
+
+44. Seit 0.10.1 Feldlabels mittig/groß/fett ohne Fußstreifen, Figurenmarker klein in der Ecke.
+    Neue Kacheln nur durch Drag platzieren; keine Leerfeld-Tipp-/Pfeiltasten-Positionierung.
+    Bestehende Kacheln weiter antippen zum Drehen; Startfiguren im expliziten Modus per Tipp.
+45. Story alle Einträge als scrollende Sprechblasen neueste zuerst. Eigener Steckbrief hohe
+    Bildkarte, Infos in unterer Hälfte. Aktiver Client nach Go ohne redundante Zugbox; Würfel
+    selbst ist Schaltfläche, kein separater Würfeln-Button. Würfel/Kompass nebeneinander,
+    mitlaufender vergrößerter Kartenausschnitt darunter, dieselbe lokale Sitzorientierung.

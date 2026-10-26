@@ -2,8 +2,8 @@
 .board-tile{position:absolute;box-sizing:border-box;padding:0;margin:0;border:1px solid #7f714f;border-radius:3px;background:linear-gradient(140deg,#f8e8bd,#ccba8b);color:#183e43;box-shadow:inset 0 0 0 2px #fff5d333,0 1px 3px #0008;overflow:hidden;min-height:0}
 .board-tile svg{display:block;width:100%;height:100%;pointer-events:none}
 .board-subfield{position:absolute;box-sizing:border-box;pointer-events:none;border-right:1px solid #34483e88;border-bottom:1px solid #34483e88;transform:rotate(var(--map-counter-angle,0deg));transform-origin:center}
-.field-label{position:absolute;left:0;right:0;bottom:1px;text-align:center;font:700 clamp(4px,calc(var(--cell)/10),14px)/1.1 system-ui,sans-serif;color:#163b40;text-shadow:0 1px 1px #fff8;white-space:nowrap;background:#f5e8c5b8;pointer-events:none}
-.board-marker{position:absolute;box-sizing:border-box;width:clamp(6px,calc(var(--cell)/4),24px);height:clamp(6px,calc(var(--cell)/4),24px);border-radius:50%;display:grid;place-items:center;font:700 clamp(4px,calc(var(--cell)*.14),12px)/1 system-ui,sans-serif;color:#fff7df;background:#186f76;border:1px solid #dbe9bf;z-index:5;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--map-counter-angle,0deg));transform-origin:center}
+.field-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;font:900 clamp(5px,calc(var(--cell)/7),20px)/1.1 system-ui,sans-serif;color:#163b40;text-shadow:0 0 3px #fff7db,0 1px 1px #fff;white-space:nowrap;pointer-events:none}
+.board-marker{position:absolute;box-sizing:border-box;width:clamp(6px,calc(var(--cell)*.14),18px);height:clamp(6px,calc(var(--cell)*.14),18px);border-radius:50%;display:grid;place-items:center;font:700 clamp(4px,calc(var(--cell)*.09),10px)/1 system-ui,sans-serif;color:#fff7df;background:#186f76;border:1px solid #dbe9bf;z-index:5;pointer-events:none;transform:translate(-50%,-50%) rotate(var(--map-counter-angle,0deg));transform-origin:center}
 .board-marker.mine{background:#a94f36}
 /* The saved player map pans naturally; editor tiles keep their drag gesture. */
 #gameBoard .board-tile{touch-action:pan-x pan-y}

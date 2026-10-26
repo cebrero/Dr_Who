@@ -59,9 +59,44 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 #mapRotationFrame>#grid .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}
 #mapPanel{display:flex;flex-direction:column;gap:6px}#mapPanel .board-viewport{height:auto;min-height:0;flex:1;touch-action:pan-x pan-y}.map-tools{display:flex;align-items:center;gap:6px;color:#ead6ad;flex-shrink:0}.map-tools button{min-height:36px;padding:5px 12px;font-size:13px}.map-tools span{text-align:center;min-width:46px;font-size:12px}#mapFocus{margin-left:auto}
 #playerTabs{grid-template-columns:repeat(5,minmax(0,1fr))}#playerTabs button{font-size:10px}#bagPanel{flex:1;min-height:0;overflow:auto}.bag-card{margin:0}.bag-item{text-align:center}.bag-item svg{width:100%;max-height:140px}.key-art{text-align:center;animation:keyGleam 3s ease-in-out infinite}.key-art svg{max-height:150px;width:100%;filter:drop-shadow(0 0 12px #e2bd56aa)}@keyframes keyGleam{50%{transform:translateY(-8px) rotate(4deg);filter:brightness(1.2)}}@media(prefers-reduced-motion:reduce){.key-art{animation:none}}
+
+/* Compact personal turn: touch the die, then keep die and compass beside the map. */
+#game>.card{display:flex;flex-direction:column;gap:4px;padding:8px;min-height:0}
+#game #turn,#game #players{display:none}#round{font-size:10px;flex-shrink:0}
+.turn-console{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-height:150px;gap:4px}
+.turn-console.with-compass{justify-content:space-evenly}.die-control{flex:0 0 134px;text-align:center}
+#roll{width:134px;height:132px;min-height:132px;margin:0;transform:none;padding:0;overflow:visible;cursor:pointer;color:var(--ink);border:0;background:none;box-shadow:none}
+#roll.unrolled .dice-cube{visibility:visible}#roll.unrolled .dice-placeholder{display:none}
+.turn-console.with-compass .die-control{animation:dieAside .45s ease-out both}@keyframes dieAside{from{transform:translateX(65px)}to{transform:translateX(0)}}@media(prefers-reduced-motion:reduce){.turn-console.with-compass .die-control{animation:none}}
+#roll:disabled{opacity:1;cursor:default}#roll:active{transform:none}#roll:focus-visible{outline:3px solid #c6993e;outline-offset:-4px}
+#roll .dice-placeholder{inset:24px 28px}#rollResult{font-size:12px;min-height:18px;line-height:1.3}
+.dice-hint{font-size:11px;margin:0;color:var(--muted)}#turnConsole #controls{margin:0;width:148px;height:148px;flex:0 0 148px}
+#turnConsole #controls button{width:48px;height:42px;min-height:42px;font-size:11px}#turnConsole #controls button:nth-child(1){left:49px}#turnConsole #controls button:nth-child(2){top:53px}#turnConsole #controls button:nth-child(3){left:49px}#turnConsole #controls button:nth-child(4){top:53px}
+#turnPrompt{font-size:14px;line-height:1.3;margin:2px;flex-shrink:0}#turnPrompt:empty{display:none}
+#turnChoices{flex-shrink:0;grid-template-columns:1fr 1fr;gap:6px}#turnChoices button{font-size:12px;min-height:42px}
+.turn-map-heading{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#6b5935;flex-shrink:0}
+#turnMapViewport{flex:1;min-height:100px;border-radius:8px;touch-action:pan-x pan-y;overflow:auto;overflow-anchor:none}
+#turnMapFrame{position:relative;--cell:128px;--map-counter-angle:0deg}
+#turnMapFrame>#turnBoard,#turnMapFrame>#turnLegacy{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
+#turnBoard .board-tile{touch-action:pan-x pan-y}#turnLegacy{display:grid;grid-template-columns:repeat(6,1fr);gap:0}
+#turnLegacy .cell{transform:rotate(var(--map-counter-angle));font-size:15px;border-radius:0}
+/* A full-height character card, with the dossier in its lower half. */
+#myProfile .dossier{position:relative;isolation:isolate;background:#0d292e}
+#myProfile .portrait{position:absolute;inset:0;height:100%;width:100%;border:0;background:radial-gradient(ellipse at top,#355e60,#0d292e);z-index:-1}
+#myProfile .portrait img{object-fit:contain;object-position:center top;width:100%;height:100%}
+#myProfile .details{position:absolute;left:0;right:0;bottom:0;height:50%;overflow:auto;overscroll-behavior:contain;padding:14px;background:linear-gradient(#f4ead3ed,#f4ead3 18%);border-top:2px solid var(--brass)}
+#myProfile .details h2{font-size:25px}#myProfile .details p,#myProfile .details li{font-size:13px;line-height:1.4}.portrait span{z-index:0}
+/* Read the whole newest-first story by scrolling inside its own panel. */
+#historyDetails{overflow-y:auto;overscroll-behavior:contain;overflow-anchor:none;scrollbar-width:thin;padding:12px 14px}
+#historyDetails summary{margin-bottom:16px}#log{margin:0;padding:0 0 12px;display:flex;flex-direction:column;gap:14px}
+#log li.story-bubble{position:relative;border:1px solid #b69b6480;border-radius:14px 14px 14px 3px;padding:12px;margin:0 8px 0 0;background:#fff9e9;box-shadow:0 3px 8px #61471c12}
+#log li.story-bubble::before{content:'';position:absolute;left:-7px;bottom:10px;width:12px;height:12px;background:#fff9e9;border-left:1px solid #b69b6480;border-bottom:1px solid #b69b6480;transform:rotate(45deg)}
+#log li.own-story{background:#e0ece5;border-radius:14px 14px 3px 14px;margin:0 0 0 8px}#log li.own-story::before{left:auto;right:-7px;background:#e0ece5;border:0;border-right:1px solid #b69b6480;border-top:1px solid #b69b6480}
+#log .story-meta{font-weight:700;font-size:11px;line-height:1.4}#log .story-text{font-size:14px;line-height:1.5;margin-top:7px}
+@media(max-height:650px){.turn-console{min-height:132px}#turnConsole #controls{transform-origin:center}#myProfile .details{padding:9px}#myProfile .details h2{font-size:20px}#myProfile .details p,#myProfile .details li{font-size:12px}}
 </style>
 <link rel="stylesheet" href="/board-art.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.1</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -80,7 +115,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
   <div id="spawnList" class="spawn-list" hidden></div><p id="boardStatus" class="board-status" role="status" aria-live="polite"></p>
   <div id="boardViewport" class="board-viewport"><div id="editorGrid" class="board-grid" role="group" aria-label="Aufbau 20 mal 20 Felder, A1 bis T20"></div></div>
   <div id="boardLegend" class="board-legend"></div>
-  <div id="buildPalette"><div class="palette-pages"><button type="button" id="palettePrev">← Kacheln</button><button type="button" id="dungeonMode">Kerker öffnen / schließen</button><button type="button" id="paletteNext">Kacheln →</button></div><div id="tilePalette" class="palette-items" role="group" aria-label="Kacheln zum Ziehen oder Auswählen"></div><div class="palette-bottom"><p id="boardHelp">Ziehen: platzieren · Antippen: 90° drehen<br>Alternativ Kachel auswählen und Feld antippen.</p><button id="boardTrash" type="button" aria-label="Ausgewählte Kachel entfernen oder Kachel hierher ziehen">▱ Mülleimer</button></div></div>
+  <div id="buildPalette"><div class="palette-pages"><button type="button" id="palettePrev">← Kacheln</button><button type="button" id="dungeonMode">Kerker öffnen / schließen</button><button type="button" id="paletteNext">Kacheln →</button></div><div id="tilePalette" class="palette-items" role="group" aria-label="Kacheln zum Ziehen oder Auswählen"></div><div class="palette-bottom"><p id="boardHelp">Ziehen: platzieren · Antippen: 90° drehen<br>Neue Kacheln nur aus der Auswahl ins Raster ziehen.</p><button id="boardTrash" type="button" aria-label="Ausgewählte Kachel entfernen oder Kachel hierher ziehen">▱ Mülleimer</button></div></div>
  </section>
 </section>
 
@@ -97,18 +132,19 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <div id="playWaiting" class="card" hidden><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><p id="playWaitingStatus" class="idletext"></p></div>
 <section id="helper" class="card" hidden><small>DU WURDEST ZUFÄLLIG AUSGEWÄHLT</small><h2>Bewege die Gegnerfigur</h2><div id="helperProfile"></div><p>Der Spielleiter nennt Ziel und Weg. Versetze die Figur auf dem Tisch und bestätige anschließend die Bewegung.</p><div id="enemyCompass" class="compass-wheel"><button type="button" data-enemy-dir="N">N</button><button type="button" data-enemy-dir="W">W</button><button type="button" data-enemy-dir="S">S</button><button type="button" data-enemy-dir="E">O</button></div><button id="confirmMovement" class="primary">Figur bewegt · bestätigen</button></section>
 <section id="battle" class="card battle" hidden aria-live="polite"><small>DEIN CHARAKTER WIRD ANGEGRIFFEN</small><h2 id="battleTitle"></h2><p id="outcome" class="outcome"></p><div class="compare"><div><h2>Dein Charakter</h2><div id="defenderProfile"></div></div><div><h2>Dein Gegner</h2><div id="attackerProfile"></div></div></div><button id="ackAttack" class="primary">Verstanden · weiter</button></section>
-<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="roll" role="img" aria-label="W6 noch nicht gewürfelt"></div><p id="rollResult" class="dice-caption" role="status" aria-live="polite"></p>
+<main id="game" hidden><section class="card"><small id="round"></small><h2 id="turn">Warte auf Spielleiter …</h2><div id="players"></div><div id="turnConsole" class="turn-console"><div class="die-control"><button id="roll" type="button" aria-label="Würfeln · Würfel antippen"></button><p id="rollResult" class="dice-caption" role="status" aria-live="polite"></p>
+<p id="diceHint" class="dice-hint">Würfel antippen</p></div>
+<div class="controls compass-wheel" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div></div>
 <p id="turnPrompt" class="outcome"></p>
-<button type="button" id="rollButton" class="primary">Jetzt würfeln</button>
 <div id="turnChoices" hidden><button id="moveChoiceButton" class="primary" type="button">Bewegen</button><button id="actionChoiceButton" class="wide" type="button">Aktion wählen · Techniktest</button><p class="muted">Die Aktionswahl wird gespeichert. Ihre konkrete Wirkung folgt mit den Charakterregeln.</p></div>
 <p class="muted move-help">Genau die gewürfelte Anzahl Felder ziehen. Nur Nord, Ost, Süd und West; Richtungswechsel sind erlaubt. Bestätige jeden Schritt am eigenen Handy und versetze die echte Figur entsprechend.</p>
-<div class="controls compass-wheel" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div>
-<p id="mapInfo" class="muted"></p></section>
+
+<p id="mapInfo" class="muted"></p><div class="turn-map-heading"><span>Dein Umfeld</span><strong id="turnMapField"></strong></div><div id="turnMapViewport" class="board-viewport" aria-label="Kartenausschnitt um deine Figur"><div id="turnMapFrame"><div id="turnBoard" class="board-grid"></div><div id="turnLegacy"></div></div></div></section>
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
 <section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div class="map-tools"><button type="button" id="mapZoomOut" aria-label="Karte verkleinern">−</button><span id="mapZoomLevel" role="status">100 %</span><button type="button" id="mapZoomIn" aria-label="Karte vergrößern">+</button><button type="button" id="mapFocus" aria-label="Deine Figur auf der Karte anzeigen">Dein Feld</button></div><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
 <section id="bagPanel" role="tabpanel" aria-labelledby="tabBag" tabindex="0" hidden><div class="card bag-card"><h2>Deine Tasche</h2><div id="bagItems"></div></div></section>
-<section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card"><summary>Story</summary><div class="story-pager"><button id="storyPrev" type="button">← Neuere</button><span id="storyPage"></span><button id="storyNext" type="button">Ältere →</button></div><ol id="log"></ol></details></section>
+<section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card" open><summary>Story</summary><ol id="log"></ol></details></section>
 </section>
 <div id="keyDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="keyTitle" tabindex="-1" hidden><div class="modal-surface"><div class="key-art" aria-hidden="true"></div><h2 id="keyTitle">Portalschlüssel gefunden!</h2><p id="keyText"></p><button id="ackKey" type="button" class="primary">In die Tasche · weiter</button><p id="keyStatus" role="status"></p></div></div>
 <div id="northDialog" class="modal-shade" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="northTitle" hidden><div class="modal-surface"><h2 id="northTitle">Das Portal steht im Norden!</h2><p>Lege das Portal an die Nordseite des Tisches. Im Plan ist Norden immer oben.</p><button id="northConfirm" type="button" class="primary">Verstanden · Aufbau öffnen</button></div></div>
@@ -121,7 +157,8 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.10.0',PROTOCOL_VERSION=5;
+const CLIENT_VERSION='0.10.1',PROTOCOL_VERSION=5;
+let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 let directionPicking=false,shownModal='',previousFocus=null,modalError='';
@@ -140,7 +177,7 @@ async function api(path,data){
 function controls(){
  const active=state&&!state.keyPickup?.pending&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&state.turn.accepted===true&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
- $('rollButton').disabled=!active||state.turn.stage!=='roll';
+ $('roll').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
  $('actionChoiceButton').disabled=!active||state.turn.stage!=='choice';
  $('retry').hidden=!pending||compatibilityBlocked;$('retry').disabled=busy;
@@ -164,7 +201,7 @@ function syncModals(){
   document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>e.inert=!!modal);
   if(modal){$(modal).focus()}
   else if(old){
-   const target=previousFocus&&previousFocus.isConnected&&!previousFocus.closest('[hidden]')&&!previousFocus.disabled&&previousFocus!==document.body?previousFocus:ownTurn()&&state.turn.accepted&&!$('rollButton').hidden&&!$('rollButton').disabled?$('rollButton'):setupActive()?(state.setup.stage==='building'&&state.setup.roomMaster===state.you?$('boardEditor'):$('setupTitle')):!$('playerArea').hidden?document.querySelector('[role="tab"][aria-selected="true"]'):$('name');
+   const target=previousFocus&&previousFocus.isConnected&&!previousFocus.closest('[hidden]')&&!previousFocus.disabled&&previousFocus!==document.body?previousFocus:ownTurn()&&state.turn.accepted&&!$('roll').hidden&&!$('roll').disabled?$('roll'):setupActive()?(state.setup.stage==='building'&&state.setup.roomMaster===state.you?$('boardEditor'):$('setupTitle')):!$('playerArea').hidden?document.querySelector('[role="tab"][aria-selected="true"]'):$('name');
    if(target)target.focus();previousFocus=null;
   }
  }
@@ -185,15 +222,18 @@ function openActionPicker(){
  if(character&&character.actionNeedsDirection){directionPicking=true;$('directionHint').textContent=character.name+': Wohin soll deine Aktion wirken?';syncModals()}
  else command('action');
 }
-let storyPage=0;function pageStory(){const rows=Array.from($('log').children);storyPage=Math.min(storyPage,Math.max(0,rows.length-1));rows.forEach((e,i)=>e.hidden=i!==storyPage);$('storyPage').textContent=(rows.length?storyPage+1:0)+' / '+rows.length;$('storyPrev').disabled=storyPage===0;$('storyNext').disabled=storyPage>=rows.length-1}$('storyPrev').onclick=()=>{storyPage--;pageStory()};$('storyNext').onclick=()=>{storyPage++;pageStory()};
 function renderStory(s){
- const entries=rolling?[]:s.story||s.log||[],signature=JSON.stringify(entries);
- if($('log').dataset.signature===signature)return;$('log').dataset.signature=signature;$('log').replaceChildren();
+ if(rolling)return; // Never reveal the new result through Story before the die lands.
+ const entries=s.story||s.log||[],signature=JSON.stringify(entries),viewport=$('historyDetails');
+ if($('log').dataset.signature===signature)return;
+ const wasTop=viewport.scrollTop<12,oldHeight=viewport.scrollHeight,oldTop=viewport.scrollTop;
+ $('log').dataset.signature=signature;$('log').replaceChildren();
  for(const entry of entries.slice().reverse()){
-  const row=el('li');if(typeof entry==='string')row.textContent=entry;
-  else{row.append(el('small',(entry.dateTime||'Zeit nicht erfasst')+' - '+entry.speaker+':','story-meta'),el('p',entry.text,'story-text'))}
+  const row=el('li',undefined,'story-bubble');if(typeof entry==='string')row.textContent=entry;
+  else{row.append(el('small',(entry.dateTime||'Zeit nicht erfasst')+' - '+entry.speaker+':','story-meta'),el('p',entry.text,'story-text'));if(entry.playerName&&entry.playerName===s.players.find(p=>p.id===s.you)?.name)row.classList.add('own-story')}
   $('log').append(row);
- }pageStory();
+ }
+ viewport.scrollTop=wasTop?0:oldTop+viewport.scrollHeight-oldHeight;
 }
 function el(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e}
 function dossier(c){
@@ -240,7 +280,7 @@ function selectTab(name,focus=false){
  for(const [key,tab,panel] of [['play','tabPlay','playPanel'],['profile','tabProfile','profilePanel'],['map','tabMap','mapPanel'],['bag','tabBag','bagPanel'],['history','tabHistory','historyPanel']]){
   const chosen=key===name;$(tab).setAttribute('aria-selected',String(chosen));$(tab).tabIndex=chosen?0:-1;$(panel).hidden=!chosen;if(chosen&&focus)$(tab).focus();
  }
- if(name==='history')$('historyDetails').open=true;
+ if(name==='history')$('historyDetails').open=true; if(name==='play')(window.requestAnimationFrame||setTimeout)(()=>updateTurnMap(true));
 }
 function updatePlayerView(s,active,helping,attacked){
  const playing=isPlaying(s);$('playerArea').hidden=!playing;document.body.classList.toggle('in-game',playing);if(!playing)return;
@@ -253,7 +293,7 @@ function updatePlayerView(s,active,helping,attacked){
  const detail=attacked?'Die Angriffsfolge wartet im Tab Spiel auf dich.':helping?'Bewege die Figur und bestätige im Tab Spiel.':active?(!s.turn.accepted?'Bestätige Your move... mit Go.':rolling?'Dein Wurf entsteht im Zeitwirbel …':s.turn.stage==='roll'?'Würfle am eigenen Handy.':s.turn.stage==='choice'?'Wähle Bewegung oder Charakteraktion.':'Bestätige deine Bewegung im Tab Spiel.'):'Dein Steckbrief bleibt bereit. Du kannst auch die Ereignisse nachlesen.';
  if($('turnNoticeTitle').textContent!==title)$('turnNoticeTitle').textContent=title;
  if($('turnNoticeDetail').textContent!==detail)$('turnNoticeDetail').textContent=detail;
- $('turnNotice').classList.toggle('is-active',active);$('turnNotice').classList.toggle('is-alert',attacked||helping);
+ $('turnNotice').hidden=active&&s.turn.accepted===true; $('turnNotice').classList.toggle('is-active',active);$('turnNotice').classList.toggle('is-alert',attacked||helping);
  $('playWaiting').hidden=mode!=='waiting';$('playWaitingStatus').textContent=waiting;
 }
 function presentRoll(s,active){
@@ -306,11 +346,12 @@ function render(s){
   }$('grid').append(cell);
  }
  $('rollResult').textContent=rolling?'Dein Wurf entsteht im Zeitwirbel …':s.turn.roll?'Dein Wurf: '+s.turn.roll:'';
- $('roll').setAttribute('aria-label',rolling?'W6 wird gewürfelt. Ergebnis folgt.':s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'W6 noch nicht gewürfelt');
- $('rollButton').hidden=s.turn.stage!=='roll';$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||s.turn.stage!=='move';
- $('turnPrompt').textContent=rolling?'Gleich zeigt sich dein Ergebnis.':s.turn.stage==='roll'?'Dein Zug beginnt: zuerst würfeln.':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
+ $('roll').setAttribute('aria-label',rolling?'W6 wird gewürfelt. Ergebnis folgt.':s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'Würfeln · Würfel antippen');
+ $('diceHint').hidden=s.turn.stage!=='roll'||rolling;$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||s.turn.stage!=='move';
+ $('turnPrompt').textContent=rolling?'':s.turn.stage==='roll'?'':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
  $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
- renderBag(s);renderStory(s);controls();
+ $('turnConsole').classList.toggle('with-compass',!rolling&&s.turn.stage==='move');
+ updateTurnMap();renderBag(s);renderStory(s);controls();
 }
 function returnToJoin(message){
  const name=saved.join?.name||state?.players.find(p=>p.id===state.you)?.name||'';
@@ -375,7 +416,7 @@ async function poll(){
  catch(e){
   if(token!==access||compatibilityBlocked)return;
   if(e.status===401){returnToJoin('Dein Spielerplatz ist nicht mehr angemeldet. Du kannst hier neu beitreten.');return}
-  $('message').textContent='Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#rollButton,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true);
+  $('message').textContent='Verbindung unterbrochen. Host-App und WLAN prüfen. Dein Zug bleibt gespeichert.';document.querySelectorAll('#controls button,#roll,#moveChoiceButton,#actionChoiceButton').forEach(b=>b.disabled=true);
  }
 }
 $('join').addEventListener('submit',async event=>{
@@ -439,7 +480,7 @@ function paintBoard(container,s,editable){
   decorateTile(tile,t,s.board.subdivisions||1);tile.setAttribute('aria-label',(tileKinds[t.kind]||t.kind)+' '+fieldRange(s,t)+' · '+t.rotation*90+' Grad'+(editable?' · antippen zum Drehen':''));
   if(selectedTile===tile.dataset.cell&&editable)tile.classList.add('selected');container.append(tile);
  }
- [...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const scale=s.board.subdivisions||1;if(p.x<0||p.y<0||!tileAt(s,Math.floor(p.x/scale),Math.floor(p.y/scale)))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+((p.x+.5)/scale-ox)+')';marker.style.top='calc(var(--cell) * '+((p.y+.5)/scale-oy)+')';marker.style.right='auto';container.append(marker)});
+ [...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const scale=s.board.subdivisions||1;if(p.x<0||p.y<0||!tileAt(s,Math.floor(p.x/scale),Math.floor(p.y/scale)))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+((p.x+.78)/scale-ox)+')';marker.style.top='calc(var(--cell) * '+((p.y+.22)/scale-oy)+')';marker.style.right='auto';container.append(marker)});
  if(focus&&editable)container.querySelector('[data-cell="'+focus+'"]')?.focus({preventScroll:true});
 }
 function renderSetup(s){
@@ -451,7 +492,7 @@ function renderSetup(s){
  if(editing){
   paintBoard($('editorGrid'),s,true);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;
   $('boardStatus').textContent=busy?'Änderung wird am Portal gespeichert …':pending?'Bestätigung fehlt. Bitte dieselbe Anfrage erneut senden.':'';
-  if(!busy&&!pending&&!modalError)$('boardStatus').textContent=spawnMode?'Wähle unten einen Spieler und tippe sein Startfeld an.':paletteKind?tileKinds[paletteKind]+' gewählt. Ziehen oder leeres Feld antippen.':s.board.tiles.length+' Kacheln gespeichert · Antippen dreht um 90°.';
+  if(!busy&&!pending&&!modalError)$('boardStatus').textContent=spawnMode?'Wähle unten einen Spieler und tippe sein Startfeld an.':paletteKind?tileKinds[paletteKind]+' gewählt. Ziehe die Kachel aus der Auswahl ins Raster.':s.board.tiles.length+' Kacheln gespeichert · Antippen dreht um 90°.';
   if(modalError&&!busy&&!pending)$('boardStatus').textContent=modalError;
   const legend=$('boardLegend');legend.replaceChildren();[...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const label=el('span');label.append(el('i',String(i+1)),document.createTextNode(p.name+' · '+(p.x<0?'noch kein Startfeld':fieldName(s,p.x,p.y))));legend.append(label)});
   $('spawnList').hidden=!spawnMode;$('spawnList').replaceChildren();[...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const b=el('button',(i+1)+' · '+p.name,spawnTarget===p.id?'selected':'');b.type='button';b.disabled=!canBuild();b.onclick=()=>{spawnTarget=p.id;renderSetup(state)};$('spawnList').append(b)});
@@ -462,7 +503,6 @@ function boardClick(event){
  if(event.type==='click'&&event.detail>0&&performance.now()-lastTouchHandledAt<700)return;if(suppressBoardClick){suppressBoardClick=false;return}if(!canBuild())return;const target=event.target.closest('[data-cell]');if(!target)return;const [x,y]=target.dataset.cell.split(',').map(Number);modalError='';
  if(spawnMode){const scale=state.board.subdivisions||1;let sx=x*scale,sy=y*scale;const tile=tileAt(state,x,y);if(tile&&event.detail){const rect=target.getBoundingClientRect(),[w,h]=tileSize(tile);sx=x*scale+Math.min(w*scale-1,Math.max(0,Math.floor((event.clientX-rect.left)/rect.width*w*scale)));sy=y*scale+Math.min(h*scale-1,Math.max(0,Math.floor((event.clientY-rect.top)/rect.height*h*scale)));}if(spawnTarget)command('setSpawn',spawnTarget+','+sx+','+sy);return}
  if(target.dataset.tile){selectedTile=x+','+y;command(dungeonMode?'tileState':'tileRotate',selectedTile)}
- else if(paletteKind){selectedTile=null;command('tilePlace',x+','+y+','+paletteKind+',0')}
 }
 function dropTarget(clientX,clientY){const rect=$('editorGrid').getBoundingClientRect(),cell=rect.width/20;return {x:Math.floor((clientX-rect.left)/cell),y:Math.floor((clientY-rect.top)/cell)}}
 function inside(rect,x,y){return x>=rect.left&&x<rect.right&&y>=rect.top&&y<rect.bottom}
@@ -509,13 +549,13 @@ renderPalette();$('editorGrid').style.setProperty('--cell','64px');
 $('editorGrid').addEventListener('click',boardClick);
 $('editorGrid').addEventListener('pointerdown',event=>{const tile=event.target.closest('[data-tile]');if(tile){const t=tileAt(state,...tile.dataset.cell.split(',').map(Number));beginDrag(event,t.kind,tile.dataset.cell)}else if(event.pointerType==='touch'){const cell=event.target.closest('[data-cell]');if(cell){beginDrag(event,'',cell.dataset.cell);if(drag)drag.tapOnly=true}}});
 document.addEventListener('pointermove',moveDrag,{passive:false});document.addEventListener('pointerup',event=>finishDrag(event));document.addEventListener('pointercancel',event=>finishDrag(event,true));
-$('editorGrid').addEventListener('keydown',event=>{if(!canBuild())return;const t=event.target.closest('[data-tile]');if(!t)return;const [x,y]=t.dataset.cell.split(',').map(Number),steps={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();command('tileRemove',t.dataset.cell)}else if(steps[event.key]){event.preventDefault();const [dx,dy]=steps[event.key];if(x+dx>=0&&y+dy>=0)command('tileMove',t.dataset.cell+','+(x+dx)+','+(y+dy))}});
+$('editorGrid').addEventListener('keydown',event=>{if(!canBuild()||!event.target.closest('[data-tile]'))return;if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();command('tileRemove',event.target.closest('[data-tile]').dataset.cell)}});
 $('boardTrash').onclick=()=>{if(canBuild()&&selectedTile){const [x,y]=selectedTile.split(',').map(Number);if(tileAt(state,x,y))command('tileRemove',selectedTile);selectedTile=null}};
 $('clearPalette').onclick=()=>{paletteKind='';spawnMode=false;renderSetup(state)};
 $('spawnMode').onclick=()=>{spawnMode=!spawnMode;paletteKind='';spawnTarget=spawnTarget||state.you;renderSetup(state)};
 $('boardZoom').onclick=()=>{boardFit=!boardFit;$('editorGrid').style.setProperty('--cell',boardFit?Math.max(12,Math.floor(($('boardViewport').clientWidth-2)/10))+'px':'64px');$('boardZoom').textContent=boardFit?'Große Kacheln':'Kleine Kacheln'};
 // Pointer-driven tools stay responsive immediately after a captured tile drag.
-const boardToolSelector='#spawnMode,#clearPalette,#boardZoom,#boardTrash,#saveBoard,#spawnList button';let toolTap=null;
+const boardToolSelector='#spawnMode,#clearPalette,#boardZoom,#boardTrash,#saveBoard,#spawnList button,#palettePrev,#paletteNext,#dungeonMode';let toolTap=null;
 document.addEventListener('pointerdown',event=>{const button=event.target.closest(boardToolSelector);if(event.pointerType==='touch'&&button&&!button.disabled)toolTap={button,id:event.pointerId,x:event.clientX,y:event.clientY}});
 document.addEventListener('pointercancel',()=>toolTap=null);
 document.addEventListener('pointerup',event=>{const tap=toolTap;if(!tap||tap.id!==event.pointerId)return;toolTap=null;if(tap.button.isConnected&&!tap.button.disabled&&tap.button.contains(event.target)&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)<7){event.preventDefault();tap.button.dataset.touchUntil=String(performance.now()+700);tap.button.click()}});
@@ -545,7 +585,7 @@ $('playerTabs').addEventListener('keydown',event=>{
 });
 document.querySelectorAll('[data-dir]').forEach(b=>b.addEventListener('click',()=>command('move',b.dataset.dir)));
 $('reloadPage').addEventListener('click',()=>location.reload());
-$('rollButton').addEventListener('click',()=>command('roll'));$('retry').addEventListener('click',send);
+$('roll').addEventListener('click',()=>command('roll'));$('retry').addEventListener('click',send);
 $('moveChoiceButton').addEventListener('click',()=>command('chooseMove'));$('actionChoiceButton').addEventListener('click',openActionPicker);
 $('goButton').addEventListener('click',()=>{if(busy)return;if(pending?.action==='beginTurn')send();else command('beginTurn')});
 document.querySelectorAll('[data-action-dir]').forEach(b=>b.addEventListener('click',()=>{if(directionPicking&&!busy&&!pending)command('action',b.dataset.actionDir)}));
@@ -574,8 +614,32 @@ function rotateClientMap(){
  const sideways=compassAngle%180!==0;frame.style.width='calc(var(--cell) * '+(sideways?rows:cols)+')';frame.style.height='calc(var(--cell) * '+(sideways?cols:rows)+')';
  map.style.width='calc(var(--cell) * '+cols+')';map.style.height='calc(var(--cell) * '+rows+')';
  const tx=compassAngle===90?rows:compassAngle===180?cols:0,ty=compassAngle===180?rows:compassAngle===270?cols:0;
- map.style.transform='translate(calc(var(--cell) * '+tx+'), calc(var(--cell) * '+ty+')) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle);
+ map.style.transform='translate(calc(var(--cell) * '+tx+'), calc(var(--cell) * '+ty+')) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle); updateTurnMap();
 }
+function updateTurnMap(force=false){
+ if(!state||!isPlaying(state))return;
+ const me=state.players.find(p=>p.id===state.you),mapped=state.setup&&!state.setup.legacy&&state.setup.saved;
+ const map=mapped?$('turnBoard'):$('turnLegacy'),frame=$('turnMapFrame'),viewport=$('turnMapViewport');
+ $('turnBoard').hidden=!mapped;$('turnLegacy').hidden=!!mapped;
+ if(mapped)paintBoard(map,state,false);else if(map.dataset.signature!==$('grid').innerHTML){map.dataset.signature=$('grid').innerHTML;map.replaceChildren(...Array.from($('grid').children,n=>n.cloneNode(true)))}
+ const cols=mapped?Number(map.dataset.cols)||1:6,rows=mapped?Number(map.dataset.rows)||1:6,q=mapped?state.board.subdivisions||1:1;
+ const cell=mapped?128:64,sideways=compassAngle%180!==0;
+ frame.style.setProperty('--cell',cell+'px');frame.style.setProperty('--map-counter-angle',(-compassAngle)+'deg');map.style.setProperty('--cell',cell+'px');
+ frame.style.width=(sideways?rows:cols)*cell+'px';frame.style.height=(sideways?cols:rows)*cell+'px';
+ map.style.width=cols*cell+'px';map.style.height=rows*cell+'px';
+ const tx=compassAngle===90?rows:compassAngle===180?cols:0,ty=compassAngle===180?rows:compassAngle===270?cols:0;
+ map.style.transform='translate('+tx*cell+'px,'+ty*cell+'px) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle);
+ $('turnMapField').textContent=me&&me.x>=0?fieldName(state,me.x,me.y):'Noch kein Feld';
+ const focusKey=JSON.stringify([me?.x,me?.y,compassAngle,map.dataset.signature,viewport.clientWidth,viewport.clientHeight]);
+ if(!me||me.x<0||!viewport.clientWidth||!viewport.clientHeight||!force&&focusKey===turnFocusKey)return;turnFocusKey=focusKey;
+ const u=(me.x+.5)/q-(Number(map.dataset.ox)||0),v=(me.y+.5)/q-(Number(map.dataset.oy)||0);
+ const x=compassAngle===90?rows-v:compassAngle===180?cols-u:compassAngle===270?v:u,y=compassAngle===90?u:compassAngle===180?rows-v:compassAngle===270?cols-u:v;
+ // Padding lets even corner fields remain in the center of the crop.
+ frame.style.marginLeft=viewport.clientWidth/2+'px';frame.style.marginRight=viewport.clientWidth/2+'px';frame.style.marginTop=viewport.clientHeight/2+'px';frame.style.marginBottom=viewport.clientHeight/2+'px';
+ viewport.scrollLeft=x*cell;viewport.scrollTop=y*cell;
+}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>updateTurnMap(true)).observe($('turnMapViewport'));
+window.addEventListener('resize',()=>updateTurnMap(true));
 function setMapZoom(value,anchor,save=true){
  const viewport=$('gameMapViewport'),frame=$('mapRotationFrame'),ratio=Math.max(.5,Math.min(3,value))/mapZoom;
  const at=anchor||{x:viewport.clientWidth/2,y:viewport.clientHeight/2};

@@ -2,7 +2,7 @@ package de.cebrero.drwho.core;
 import java.nio.file.*;import java.io.*;import java.time.*;import java.util.*;
 public final class BrowserPortalFixture {
  private static LocalServer open(GameEngine e,byte[] page,int port,LocalServer.Portraits portraits,Path root)throws Exception{
-  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.10.0",Map.of("/board-art.js",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.js")),"/board-art.css",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.css"))));}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
+  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.10.1",Map.of("/board-art.js",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.js")),"/board-art.css",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.css"))));}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
  }
  public static void main(String[] args)throws Exception{
   Path root=Path.of(args[0]);CoreTest.MemoryStore store=new CoreTest.MemoryStore();CoreTest.Dice dice=new CoreTest.Dice();dice.face=6;
