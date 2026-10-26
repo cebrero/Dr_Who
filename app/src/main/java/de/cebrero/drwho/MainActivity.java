@@ -29,7 +29,14 @@ public class MainActivity extends Activity {
     private PortalNetwork network;
     private WifiManager.LocalOnlyHotspotReservation reservation;
     private boolean hotspotPending,destroyed,confirming;
-    private FrameLayout root,stage;
+    private FrameLayout root,stage,setupScreen,noticeScreen;
+    private TardisView setupFlight;
+    private BoardView setupBoard;
+    private TextView setupHeading,setupHint,setupTeam,noticeText;
+    private boolean wasPreparing;
+    private SharedPreferences prefs;
+    private String activeNotice="";
+    private final Runnable finishNotice=()->{if(!activeNotice.isEmpty()){prefs.edit().putString("seen-notice-"+engine.sessionId(),activeNotice).apply();activeNotice="";}noticeScreen.setVisibility(View.GONE);updatePortal();};
     private ScrollView lobby,director,play;
     private TextView playRound,playActor,playDetail,playEvents,playPositions,playDiceLabel;
     private DiceView playDice;
@@ -42,8 +49,7 @@ public class MainActivity extends Activity {
     private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,code,gameStatus,stageStatus;
     private Button wifiButton,startButton;
     private String ssid="",password="",rosterSignature="";
-    private SharedPreferences prefs;
-    private final Runnable refresh=new Runnable(){public void run(){updatePortal();handler.postDelayed(this,1500);}};
+    private final Runnable refresh=new Runnable(){public void run(){updatePortal();handler.postDelayed(this,500);}};
 
     @Override public void onCreate(Bundle saved){
         super.onCreate(saved);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -60,7 +66,7 @@ public class MainActivity extends Activity {
             try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME);}
             network=new PortalNetwork(this,name->{if(server!=null)server.setLocalHostname(name);});
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
-        buildLobby();buildDirector();buildPlay();buildStage();if(engine.playing())showPlay();else showLobby();updatePortal();
+        buildLobby();buildDirector();buildPlay();buildStage();buildSetup();if(engine.playing())showPlay();else showLobby();updatePortal();
     }
     private byte[] asset(String path)throws IOException{
         try(InputStream in=getAssets().open(path);ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
@@ -105,6 +111,8 @@ public class MainActivity extends Activity {
         gameStatus=text("",17,WHITE);content.addView(gameStatus);
         content.addView(button("Übrige Figur als Gegner hinzufügen",this::enemyDialog));
         content.addView(button("Partie starten / fortsetzen",this::startGame));
+        content.addView(button("Raumgefüge erfassen / bearbeiten",()->new AlertDialog.Builder(this).setTitle("Raumgefüge bearbeiten?").setMessage("Die Partie pausiert für eine neue Raummeister-Auswahl. Ein vorhandener Plan bleibt als Entwurf erhalten. Runde und Zug bleiben gespeichert; Startfelder lassen sich neu setzen.").setPositiveButton("Aufbau beginnen",(d,w)->{try{engine.rebuildBoard();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}).setNegativeButton("Abbrechen",null).show()));
+        content.addView(button("Gespeicherten Aufbau anzeigen",this::showBoard));
         content.addView(button("TARDIS groß anzeigen",()->{lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.VISIBLE);}));
         content.addView(text("Gegnerzug",20,CYAN));content.addView(text("Bewegung und Angriffsfolgen werden bis zur fertigen Gegnersteuerung hier vorgegeben.",14,MUTED));
         content.addView(button("Bewegungshelfer bestimmen",()->{try{toast(engine.requestEnemyMovement()+" bewegt die Gegnerfigur.");updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
@@ -125,7 +133,8 @@ public class MainActivity extends Activity {
         playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(200)));
         LinearLayout events=card(content);events.addView(text("STORY",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(5),1);events.addView(playEvents);
         LinearLayout positions=card(content);positions.addView(text("DEIN TEAM AUF DEM SPIELFELD",12,CYAN));playPositions=text("",15,WHITE);positions.addView(playPositions);
-        LinearLayout actions=row();actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Spielleitung",this::showDirector),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
+        LinearLayout actions=row();content.addView(button("Raumgefüge anzeigen",this::showBoard));
+        actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Spielleitung",this::showDirector),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
     }
     private void showPlay(){lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);play.setVisibility(View.VISIBLE);updatePortal();}
     private void buildStage(){
@@ -135,10 +144,42 @@ public class MainActivity extends Activity {
         stageStatus=text("",20,WHITE);stageStatus.setGravity(Gravity.CENTER);stageStatus.setPadding(dp(20),0,dp(20),dp(35));stage.addView(stageStatus,new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM));
         stage.setContentDescription("Drehende TARDIS. Antippen öffnet die Portal-Lobby.");stage.setOnClickListener(v->showLobby());
     }
+    private void buildSetup(){
+        setupScreen=new FrameLayout(this);setupScreen.setBackgroundColor(INK);root.addView(setupScreen,new FrameLayout.LayoutParams(-1,-1));setupScreen.setVisibility(View.GONE);
+        LinearLayout layout=column();layout.setGravity(Gravity.CENTER);layout.setPadding(dp(18),dp(20),dp(18),dp(20));setupScreen.addView(layout,new FrameLayout.LayoutParams(-1,-1));
+        TextView kicker=text("DR WHO · DAS RAUMGEFÜGE",12,CYAN);kicker.setGravity(Gravity.CENTER);layout.addView(kicker);
+        setupHeading=text("",30,WHITE);setupHeading.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));setupHeading.setGravity(Gravity.CENTER);layout.addView(setupHeading);
+        FrameLayout visual=new FrameLayout(this);layout.addView(visual,new LinearLayout.LayoutParams(-1,0,1));
+        setupFlight=new TardisView(this,true);visual.addView(setupFlight,new FrameLayout.LayoutParams(-1,-1));setupBoard=new BoardView(this);visual.addView(setupBoard,new FrameLayout.LayoutParams(-1,-1));
+        setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);
+        noticeScreen=new FrameLayout(this);noticeScreen.setBackgroundColor(INK);root.addView(noticeScreen,new FrameLayout.LayoutParams(-1,-1));noticeScreen.setVisibility(View.GONE);noticeScreen.setClickable(true);
+        noticeScreen.addView(new TardisView(this,true),new FrameLayout.LayoutParams(-1,-1));noticeText=text("",32,WHITE);noticeText.setGravity(Gravity.CENTER);noticeText.setAutoSizeTextTypeUniformWithConfiguration(18,32,2,android.util.TypedValue.COMPLEX_UNIT_SP);noticeText.setPadding(dp(25),dp(24),dp(25),dp(24));noticeText.setBackgroundColor(0xb807111e);noticeScreen.addView(noticeText,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
+        noticeScreen.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);noticeText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+    }
+    private void updateSetup(GameEngine.PortalState info){
+        setupScreen.setVisibility(info.preparing?View.VISIBLE:View.GONE);
+        if(info.preparing){
+            lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.GONE);
+            setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building");setupFlight.setVisibility(building?View.GONE:View.VISIBLE);setupBoard.setVisibility(building?View.VISIBLE:View.GONE);
+            if(building)setupBoard.setPlan(info.tiles,info.boardPlayers);
+            StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);if(team.length()>0)team.append("\n");team.append(i+1).append(" · ").append(p[0]);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x>=0)team.append(" · ").append(BoardPlan.cell(x,y));}
+            setupTeam.setText(team.toString());setupTeam.setVisibility(building?View.VISIBLE:View.GONE);
+            setupHint.setText(building?"Der gespeicherte Aufbau vom Raummeister-Handy erscheint hier live. Nummern zeigen die Startfelder.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
+        }
+        boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}
+        if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")){
+            String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
+            for(int i=0;i<info.notices.size();i++)if(info.notices.get(i).id.equals(seen))next=i+1;
+            if(next<info.notices.size()){
+                GameEngine.PortalNotice notice=info.notices.get(next);activeNotice=notice.id;noticeText.setText(notice.text);noticeScreen.setVisibility(View.VISIBLE);noticeScreen.bringToFront();handler.postDelayed(finishNotice,3000);
+            }
+        }
+    }
     private void showLobby(){play.setVisibility(View.GONE);lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.VISIBLE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);}
     private void showDirector(){play.setVisibility(View.GONE);lobbyBackground.setVisibility(View.GONE);lobby.setVisibility(View.GONE);director.setVisibility(View.VISIBLE);stage.setVisibility(View.GONE);updatePortal();}
     private void updatePortal(){
         if(engine==null||network==null||playerRows==null)return;
+        try{engine.tick();}catch(IOException error){gameStatus.setText("Speichern fehlgeschlagen. Der letzte bestätigte Zustand bleibt erhalten.");return;}
         network.update(server.port());
         String ip=network.address,host=network.hostname;
         wifiName.setText(ssid.isEmpty()?"Spiel-WLAN noch nicht eingerichtet":ssid);
@@ -159,9 +200,9 @@ public class MainActivity extends Activity {
                 r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));r.addView(text(id.isEmpty()?"○":"✓",21,id.isEmpty()?MUTED:CYAN));playerRows.addView(r);
             }
         }
-        startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":"Abenteuer starten");
+        startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":engine.preparing()?"Aufbau läuft…":"Abenteuer starten");
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
-        GameEngine.PortalState info=engine.portalState();
+        GameEngine.PortalState info=engine.portalState();updateSetup(info);
         playRound.setText("RUNDE "+info.round);playActor.setText(info.headline);
         goCard.setVisibility(info.awaitingGo?View.VISIBLE:View.GONE);playDice.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);playDiceLabel.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);
         if(info.awaitingGo&&info.activeCharacter!=null){
@@ -182,7 +223,13 @@ public class MainActivity extends Activity {
         playEvents.setText(events.toString());playPositions.setText(android.text.TextUtils.join("\n",info.positions));
     }
     private String summary(){StringBuilder b=new StringBuilder(engine.hostText().split("\n")[0]);for(String line:engine.hostText().split("\n"))if(line.startsWith("Am Zug:")||line.startsWith("Gegnerzug:")||line.startsWith("Noch ")||line.startsWith("Wurf "))b.append('\n').append(line);return b.append("\n\nAntippen · Portal-Lobby").toString();}
-    private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing()){showPlay();toast("Das Abenteuer läuft.");}}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
+    private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing())showPlay();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
+    private void showBoard(){
+        GameEngine.PortalState info=engine.portalState();if(info.tiles.isEmpty()){toast("Bisher ist nur das alte Testfeld gespeichert. Unter Spielleitung kannst du euren Aufbau erfassen.");return;}
+        LinearLayout content=column();BoardView board=new BoardView(this);board.setPlan(info.tiles,info.boardPlayers);content.addView(board,new LinearLayout.LayoutParams(-1,dp(360)));
+        StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);team.append(i+1).append(" · ").append(p[0]).append(" · ").append(x<0?"noch nicht aufgestellt":BoardPlan.cell(x,y)).append("\n");}TextView positions=text(team.toString(),16,CYAN);positions.setPadding(dp(15),dp(10),dp(15),dp(10));content.addView(positions);
+        new AlertDialog.Builder(this).setTitle("Euer Raumgefüge · aktuelle Positionen").setView(content).setPositiveButton("Zurück",null).show();
+    }
     private void enemyDialog(){
         java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
         String[] names=new String[available.size()];for(int i=0;i<names.length;i++)names[i]=available.get(i).name;
@@ -256,10 +303,10 @@ public class MainActivity extends Activity {
         }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
-    @Override protected void onStart(){super.onStart();if(engine!=null&&playerRows!=null)handler.post(refresh);}
+    @Override protected void onStart(){super.onStart();if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
     @Override protected void onResume(){super.onResume();if(prefs!=null&&prefs.getBoolean("setupPending",false)&&playerRows!=null)handler.post(this::confirmManualWifi);}
-    @Override protected void onStop(){handler.removeCallbacks(refresh);super.onStop();}
-    @Override protected void onDestroy(){destroyed=true;handler.removeCallbacks(refresh);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
+    @Override protected void onStop(){handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);super.onStop();}
+    @Override protected void onDestroy(){destroyed=true;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}
         @Override public byte[] load()throws IOException{try{return file.readFully();}catch(FileNotFoundException missing){return null;}}

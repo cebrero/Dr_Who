@@ -72,8 +72,24 @@
     Geräusche einmalig aus separatem kosmetischem Zufall; niemals beim Anzeigen neu auswürfeln.
     Alte Protokolle ohne Zeit ausdrücklich Archiv nennen. Keine fiktiven Räume erfinden.
 26. Gerichtete Aktion: erst Nord/Ost/Süd/West-Popup, vor Auswahl abbrechbar. Nach unbestätigtem
-    Senden nur identischer Retry. Vorhandene Aktionswirkungen bleiben Techniktest. Format 6,
-    alte Formate 1–5 lesen; API-Protokoll 2 erfordert Neuladen alter Spieleroberflächen.
+    Senden nur identischer Retry. Vorhandene Aktionswirkungen bleiben Techniktest. Seit 0.8.0 Format 7,
+    alte Formate 1–6 lesen; API-Protokoll 3 erfordert Neuladen alter Spieleroberflächen.
 27. drwho.local auf dem Portal-Handy ist beim Nutzer nicht auflösbar gewesen, IP funktioniert.
     Vollständige URL/Port und mDNS-/Netzroute prüfen. Ohne Gerätetest keine konkrete Ursache
     oder universelle Namensauflösung behaupten; IP-/QR-Ausweichweg erhalten.
+
+28. Seit 0.8.0 Start zuerst Raummeisterwahl: gespeicherte 3-Sekunden-TARDIS, zufällige echte
+    Spieler ohne Wiederholung fragen, Ja überträgt, alle Nein führt zur verbindlichen zufälligen
+    Portalwahl (mit Informationspopup). Kein automatischer Plan ohne Inventar. Kein Zeitablauf
+    für Kandidaten erfinden. Auswahl/Entwurf/Deadline über Neustarts und Retrys erhalten.
+29. Nur Raummeister-Token bearbeitet 20×20-Karte (A1–T20): Ecke, Boden, parallele Wände, Tür,
+    Kerker, Brunnen, Portal mit genau zwei Feldern. Touch/Maus-Drag, Tipp-Alternative, 90°-Drehung,
+    Verschieben, Müll, Startfiguren. Jede Änderung zuerst am Host speichern und dann darstellen.
+    Kein Feld ohne Kachel, kein Überlappen, kein Trennen des Portals, keine doppelten Startplätze.
+30. Portal zeigt Aufbau live; erst nach finalem Speichern 3-Sekunden-Startfilm, dann Go/W6.
+    Hinweise auf Zusage/Ablehnung/Portalwahl/Angriff groß je 3 Sekunden mit stabilen IDs zeigen.
+    Altpartien bleiben auf altem Testfeld; hostbestätigtes Nachtragen des Aufbaus pausiert und
+    erhält Runde/Zug. Keine ungefragte Rücksetzung oder fertige Mission behaupten.
+31. Massive Kachelwände blockieren beidseitig Bewegung, leere Stellen existieren nicht. Türen
+    vorläufig passierbar; Kerker/Brunnen/Portal sind noch ohne Sonderwirkung. Blockierte volle
+    Würfelstrecke, Türzustände und Szenariostart sind offene Regeln. Kein neues Passen erfinden.

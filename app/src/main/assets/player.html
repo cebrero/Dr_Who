@@ -34,8 +34,20 @@ body.in-game>header{padding:0 4px 8px;margin-bottom:6px;border:0}body.in-game>he
 .modal-shade{position:fixed;inset:0;z-index:1000;background:#030d18d9;display:grid;place-items:center;padding:20px}.modal-surface{width:min(100%,430px);max-height:90vh;overflow:auto;padding:27px;border:1px solid var(--brass);border-radius:16px;background:var(--paper);color:var(--ink);box-shadow:0 0 80px #69c8dc30,0 16px 60px #0008}.modal-surface h2{text-align:center;font-size:34px;margin:8px 0 18px}.modal-surface p{text-align:center}.modal-surface .primary{font-size:22px}#goStatus,#actionStatus{font-size:14px;min-height:22px}#actionDirections{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:22px 0}#actionDirections button:nth-child(1){grid-column:2}#actionDirections button:nth-child(2){grid-column:1}#actionDirections button{padding:15px 5px;min-height:60px}#log{list-style:none;padding:0}#log li{border-left:2px solid #b69b64;padding:8px 0 8px 13px;margin:16px 0}.story-meta{display:block;font-size:12px;letter-spacing:0;color:#786037}.story-text{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
 
 [hidden]{display:none!important}
+/* Room reconstruction: the same host-saved plan on every phone. */
+body.building{max-width:980px;padding-top:12px}body.building>header{padding:4px 0 8px;margin-bottom:8px;border:0}body.building>header::after{display:none}body.building>header h1{font-size:23px;margin:0}body.building>header>small:first-child{display:none}
+#setupArea .setup-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}#setupArea h2{margin:5px 0;font-size:26px}#boardEditor h2{color:#f0dfb8}.setup-heading>div{flex:1;min-width:0}#boardEditor .setup-copy{color:#ddd0b4}#setupArea .setup-kicker{letter-spacing:.16em;color:#c8ad70;font-size:11px}#setupArea .setup-copy{font-size:14px;line-height:1.5;margin:8px 0}#setupWait .flight{height:240px}#setupTitle{text-align:center;font-size:28px;line-height:1.35}#setupSub{text-align:center;color:var(--muted)}
+.board-viewport{position:relative;overflow:auto;border:1px solid #aa8b54;border-radius:12px;background:radial-gradient(ellipse at 50% 20%,#153e47,#071e2a);box-shadow:inset 0 0 25px #0007;overscroll-behavior:contain;isolation:isolate}.board-grid{--cell:36px;position:relative;width:calc(var(--cell)*20);height:calc(var(--cell)*20);touch-action:pan-x pan-y;background-image:linear-gradient(#85b1b214 1px,transparent 1px),linear-gradient(90deg,#85b1b214 1px,transparent 1px);background-size:var(--cell) var(--cell)}#boardViewport{height:clamp(280px,calc(100svh - 365px),650px)}.board-empty{position:absolute;width:var(--cell);height:var(--cell);padding:0;margin:0;background:transparent;box-shadow:none;border:0;border-radius:0;color:#a0c5c033;font:8px/1 sans-serif;display:grid;place-items:center;min-height:0}.board-empty:focus-visible{outline:2px solid #f5cf7d;outline-offset:-2px;z-index:3}.board-tile{position:absolute;padding:0;margin:0;border:1px solid #7f714f;border-radius:3px;background:linear-gradient(140deg,#f8e8bd,#ccba8b);color:#183e43;box-shadow:inset 0 0 0 2px #fff5d333,0 1px 3px #0008;overflow:hidden;min-height:0;touch-action:none}.board-tile svg{display:block;width:100%;height:100%;pointer-events:none}.board-tile .tile-label{position:absolute;bottom:2px;left:3px;font:bold 8px/1 sans-serif;color:#24464b;text-shadow:0 1px #fff7;pointer-events:none}.board-tile.selected{outline:2px solid #ffe49a;outline-offset:-2px;z-index:4}.board-marker{position:absolute;right:1px;top:1px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;font:bold 10px sans-serif;color:#fff7df;background:#186f76;border:1px solid #dbe9bf;z-index:5;pointer-events:none}.board-marker.mine{background:#a94f36}.board-preview{position:absolute;border:2px solid #b9ffdc;background:#44f2ac44;border-radius:3px;z-index:9;pointer-events:none}.board-preview.invalid{border-color:#ff9b91;background:#ff494955}
+.board-tools{display:flex;align-items:center;gap:8px;margin:8px 0;flex-wrap:wrap}.board-tools button{margin:0;padding:8px 12px;font-size:12px;min-height:38px;flex:1}.board-tools .selected{background:#986f2d;color:#fff7df}.board-legend{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:#e4d4ad;margin:9px 0}.board-legend span{display:flex;gap:5px;align-items:center}.board-legend i{display:inline-grid;place-items:center;width:18px;height:18px;background:#186f76;color:#fff;border-radius:50%;font-style:normal}
+#buildPalette{position:sticky;bottom:0;z-index:10;margin-top:10px;padding:10px;border-radius:14px 14px 5px 5px;background:#e9d9b5;box-shadow:0 -6px 24px #061e2966;border:1px solid #af8b50}.palette-items{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.palette-tile{padding:3px 2px 6px;margin:0;min-height:80px;background:#f9eccd;color:#24454a;border:1px solid #b29b68;border-radius:7px;box-shadow:none;touch-action:none;font-size:9px;line-height:1.2}.palette-tile svg{display:block;width:100%;height:43px;pointer-events:none}.palette-tile.selected{outline:2px solid #155a61;background:#fff6de}.palette-bottom{display:flex;gap:8px;align-items:center;margin-top:8px}.palette-bottom p{font-size:11px;line-height:1.4;margin:0;flex:1;color:#75603b}#boardTrash{margin:0;padding:8px 14px;min-height:44px;font-size:12px;background:#f4ddd0;color:#833b32;border-color:#b47a67}#boardTrash.drag-over{background:#aa3e35;color:white;outline:3px solid #ffd59a}#saveBoard{width:132px;flex:0 0 132px;margin:0;padding:11px 14px;font-size:14px;min-height:48px}.board-status{min-height:20px;font-size:12px;color:#e7d2a7}.spawn-list{display:flex;gap:6px;flex-wrap:wrap}.spawn-list button{margin:0;padding:8px 10px;font-size:12px;min-height:40px}.spawn-list button.selected{background:#8a6632;color:#fff3ca}.drag-ghost{position:fixed;width:54px;height:54px;z-index:2000;background:#eddbaf;border:2px solid #f3d189;border-radius:6px;pointer-events:none;opacity:.9;box-shadow:0 8px 20px #0008}.drag-ghost svg{width:100%;height:100%}#gameMapViewport{max-height:380px;margin:20px 0}#gameMapViewport[hidden]{display:none}#boardHelp{margin:5px 0}
+@media(max-width:360px){.palette-items{gap:2px}.palette-tile{font-size:8px}.palette-tile svg{height:35px}.palette-tile{min-height:72px}#setupArea h2{font-size:22px}#saveBoard{font-size:12px;padding:10px}.board-tools{gap:4px}}
+
+
+/* Keep the palette in its own row so it never covers the last map rows. */
+body.editing-board{height:100svh;max-height:100svh;overflow:hidden;padding:8px 10px;display:flex;flex-direction:column}body.editing-board>header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 4px;padding:0;flex-shrink:0}body.editing-board>header h1{font-size:23px}body.editing-board>header small{font-size:10px}body.editing-board #message{font-size:12px;flex-shrink:0;min-height:20px;height:20px;line-height:20px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}body.editing-board #setupArea{flex:1;min-height:0;display:flex;flex-direction:column}#boardEditor{flex:1;min-height:0;display:flex;flex-direction:column}#boardEditor>.setup-heading,#boardEditor>.setup-copy,#boardEditor>.board-tools,#boardStatus,#spawnList,#boardLegend,#buildPalette{flex-shrink:0}#boardEditor .setup-copy{font-size:12px;line-height:1.4;margin:5px 0}#boardEditor h2{font-size:25px}.board-tools{margin:4px 0;flex-wrap:nowrap}.board-tools button{font-size:11px;min-width:0;min-height:36px;padding:7px 5px}#boardStatus{margin:4px 0;min-height:18px;font-size:11px;line-height:1.35}#boardViewport{height:auto;flex:1;min-height:140px}#boardLegend{font-size:11px;margin:5px 0}#buildPalette{position:static;padding:7px;margin-top:2px;border-radius:10px}.palette-tile{min-height:64px;font-size:9px}.palette-tile svg{height:32px}.palette-bottom{margin-top:5px}.palette-bottom p{font-size:10px;line-height:1.35}#boardTrash{min-height:36px;padding:7px 9px;font-size:11px}.spawn-list button{min-height:34px;padding:5px 8px}#boardEditor .setup-kicker{font-size:10px}#saveBoard{font-size:12px;padding:9px;min-height:44px}
+
 </style>
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.7.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.8.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -44,6 +56,19 @@ body.in-game>header{padding:0 4px 8px;margin-bottom:6px;border:0}body.in-game>he
 <label for="code">Portalcode</label><input id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off">
 <button class="primary" id="joinButton">Beitreten</button><p id="joinOccupancy" class="muted" role="status" aria-live="polite">Spielerplätze werden geladen …</p></form>
 <section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
+<section id="setupArea" hidden>
+ <div id="setupWait" class="card"><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 id="setupTitle" tabindex="-1"></h2><p id="setupSub"></p></div>
+ <section id="boardEditor" tabindex="-1" hidden>
+  <div class="setup-heading"><div><small class="setup-kicker">DU BIST RAUMMEISTER</small><h2>Das Raumgefüge</h2></div><button id="saveBoard" class="primary" type="button">Speichern & starten</button></div>
+  <p class="setup-copy">Baue euren Tisch nach. Ziehe Kacheln ins Raster, tippe zum Drehen. Nur belegte Stellen existieren.</p>
+  <div class="board-tools"><button type="button" id="boardZoom">Ganzes Raster</button><button type="button" id="spawnMode">Startfiguren setzen</button><button type="button" id="clearPalette">Drehen / verschieben</button></div>
+  <div id="spawnList" class="spawn-list" hidden></div><p id="boardStatus" class="board-status" role="status" aria-live="polite"></p>
+  <div id="boardViewport" class="board-viewport"><div id="editorGrid" class="board-grid" role="group" aria-label="Aufbau 20 mal 20 Felder, A1 bis T20"></div></div>
+  <div id="boardLegend" class="board-legend"></div>
+  <div id="buildPalette"><div id="tilePalette" class="palette-items" role="group" aria-label="Kacheln zum Ziehen oder Auswählen"></div><div class="palette-bottom"><p id="boardHelp">Ziehen: platzieren · Antippen: 90° drehen<br>Alternativ Kachel auswählen und leeres Feld antippen.</p><button id="boardTrash" type="button" aria-label="Ausgewählte Kachel entfernen oder Kachel hierher ziehen">▱ Mülleimer</button></div></div>
+ </section>
+</section>
+
 <section id="playerArea" hidden>
 <div id="playerTopbar"><div id="turnNotice" role="status" aria-live="polite"><strong id="turnNoticeTitle"></strong><p id="turnNoticeDetail"></p></div>
 <div id="playerTabs" role="tablist" aria-label="Deine Spielansicht">
@@ -61,18 +86,20 @@ body.in-game>header{padding:0 4px 8px;margin-bottom:6px;border:0}body.in-game>he
 <div id="turnChoices" hidden><button id="moveChoiceButton" class="primary" type="button">Bewegen</button><button id="actionChoiceButton" class="wide" type="button">Aktion wählen · Techniktest</button><p class="muted">Die Aktionswahl wird gespeichert. Ihre konkrete Wirkung folgt mit den Charakterregeln.</p></div>
 <p class="muted">Genau die gewürfelte Anzahl Felder ziehen. Nur Nord, Ost, Süd und West; Richtungswechsel sind erlaubt. Bestätige jeden Schritt am eigenen Handy und versetze die echte Figur entsprechend.</p>
 <div class="controls" id="controls"><button type="button" data-dir="N">↑ Nord</button><button type="button" data-dir="W">← West</button><button type="button" data-dir="S">↓ Süd</button><button type="button" data-dir="E">Ost →</button></div>
-<div id="grid" aria-label="Demo-Spielfeld A1 bis F6"></div><p class="muted">Freies 6×6-Testfeld. Wände, Türzustände und Regeln für blockierte Wege folgen noch.</p></section>
+<div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div><div id="gameMapViewport" class="board-viewport" hidden><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div></div><p id="mapInfo" class="muted"></p></section>
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card"><summary>Story</summary><ol id="log"></ol></details></section>
 </section>
+<div id="forcedDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="forcedTitle" tabindex="-1" hidden><div class="modal-surface"><small>DAS PORTAL HAT ENTSCHIEDEN</small><h2 id="forcedTitle">Du bist Raummeister!</h2><p>Alle haben abgelehnt. Das Portal hat dich zufällig ausgewählt, um das Raumgefüge wiederherzustellen.</p><button id="openBoard" class="primary" type="button">Aufbau öffnen</button><p id="forcedStatus" role="status"></p></div></div>
+<div id="roomDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="roomTitle" tabindex="-1" hidden><div class="modal-surface"><small>DEINE REISE BEGINNT</small><h2 id="roomTitle">Wirst du Raummeister?</h2><p>Möchtest du das Raumgefüge wiederherstellen und euren gedruckten Aufbau im Plan erfassen?</p><button id="roomYes" type="button" class="primary">Ja, ich stelle es wieder her</button><button id="roomNo" type="button" class="wide">Nein, jemand anderes</button><p id="roomStatus" role="status" aria-live="polite"></p></div></div>
 <div id="turnDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="yourMoveTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="yourMoveTitle">Your move...</h2><p>Das Portal wartet auf dich.</p><button id="goButton" class="primary" type="button">Go</button><p id="goStatus" role="status" aria-live="polite"></p></div></div>
 <div id="directionDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="directionTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="directionTitle">Welche Richtung?</h2><p id="directionHint">Wohin soll deine Aktion wirken?</p><div id="actionDirections"><button type="button" data-action-dir="N">↑ Nord</button><button type="button" data-action-dir="W">← West</button><button type="button" data-action-dir="S">↓ Süd</button><button type="button" data-action-dir="E">Ost →</button></div><p id="actionStatus" role="status" aria-live="polite"></p><button id="actionRetry" class="primary" type="button" hidden>Gleiche Aktion erneut senden</button><button id="cancelDirection" class="wide" type="button">Abbrechen</button></div></div>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.7.0',PROTOCOL_VERSION=2;
+const CLIENT_VERSION='0.8.0',PROTOCOL_VERSION=3;
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 let directionPicking=false,shownModal='',previousFocus=null,modalError='';
@@ -88,7 +115,7 @@ async function api(path,data){
  }finally{clearTimeout(timeout)}
 }
 function controls(){
- const active=state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&state.turn.accepted===true&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
+ const active=state&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&state.turn.accepted===true&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
  $('rollButton').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
@@ -99,18 +126,20 @@ function controls(){
  document.querySelectorAll('.choose').forEach(b=>b.disabled=compatibilityBlocked||!state||b.dataset.locked==='true'||busy||!!pending);
  syncModals();
 }
-function ownTurn(){return state&&state.started&&state.ready&&state.phase==='players'&&state.current===state.you&&!state.attack.pending&&!compatibilityBlocked}
+function ownTurn(){return state&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&!state.attack.pending&&!compatibilityBlocked}
 function syncModals(){
  const active=ownTurn(),waitForGo=active&&!state.turn.accepted;
  if(!active||!state.turn.accepted||state.turn.stage!=='choice'||rolling)directionPicking=false;
- const modal=waitForGo?'turnDialog':directionPicking?'directionDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
+ const roomOffer=setupActive()&&state.setup.stage==='offering'&&state.setup.candidate===state.you&&!compatibilityBlocked;
+ const forced=setupActive()&&state.setup.stage==='building'&&state.setup.forced&&state.setup.roomMaster===state.you&&saved.roomDecision!==state.setup.id&&!compatibilityBlocked;
+ const modal=roomOffer?'roomDialog':forced?'forcedDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
  if(modal!==shownModal){
   const old=shownModal;if(modal)modalError='';if(!old&&modal)previousFocus=document.activeElement;
-  shownModal=modal;$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';
-  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea').forEach(e=>e.inert=!!modal);
+  shownModal=modal;$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';
+  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>e.inert=!!modal);
   if(modal){$(modal).focus()}
   else if(old){
-   const target=previousFocus&&previousFocus.isConnected&&!previousFocus.closest('[hidden]')&&!previousFocus.disabled&&previousFocus!==document.body?previousFocus:ownTurn()&&state.turn.accepted&&!$('rollButton').hidden&&!$('rollButton').disabled?$('rollButton'):!$('playerArea').hidden?document.querySelector('[role="tab"][aria-selected="true"]'):$('name');
+   const target=previousFocus&&previousFocus.isConnected&&!previousFocus.closest('[hidden]')&&!previousFocus.disabled&&previousFocus!==document.body?previousFocus:ownTurn()&&state.turn.accepted&&!$('rollButton').hidden&&!$('rollButton').disabled?$('rollButton'):setupActive()?(state.setup.stage==='building'&&state.setup.roomMaster===state.you?$('boardEditor'):$('setupTitle')):!$('playerArea').hidden?document.querySelector('[role="tab"][aria-selected="true"]'):$('name');
    if(target)target.focus();previousFocus=null;
   }
  }
@@ -119,7 +148,10 @@ function syncModals(){
  document.querySelectorAll('[data-action-dir]').forEach(b=>b.disabled=busy||!!pending||!directionPicking);
  $('cancelDirection').disabled=busy||!!pending;$('actionRetry').hidden=!pending||pending.action!=='action';$('actionRetry').disabled=busy;
  $('actionStatus').textContent=busy&&pending?.action==='action'?'Richtung wird gespeichert …':pending?.action==='action'?'Bestätigung fehlt. Sende dieselbe Aktion erneut.':modalError;
- if(newlyOpened){const target=modal==='turnDialog'?$('goButton'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
+ $('roomYes').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomYes';$('roomNo').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomNo';
+ $('roomStatus').textContent=busy?'Deine Antwort wird gespeichert …':pending?'Bestätigung fehlt. Sende dieselbe Antwort erneut.':modalError;
+ if(setupActive())renderSetup(state);
+ if(newlyOpened){const target=modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
 }
 function openActionPicker(){
  if(!ownTurn()||!state.turn.accepted||state.turn.stage!=='choice'||rolling||busy||pending)return;
@@ -180,7 +212,7 @@ function selectTab(name,focus=false){
  if(name==='history')$('historyDetails').open=true;
 }
 function updatePlayerView(s,active,helping,attacked){
- const playing=s.started&&s.ready;$('playerArea').hidden=!playing;document.body.classList.toggle('in-game',playing);if(!playing)return;
+ const playing=isPlaying(s);$('playerArea').hidden=!playing;document.body.classList.toggle('in-game',playing);if(!playing)return;
  const mode=attacked?'attack':helping?'helper':active?'turn':'waiting';
  const key=mode==='waiting'?'waiting':[s.sessionId,s.round,mode,s.current,s.activeEnemy,attacked?s.attack.id:''].join(':');
  if(mode!==viewMode||key!==attentionKey){viewMode=mode;attentionKey=key;selectTab(mode==='waiting'?'profile':'play')}
@@ -208,18 +240,18 @@ function render(s){
  if(compatibilityBlocked)return;
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
  state=s;$('join').hidden=true;
- const me=s.players.find(p=>p.id===s.you),playing=s.started&&s.ready;
+ const me=s.players.find(p=>p.id===s.you),playing=isPlaying(s);
  const attacked=playing&&s.attack.pending&&s.attack.targetId===s.you;
  const helping=playing&&s.phase==='enemies'&&s.helperId===s.you;
  const active=playing&&s.phase==='players'&&s.current===s.you;paintDice(s.turn.roll);presentRoll(s,active);updatePlayerView(s,active,helping,attacked);
- $('selection').hidden=playing;$('game').hidden=!active;$('helper').hidden=!helping;$('battle').hidden=!attacked;$('idle').hidden=!playing||active||helping||attacked;
+ $('selection').hidden=playing||setupActive();renderSetup(s);$('game').hidden=!active;$('helper').hidden=!helping;$('battle').hidden=!attacked;$('idle').hidden=!playing||active||helping||attacked;
  $('selectionStatus').textContent=s.selectedCount+' / '+s.players.length+' haben gewählt. '+(me.characterId?'Deine Figur ist reserviert. Der Spielleiter startet die Partie.':'Wähle eine freie Figur.');
  const signature=JSON.stringify([s.characters,me.characterId,s.started,s.ready]);
  if($('characters').dataset.signature!==signature){
   const browsed=$('characters').children[cardIndex]?.dataset.characterId||me.characterId;
   $('characters').dataset.signature=signature;$('characters').replaceChildren();
   for(const c of s.characters){
-   const card=dossier(c);card.dataset.characterId=c.id;card.dataset.name=c.name;const mine=c.owner===s.you,owner=s.players.find(p=>p.id===c.owner),locked=playing||c.enemy||!!c.owner;
+   const card=dossier(c);card.dataset.characterId=c.id;card.dataset.name=c.name;const mine=c.owner===s.you,owner=s.players.find(p=>p.id===c.owner),locked=s.started||c.enemy||!!c.owner;
    if(mine)card.classList.add('chosen');const button=el('button',mine?'Deine Figur':c.enemy?'Als Gegner hinzugefügt':owner?'Gewählt von '+owner.name:'Diesen Charakter wählen','choose');button.type='button';button.dataset.locked=String(locked);button.disabled=locked||busy||!!pending;
    button.addEventListener('click',()=>choose(c.id));card.lastChild.append(button);$('characters').append(card);
   }
@@ -233,8 +265,10 @@ function render(s){
  const actor=s.players.find(p=>p.id===s.current);
  $('turn').textContent=!s.started?'Warte auf Spielleiter …':s.current===s.you?'Du bist am Zug':(actor?actor.name:'Spieler')+' ist am Zug';
  $('players').textContent=s.players.map(p=>p.name+' · '+(s.characters.find(c=>c.id===p.characterId)?.name||'wählt noch')+(p.id===s.you?' (du)':'')).join(' / ');
+ const mapped=s.setup&&!s.setup.legacy&&s.setup.saved;$('grid').hidden=!!mapped;$('gameMapViewport').hidden=!mapped;
+ $('mapInfo').textContent=mapped?'Euer gespeicherter Aufbau. Nur platzierte Felder sind begehbar; massive Wände blockieren. Türen sind vorläufig Durchgänge.':'Bisheriges freies 6×6-Testfeld dieser gespeicherten Partie.';if(mapped)paintBoard($('gameBoard'),s,false);
  $('grid').replaceChildren();
- for(let y=0;y<6;y++)for(let x=0;x<6;x++){
+ if(!mapped)for(let y=0;y<6;y++)for(let x=0;x<6;x++){
   const cell=document.createElement('div');cell.className='cell';cell.textContent=String.fromCharCode(65+x)+(y+1);
   for(const p of s.players.filter(p=>p.x===x&&p.y===y)){
    const figure=document.createElement('span');figure.className='piece';figure.textContent=p.name;cell.append(figure);if(p.id===s.you)cell.classList.add('mine');
@@ -309,7 +343,7 @@ $('join').addEventListener('submit',async event=>{
 });
 async function send(){
  if(!pending||busy)return;const access=token,request=pending;modalError='';busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
- try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();render(s);$('message').textContent='Gespeichert.'}
+ try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();if(request.action==='tileMove')selectedTile=request.direction.split(',').slice(2).join(',');render(s);$('message').textContent='Gespeichert.'}
  catch(e){
   if(token!==access||pending!==request||compatibilityBlocked)return;
   if(e.status===401){returnToJoin();return}
@@ -326,6 +360,120 @@ function choose(characterId){
  if(!state||busy||pending||compatibilityBlocked)return;pending={kind:'character',requestId:uuid(),characterId};
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
 }
+const tileKinds={corner:'Ecke',floor:'Ohne Wand',parallel:'Gang',door:'Tür',dungeon:'Kerker',well:'Brunnen',portal:'Portal · 2 Felder'};
+let paletteKind='',spawnTarget='',spawnMode=false,boardFit=false,selectedTile=null,drag=null,suppressBoardClick=false,lastTouchHandledAt=-1000;
+function isPlaying(s){return s.started&&s.ready&&(!s.setup||s.setup.stage==='play')}
+function setupActive(){return state&&state.started&&state.setup&&state.setup.stage!=='play'}
+function canBuild(){return setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&!compatibilityBlocked&&!busy&&!pending}
+function tileGraphic(kind,rotation=0){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
+ const drawings={
+  corner:'<path d="M5 94V6H94" fill="none" stroke="#28494c" stroke-width="11"/><path d="M5 94V6H94" fill="none" stroke="#d1c39a" stroke-width="3"/>',
+  floor:'<path d="M0 33H100M0 66H100M33 0V33M66 33V66M33 66V100" fill="none" stroke="#907e542e" stroke-width="2"/><path d="M43 50h14m-7-7v14" stroke="#647d7055" stroke-width="2"/>',
+  parallel:'<path d="M0 6H100M0 94H100" stroke="#28494c" stroke-width="11"/><path d="M0 6H100M0 94H100" stroke="#d1c39a" stroke-width="3"/>',
+  door:'<path d="M0 6H27M73 6H100" stroke="#28494c" stroke-width="11"/><path d="M28 7H72V20H28Z" fill="#947149" stroke="#463e30" stroke-width="3"/><path d="M32 13h36" stroke="#f7d39a" stroke-width="2"/><path d="M28 25L68 46M28 25A43 43 0 0 1 72 25" fill="none" stroke="#806a41" stroke-width="2" stroke-dasharray="4 3"/>',
+  dungeon:'<path d="M23 80V32a27 27 0 0 1 54 0v48z" fill="#213d44" stroke="#b2955f" stroke-width="5"/><path d="M36 22v57M50 17v62M64 22v57M24 49h52" stroke="#95abad" stroke-width="4"/>',
+  well:'<ellipse cx="50" cy="69" rx="32" ry="18" fill="#8e825e" stroke="#4e695f" stroke-width="4"/><path d="M18 44v25m64-25v25" stroke="#577166" stroke-width="5"/><ellipse cx="50" cy="44" rx="32" ry="18" fill="#366976" stroke="#b8aa7a" stroke-width="9"/><ellipse cx="50" cy="44" rx="21" ry="9" fill="#255064"/><path d="M38 42q12-7 24 0" fill="none" stroke="#a2e2df" stroke-width="2"/>',
+  portal:'<ellipse cx="50" cy="49" rx="35" ry="44" fill="#16445a" stroke="#d9bc72" stroke-width="4"/><ellipse cx="50" cy="49" rx="27" ry="35" fill="#277382" stroke="#8de1df" stroke-width="3"/><path d="M48 14q39 27 1 65q-31-20 0-52q24 10 1 36" fill="none" stroke="#b6eeea" stroke-width="4"/><path d="M20 87h60" stroke="#d9bc72" stroke-width="4"/>'
+ };
+ svg.innerHTML='<g transform="rotate('+rotation*90+' 50 50)">'+(drawings[kind]||drawings.floor)+'</g>';return svg;
+}
+function tileAt(s,x,y){return (s.board?.tiles||[]).find(t=>t.x===x&&t.y===y||t.kind==='portal'&&t.x+(t.rotation%2===0?1:0)===x&&t.y+(t.rotation%2?1:0)===y)}
+function tileSize(t){return [t.kind==='portal'&&t.rotation%2===0?2:1,t.kind==='portal'&&t.rotation%2?2:1]}
+function positionTile(e,x,y,w=1,h=1){e.style.left='calc(var(--cell) * '+x+')';e.style.top='calc(var(--cell) * '+y+')';e.style.width='calc(var(--cell) * '+w+')';e.style.height='calc(var(--cell) * '+h+')'}
+function paintBoard(container,s,editable){
+ const signature=JSON.stringify([s.board,s.players,s.you,editable,spawnMode,spawnTarget,paletteKind,selectedTile]);if(container.dataset.signature===signature)return;container.dataset.signature=signature;
+ const focus=document.activeElement?.closest('[data-cell]')?.dataset.cell;container.replaceChildren();
+ if(editable)for(let y=0;y<20;y++)for(let x=0;x<20;x++){
+  if(tileAt(s,x,y))continue;const b=el('button',String.fromCharCode(65+x)+(y+1),'board-empty');b.type='button';b.dataset.cell=x+','+y;b.setAttribute('aria-label',b.textContent+' · kein Feld');positionTile(b,x,y);container.append(b);
+ }
+ for(const t of s.board.tiles){
+  const [w,h]=tileSize(t),tile=el(editable?'button':'div',undefined,'board-tile');if(editable)tile.type='button';tile.dataset.cell=t.x+','+t.y;tile.dataset.tile='true';positionTile(tile,t.x,t.y,w,h);
+  tile.append(tileGraphic(t.kind,t.rotation),el('span',String.fromCharCode(65+t.x)+(t.y+1),'tile-label'));tile.setAttribute('aria-label',(tileKinds[t.kind]||t.kind)+' '+String.fromCharCode(65+t.x)+(t.y+1)+' · '+t.rotation*90+' Grad'+(editable?' · antippen zum Drehen':''));
+  if(selectedTile===tile.dataset.cell&&editable)tile.classList.add('selected');container.append(tile);
+ }
+ s.players.forEach((p,i)=>{if(p.x<0||p.y<0||!tileAt(s,p.x,p.y))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+p.x+' + var(--cell) - 19px)';marker.style.top='calc(var(--cell) * '+p.y+' + 2px)';marker.style.right='auto';container.append(marker)});
+ if(focus&&editable)container.querySelector('[data-cell="'+focus+'"]')?.focus({preventScroll:true});
+}
+function renderSetup(s){
+ const preparing=setupActive();$('setupArea').hidden=!preparing;document.body.classList.toggle('building',!!preparing);document.body.classList.toggle('editing-board',!!preparing&&s.setup.stage==='building'&&s.setup.roomMaster===s.you);if(!preparing)return;
+ const setup=s.setup,master=s.players.find(p=>p.id===setup.roomMaster),candidate=s.players.find(p=>p.id===setup.candidate),editing=setup.stage==='building'&&setup.roomMaster===s.you;
+ $('boardEditor').hidden=!editing;$('setupWait').hidden=editing;
+ $('setupTitle').textContent=setup.stage==='selecting'?'der Raummeister wird gerade ausgewählt...':setup.stage==='offering'?(candidate?.name||'Ein Mitreisender')+' wird gerade gefragt…':setup.stage==='launching'?'Das Abenteuer beginnt!':(master?.name||'Der Raummeister')+' stellt das Raumgefüge wieder her…';
+ $('setupSub').textContent=setup.stage==='building'?(setup.forced?'Alle haben abgelehnt. Das Portal hat '+(master?.name||'einen Spieler')+' bestimmt.':'Der Raummeister hat zugesagt.')+' Den aktuellen Aufbau siehst du am Portal.':setup.stage==='launching'?'Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.':'Das Portal wählt nur echte Mitspieler. Ihr müsst nichts am Portal bedienen.';
+ if(editing){
+  paintBoard($('editorGrid'),s,true);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;
+  $('boardStatus').textContent=busy?'Änderung wird am Portal gespeichert …':pending?'Bestätigung fehlt. Bitte dieselbe Anfrage erneut senden.':'';
+  if(!busy&&!pending&&!modalError)$('boardStatus').textContent=spawnMode?'Wähle unten einen Spieler und tippe sein Startfeld an.':paletteKind?tileKinds[paletteKind]+' gewählt. Ziehen oder leeres Feld antippen.':s.board.tiles.length+' Kacheln gespeichert · Antippen dreht um 90°.';
+  if(modalError&&!busy&&!pending)$('boardStatus').textContent=modalError;
+  const legend=$('boardLegend');legend.replaceChildren();s.players.forEach((p,i)=>{const label=el('span');label.append(el('i',String(i+1)),document.createTextNode(p.name+' · '+(p.x<0?'noch kein Startfeld':String.fromCharCode(65+p.x)+(p.y+1))));legend.append(label)});
+  $('spawnList').hidden=!spawnMode;$('spawnList').replaceChildren();s.players.forEach((p,i)=>{const b=el('button',(i+1)+' · '+p.name,spawnTarget===p.id?'selected':'');b.type='button';b.disabled=!canBuild();b.onclick=()=>{spawnTarget=p.id;renderSetup(state)};$('spawnList').append(b)});
+  $('spawnMode').classList.toggle('selected',spawnMode);document.querySelectorAll('.palette-tile').forEach(b=>{b.classList.toggle('selected',b.dataset.kind===paletteKind);b.disabled=!canBuild()});$('boardTrash').disabled=!canBuild();
+ }
+}
+function boardClick(event){
+ if(event.type==='click'&&event.detail>0&&performance.now()-lastTouchHandledAt<700)return;if(suppressBoardClick){suppressBoardClick=false;return}if(!canBuild())return;const target=event.target.closest('[data-cell]');if(!target)return;const [x,y]=target.dataset.cell.split(',').map(Number);modalError='';
+ if(spawnMode){let sx=x,sy=y;const tile=tileAt(state,x,y);if(tile?.kind==='portal'&&event.detail){const rect=target.getBoundingClientRect();if(tile.rotation%2&&event.clientY>rect.top+rect.height/2)sy++;else if(tile.rotation%2===0&&event.clientX>rect.left+rect.width/2)sx++;}if(spawnTarget)command('setSpawn',spawnTarget+','+sx+','+sy);return}
+ if(target.dataset.tile){selectedTile=x+','+y;command('tileRotate',selectedTile)}
+ else if(paletteKind){selectedTile=null;command('tilePlace',x+','+y+','+paletteKind+',0')}
+}
+function dropTarget(clientX,clientY){const rect=$('editorGrid').getBoundingClientRect(),cell=rect.width/20;return {x:Math.floor((clientX-rect.left)/cell),y:Math.floor((clientY-rect.top)/cell)}}
+function inside(rect,x,y){return x>=rect.left&&x<rect.right&&y>=rect.top&&y<rect.bottom}
+function beginDrag(event,kind,source){
+ if(!canBuild()||spawnMode&&!source||event.button!==0||event.isPrimary===false)return;
+ const target=event.target.closest('button');if(!target)return;
+ drag={pointer:event.pointerId,startX:event.clientX,startY:event.clientY,kind,source,target,moved:false,tapOnly:spawnMode};target.setPointerCapture?.(event.pointerId);
+}
+function finishDrag(event,cancel=false){
+ if(!drag||event.pointerId!==drag.pointer)return;const d=drag;drag=null;clearTimeout(d.edgeTimer);d.ghost?.remove();$('boardPreview')?.remove();$('boardTrash').classList.remove('drag-over');
+ if(cancel||d.tapOnly&&d.moved)return;
+ if(!d.moved){
+  if(event.pointerType==='touch'){
+   event.preventDefault();if(d.source)boardClick({type:'pointerup',target:d.target,clientX:event.clientX,clientY:event.clientY,detail:1});
+   else if(canBuild()){paletteKind=paletteKind===d.kind?'':d.kind;spawnMode=false;renderSetup(state)}lastTouchHandledAt=performance.now();
+  }return;
+ }
+ if(event.pointerType==='touch')lastTouchHandledAt=performance.now();suppressBoardClick=true;setTimeout(()=>suppressBoardClick=false,0);event.preventDefault();if(!canBuild())return;
+ const trash=$('boardTrash').getBoundingClientRect();if(d.source&&inside(trash,event.clientX,event.clientY)){command('tileRemove',d.source);return}
+ if(!inside($('boardViewport').getBoundingClientRect(),event.clientX,event.clientY))return;
+ const {x,y}=dropTarget(event.clientX,event.clientY);if(x<0||x>19||y<0||y>19)return;modalError='';
+ if(d.source){const [sx,sy]=d.source.split(',').map(Number);if(sx!==x||sy!==y){selectedTile=d.source;command('tileMove',d.source+','+x+','+y)}}else{paletteKind=d.kind;command('tilePlace',x+','+y+','+d.kind+',0')}
+}
+function moveDrag(event){
+ if(!drag||event.pointerId!==drag.pointer)return;const d=drag;if(d.tapOnly){d.moved=Math.hypot(event.clientX-d.startX,event.clientY-d.startY)>=7;return}if(!d.moved&&Math.hypot(event.clientX-d.startX,event.clientY-d.startY)<7)return;
+ event.preventDefault();d.moved=true;if(!d.ghost){d.ghost=el('div',undefined,'drag-ghost');d.ghost.append(tileGraphic(d.kind));document.body.append(d.ghost)}d.ghost.style.left=event.clientX-27+'px';d.ghost.style.top=event.clientY-66+'px';
+ const trash=inside($('boardTrash').getBoundingClientRect(),event.clientX,event.clientY);$('boardTrash').classList.toggle('drag-over',!!d.source&&trash);
+ let preview=$('boardPreview');if(!preview){preview=el('div',undefined,'board-preview');preview.id='boardPreview';$('editorGrid').append(preview)}
+ const {x,y}=dropTarget(event.clientX,event.clientY),old=d.source?tileAt(state,...d.source.split(',').map(Number)):null,t={kind:d.kind,rotation:old?.rotation||0},[w,h]=tileSize(t);
+ const valid=x>=0&&y>=0&&x+w<=20&&y+h<=20&&Array.from({length:w*h},(_,i)=>tileAt(state,x+i%w,y+Math.floor(i/w))).every(tile=>!tile||tile===old);
+ preview.hidden=trash||!inside($('boardViewport').getBoundingClientRect(),event.clientX,event.clientY);preview.classList.toggle('invalid',!valid);positionTile(preview,x,y,w,h);
+ // Edge scrolling makes all 20 rows/columns reachable without ending the drag.
+ const viewport=$('boardViewport'),r=viewport.getBoundingClientRect();d.lastEvent=event;
+ let edgeX=0,edgeY=0;if(!trash&&inside(r,event.clientX,event.clientY)){edgeX=event.clientX<r.left+28?-1:event.clientX>r.right-28?1:0;edgeY=event.clientY<r.top+28?-1:event.clientY>r.bottom-28?1:0;}
+ if(edgeX!==d.edgeX||edgeY!==d.edgeY){clearTimeout(d.edgeTimer);d.edgeX=edgeX;d.edgeY=edgeY;if(edgeX||edgeY)d.edgeTimer=setTimeout(function scrollEdge(){if(drag!==d)return;viewport.scrollLeft+=d.edgeX*12;viewport.scrollTop+=d.edgeY*12;moveDrag(d.lastEvent);d.edgeTimer=setTimeout(scrollEdge,40)},350)}
+}
+for(const [kind,label] of Object.entries(tileKinds)){
+ const b=el('button',undefined,'palette-tile');b.type='button';b.dataset.kind=kind;b.setAttribute('aria-label',label+' · ins Raster ziehen oder auswählen');b.append(tileGraphic(kind),el('span',label));
+ b.addEventListener('pointerdown',event=>beginDrag(event,kind,null));b.onclick=event=>{if(event.detail>0&&performance.now()-lastTouchHandledAt<700||suppressBoardClick||!canBuild())return;paletteKind=paletteKind===kind?'':kind;spawnMode=false;renderSetup(state)};$('tilePalette').append(b);
+}
+$('editorGrid').addEventListener('click',boardClick);
+$('editorGrid').addEventListener('pointerdown',event=>{const tile=event.target.closest('[data-tile]');if(tile){const t=tileAt(state,...tile.dataset.cell.split(',').map(Number));beginDrag(event,t.kind,tile.dataset.cell)}else if(event.pointerType==='touch'){const cell=event.target.closest('[data-cell]');if(cell){beginDrag(event,'',cell.dataset.cell);if(drag)drag.tapOnly=true}}});
+document.addEventListener('pointermove',moveDrag,{passive:false});document.addEventListener('pointerup',event=>finishDrag(event));document.addEventListener('pointercancel',event=>finishDrag(event,true));
+$('editorGrid').addEventListener('keydown',event=>{if(!canBuild())return;const t=event.target.closest('[data-tile]');if(!t)return;const [x,y]=t.dataset.cell.split(',').map(Number),steps={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};if(event.key==='Delete'||event.key==='Backspace'){event.preventDefault();command('tileRemove',t.dataset.cell)}else if(steps[event.key]){event.preventDefault();const [dx,dy]=steps[event.key];if(x+dx>=0&&y+dy>=0)command('tileMove',t.dataset.cell+','+(x+dx)+','+(y+dy))}});
+$('boardTrash').onclick=()=>{if(canBuild()&&selectedTile){const [x,y]=selectedTile.split(',').map(Number);if(tileAt(state,x,y))command('tileRemove',selectedTile);selectedTile=null}};
+$('clearPalette').onclick=()=>{paletteKind='';spawnMode=false;renderSetup(state)};
+$('spawnMode').onclick=()=>{spawnMode=!spawnMode;paletteKind='';spawnTarget=spawnTarget||state.you;renderSetup(state)};
+$('boardZoom').onclick=()=>{boardFit=!boardFit;$('editorGrid').style.setProperty('--cell',boardFit?Math.max(12,Math.floor(($('boardViewport').clientWidth-2)/20))+'px':'36px');$('boardZoom').textContent=boardFit?'Vergrößern':'Ganzes Raster'};
+// Pointer-driven tools stay responsive immediately after a captured tile drag.
+const boardToolSelector='#spawnMode,#clearPalette,#boardZoom,#boardTrash,#saveBoard,#spawnList button';let toolTap=null;
+document.addEventListener('pointerdown',event=>{const button=event.target.closest(boardToolSelector);if(event.pointerType==='touch'&&button&&!button.disabled)toolTap={button,id:event.pointerId,x:event.clientX,y:event.clientY}});
+document.addEventListener('pointercancel',()=>toolTap=null);
+document.addEventListener('pointerup',event=>{const tap=toolTap;if(!tap||tap.id!==event.pointerId)return;toolTap=null;if(tap.button.isConnected&&!tap.button.disabled&&tap.button.contains(event.target)&&Math.hypot(event.clientX-tap.x,event.clientY-tap.y)<7){event.preventDefault();tap.button.dataset.touchUntil=String(performance.now()+700);tap.button.click()}});
+document.addEventListener('click',event=>{const button=event.target.closest(boardToolSelector);if(button&&event.detail>0&&performance.now()<Number(button.dataset.touchUntil||0)){event.preventDefault();event.stopImmediatePropagation()}},true);
+$('saveBoard').onclick=()=>{if(canBuild())command('boardSave')};
+$('openBoard').onclick=()=>{if(!state?.setup)return;saved.roomDecision=state.setup.id;try{persist();syncModals()}catch(e){saved.roomDecision='';$('forcedStatus').textContent='Bitte Browser-Speicherung erlauben und erneut öffnen.'}};
+$('roomYes').onclick=()=>{if(pending?.action==='roomYes')send();else command('roomYes')};$('roomNo').onclick=()=>{if(pending?.action==='roomNo')send();else command('roomNo')};
+
 $('previousCard').addEventListener('click',()=>showCard(cardIndex-1));
 $('nextCard').addEventListener('click',()=>showCard(cardIndex+1));
 $('characters').addEventListener('keydown',event=>{

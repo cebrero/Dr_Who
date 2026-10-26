@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.7.0 · Your move / Go, gerichtete Aktionen und gespeicherte Story**
-<!-- app-version: 0.7.0 -->
-<!-- reviewed-source-sha256: 8db956cdce726349afe9053a391c78f0f494d772986ab10f329823d3c4e903bf -->
+Stand: **26.10.2026 · Version 0.8.0 · Raummeister, physischer 20×20-Aufbau und Portalereignisse**
+<!-- app-version: 0.8.0 -->
+<!-- reviewed-source-sha256: 10f2b1720a0ebbe74571aef5cd90410ac66521da4ed3e4d6ab027e79918186a5 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.7.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.8.0
 
 ### Vor der Partie
 
@@ -115,13 +115,17 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
 4. Portal zeigt, wie viele bereits gewählt haben, plus Spielername und zugeordnete Figur.
 5. Nach der Spielerwahl kann der Host übrige bekannte Figuren als Gegner hinzufügen.
-6. Später: App erzeugt Aufbau aus tatsächlichem Teileinventar; Spieler bauen Plan nach und
-   bestätigen Aufstellung. Derzeit gibt es stattdessen nur ein freies Testfeld.
-7. Host startet bzw. setzt die Partie fort. Normale Spielerhandlungen laufen am eigenen Gerät.
+6. Host drückt Start. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
+   Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
+7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, sieben Typen, 90°-Drehung,
+   zweifeldriges Portal, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
+   dann drei Sekunden Startanimation und erster Spielerzug. Details/Interpretationen siehe Abschnitt 8b.
+8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
+   erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.7.0 |
+| Schritt | Regel | Umsetzung 0.8.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -129,9 +133,9 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 | 2b | Bei 5 oder 6: Bewegung ODER Charakteraktion wählen | Zwei Auswahlmöglichkeiten; kein Bewegen plus Aktion |
 | 3a | Bewegung immer genau um die Augenzahl, nicht nur bis zu dieser Zahl | Reststrecke wird nach jedem gespeicherten Schritt reduziert |
 | 3b | Nur gerade/orthogonale Schritte; Richtungswechsel unterwegs erlaubt | Nord/Ost/Süd/West, keine Diagonalen; z. B. 2 nach Norden, dann 3 nach Osten bei einer 5 |
-| 3c | Spieler meldet seine Bewegungen am eigenen Gerät und bewegt die echte Figur passend | Schrittweise Eingabe im Testfeld; App kann die physische Bewegung nicht automatisch erkennen |
+| 3c | Spieler meldet seine Bewegungen am eigenen Gerät und bewegt die echte Figur passend | Schrittweise Eingabe im gespeicherten Aufbau; App kann die physische Bewegung nicht automatisch erkennen |
 | 3d | Alternativ bei 5/6: charakterabhängige Aktion | Aktionswahl protokolliert; konkrete Wirkung noch nicht umgesetzt |
-| 4 | Nach vollständiger Bewegung bzw. Aktion folgt der nächste Spieler | Nach exakt verbrauchter Strecke bzw. Test-Aktionswahl; nächster Spieler beginnt wieder mit W6 |
+| 4 | Nach vollständiger Bewegung bzw. Aktion folgt der nächste Spieler | Nach exakt verbrauchter Strecke bzw. Test-Aktionswahl; nächster Spieler beginnt wieder mit Go/W6 |
 
 Im Prototyp ist die 5/6-Entscheidung verbindlich, sobald „Bewegen“ gewählt wurde. Während
 angefangener Bewegung kann nicht nachträglich zur Aktion gewechselt werden. Das ist eine
@@ -252,27 +256,30 @@ weiter `session-v1.drw`; maßgeblich ist die im Inhalt gespeicherte Formatnummer
 
 ## 6. Physisches Inventar und Brettgenerator
 
+Seit 0.8.0 ist der manuelle 20×20-Editor vor dem Spielstart umgesetzt (Abschnitt 8b).
+Er erfasst vorhandene Teile ohne unbekannte Stückzahlen zu erfinden; ein Generator fehlt noch.
+
 ### Noch vom Nutzer zu erfassen
 
 | Teil | Anzahl | Maße/Verbindungen | Status |
 | --- | --- | --- | --- |
 | Rechteckiges Feld ohne Wand | unbekannt | Breite/Tiefe, Magnetpositionen | erfragen |
 | Feld mit einer geraden Wand | unbekannt | Wandseite, Tür möglich? | angekündigte Zählung |
-| Eckfeld | unbekannt | zwei benachbarte Wände? innen/außen? | Form bestätigen |
+| Eckfeld | unbekannt | zwei benachbarte Wände; Drehung in 90°-Schritten | im Editor vorhanden |
 | Feld mit parallelen Wänden | unbekannt | Abstand, Gangbreite | angekündigte Zählung |
 | Einzelwände/Türen | unbekannt | fest am Feld oder frei aufsetzbar? | erfragen |
 | Verließ | unbekannt | Feldanzahl, Zugänge, Aufstellmaß | genannt |
 | Friedhof | unbekannt | Feldanzahl, Zugänge, Aufstellmaß | genannt |
 | Brunnen | unbekannt | blockiert Feld oder begehbar? | genannt |
 | Figuren | unbekannt | Name, Anzahl, Sockelgröße | Nutzer zeigt sie später |
-| Portalhalterung | unbekannt | Telefon, sichtbare Displayfläche, Standort | Konzept genannt |
+| Portalhalterung | unbekannt | Portal belegt zwei Rasterfelder; Telefon, sichtbare Displayfläche fehlen | zweifeldrig im Editor |
 
 Zusätzlich klären: Entspricht jedes gedruckte Plättchen einem Bewegungsfeld oder mehreren?
-Dürfen die rechteckigen Teile um 90° gedreht werden? Passt das Magnetraster in jeder Drehung?
+90°-Drehungen sind im Editor ausdrücklich gewünscht; passt das physische Magnetraster in jeder Drehung?
 Maximale Tischfläche und gewünschte Spieldauer? Müssen alle Teile benutzt werden?
 Was bedeutet „extra Raum“ baulich: abgetrennt oder über einen Gang angeschlossen?
 
-### Zielarchitektur – noch nicht implementiert
+### Späterer Inventargenerator – noch nicht implementiert
 
 - Inventar mit stabilen Typ-IDs, Stückzahlen, Abmessungen, zulässigen Drehungen und Kanten
   (offen/Wand/Tür/Anschluss) modellieren. Doppelseitige Wände und inkompatible Anschlüsse erkennen.
@@ -285,7 +292,7 @@ Was bedeutet „extra Raum“ baulich: abgetrennt oder über einen Gang angeschl
 - Generator-Seed UND den konkreten fertigen Plan speichern; Seed allein reicht bei späteren
   Generatoränderungen nicht für zuverlässigen Wiederaufbau.
 - Aufbaubild mit Koordinaten, Nordpfeil, Stückliste und Schrittfolge. Spieler bestätigen Aufbau
-  und Startaufstellung vor dem ersten Zug. Später manueller Editor als Option.
+  und Startaufstellung vor dem ersten Zug. Bestehenden manuellen Editor als zusätzliche Aufbauoption beibehalten.
 
 ## 7. Speichern und Fortsetzen – Endziel
 
@@ -305,19 +312,21 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 6, ältere Formate
-1, 2, 3, 4 und 5 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 7, ältere Formate
+1–6 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
-Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Demo-Koordinaten, letztem W6,
+Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
 Würfelereignis-ID und zugehöriger Spieler-ID, Go-Bestätigung, Zustandsrevision, 60 Protokollzeilen
 und 60 strukturierte Story-Einträge (Zeitstempel, gespeicherte Datumsanzeige, Sprecher, Spieler,
-Aussage, Richtung) und den letzten 128 Anfragequittungen. Android `AtomicFile`
+Aussage, Richtung), Raummeister-Auswahl/-ID/-phase/-deadline, Gefragte/Kandidat,
+vollständigen 20×20-Kachelplan mit Ausrichtung, Portalhinweise und die letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
-**Noch nicht:** echte Karte/Inventar, verbindliche Charakterwerte und ausgeführte Spezialregeln, Auswahl mehrerer Partien, Export/Import,
-Wiederaufbauansicht, neue Partie im UI, umfassende zukünftige Migrationen, vollwertiges Ereignisjournal oder Host-Wechsel.
+**Noch nicht:** Inventar-/Szenariogenerator, verbindliche Charakterwerte und ausgeführte Spezialregeln, Auswahl mehrerer Partien, Export/Import,
+Auswahl einer neuen Partie im UI, umfassende zukünftige Migrationen, vollwertiges Ereignisjournal oder Host-Wechsel.
+Der gespeicherte Aufbau ist bereits am Portal und im Spiel abrufbar.
 Eine Deinstallation bzw. das Löschen der App-Daten entfernt bisher den lokalen Spielstand.
 
 ## 8. Portal und Bedienidee
@@ -604,7 +613,103 @@ behaupten. IP-Erreichbarkeit bestätigt allein nicht die Namensauflösung.
   einen weiteren Spielerplatz benötigen. Für eine laufende Partie dieselbe Adresse beibehalten.
 - Referenz geprüft 26.10.2026: https://source.android.com/docs/core/ota/modular-system/dns-resolver
 
-## 9. Technische Grundlage 0.7.0
+## 8b. Raummeister und physisches Raumgefüge ab 0.8.0 (26.10.2026)
+
+**Verbindlicher neuer Nutzerwunsch:** Vor dem ersten Zug nach Start eine fliegende TARDIS mit
+**der Raummeister wird gerade ausgewählt...**. Nur echte beigetretene Spieler werden zufällig
+gefragt, ob sie das Raumgefüge wiederherstellen möchten. Nein fragt eine noch nicht gefragte
+Person, Ja überträgt den Aufbau. Nach ausschließlich Nein entscheidet das Portal. Der Raummeister
+zeichnet den tatsächlichen Tisch in ein **20×20-Raster**; währenddessen ist derselbe Aufbau am
+Portal grafisch sichtbar. Speichern startet eine weitere Portalanimation und danach die Partie.
+Große Ereignisanzeigen am Portal sollen 2–4 Sekunden dauern.
+
+**Technische Interpretation der Portalentscheidung:** Wenn alle ablehnen, bestimmt der Host
+zufällig einen der echten Spieler verbindlich zum Raummeister. Dieser erhält ein Informations-
+Popup mit **Aufbau öffnen**. Es wird kein unbekannter physischer Aufbau automatisch erfunden.
+Diese Interpretation ist in der Umsetzung verwendet und dem Nutzer mitgeteilt; falls mit
+„Portal entscheidet“ stattdessen ein automatischer Brettgenerator gemeint war, gemeinsam ändern.
+Inventar und Stückzahlen für einen solchen Generator fehlen weiterhin.
+
+### Tatsächlicher Ablauf und Bedienung
+
+1. Host startet erst, wenn alle angemeldeten Spieler Figuren gewählt haben. Beitritt und
+   Figurenwechsel schließen dann; der Spielzug beginnt noch nicht.
+2. Gespeicherte Phase `selecting` und Host-Deadline: **3 Sekunden** TARDIS-Flug mit exaktem Text.
+   Danach eine zufällige Person als Kandidat speichern und am eigenen Client Ja/Nein fragen.
+   Die Frage läuft nicht nach einer erfundenen Frist ab. Offline-Kandidat wartet auf Wiederverbindung.
+3. Nein wird atomisch gespeichert; aus den noch nicht gefragten Partnern zufällig weiterwählen.
+   Kein Kandidat wird in derselben Auswahl zweimal gefragt. Nach dem letzten Nein verbindliche
+   Zufallswahl aus allen Partnern. Wiederholte Anfrage-ID oder Neustart lost nicht erneut aus.
+4. Ja bzw. verbindliche Wahl: Phase `building`. Nur dieser geheime Browser-Token darf Kacheln
+   und Startfelder ändern. Andere Clients sehen den Namen und warten; das Portal zeigt den Plan live.
+5. Palette unten: **Ecke** (zwei benachbarte Wände), **Ohne Wand**, **Gang** (zwei gegenüberliegende
+   Wände), **Tür** auf einer Seite, **Kerker**, **Brunnen**, **Portal** über genau zwei Rasterfelder.
+   Ausgangsausrichtung Ecke Nord/Ost, Gang Nord/Süd und Tür Nord. Vier 90°-Drehungen.
+   Friedhof und einzelnes gerades Wandstück bleiben späteres Inventar, keine zusätzlich erfundenen
+   Palettenelemente. Mengen-/Magnet-/Maßbegrenzungen sind noch nicht bekannt.
+6. Kacheln mit Maus oder Touch aus der Palette ziehen. Ein farbiger Vorschauumriss zeigt Ziel
+   und Kollision; die sichtbare Karte übernimmt erst die bestätigte Speicherung am Host.
+   Antippen einer platzierten Kachel dreht 90°. Ziehen innerhalb der Matrix verschiebt sie;
+   in den Mülleimer ziehen entfernt sie. Portal immer als ein Teil über beide Felder behandeln.
+   Rand, Überlappungen und versperrte Drehungen lehnt der Host ohne Änderung ab.
+7. Alternative Bedienung: Palettenkachel auswählen und leeres Feld antippen. Eine platzierte
+   Kachel antippen und per Mülleimer-Taste entfernen; auf fokussierter Kachel auch Entf/Rücktaste.
+   Pfeiltasten verschieben eine fokussierte Kachel. Raster ist scrollbar, am Rand nach kurzem Halten beim Ziehen
+   mitlaufend; **Ganzes Raster / Vergrößern** wechselt die Übersicht. Keine diagonalen Spielzüge.
+8. Startfiguren bekommen zunächst die ersten freien vorhandenen Felder als sichtbare Vorschläge.
+   **Startfiguren setzen** erlaubt dem Raummeister pro Spieler ein anderes belegtes Feld. Die
+   Nummern entsprechen der Teamliste; keine zwei Figuren auf einem Feld. Das ist ein manueller
+   Aufbauvorschlag, keine vereinbarte Szenario-Startregel. Figuren auf dem Tisch entsprechend aufstellen.
+9. **Speichern & starten** verlangt mindestens ein eigenes belegtes Feld pro Spieler. Speichert
+   den kompletten Plan mit Koordinaten, Typ, Ausrichtung und Figurenpositionen; dann **3 Sekunden**
+   TARDIS-Flug „Das Raumgefüge steht. Das Abenteuer beginnt!“. Erst danach erster Zug mit Go/W6.
+10. Jede bestätigte Bauänderung ist bereits als Entwurf gespeichert, nicht erst der Abschluss.
+    Neustart während Anfrage, Bau oder Startfilm setzt an dieser Stelle fort. Ein während der
+    Abwesenheit abgelaufener Film wird beim nächsten Host-Tick abgeschlossen, nicht als neues
+    Spielereignis wiederholt. Jede neue Aufbauauswahl besitzt eine eigene stabile ID.
+
+### Karte im Spiel und spätere Fortsetzung
+
+- Koordinaten **A1 bis T20** folgen dem Raster. Leere Stellen sind **keine Spielfelder**. Ein Portal
+  belegt zwei benachbarte Felder; beide können Figuren tragen, ohne Stapeln auf demselben Feld.
+- Bewegung prüft nun vorhandene Zielfelder und massive Wände beider angrenzenden Kacheln.
+  Richtungswechsel und exakt gewürfelte Strecke gelten weiter. Eine abgelehnte Bewegung kostet
+  keinen Schritt. Was bei insgesamt nicht erfüllbarer Strecke passiert, bleibt eine offene Regel.
+- Türfelder sind **vorläufig Durchgänge**. Es gibt noch keinen offenen/geschlossenen Türzustand
+  oder ausgeführte Schraubenzieher-Wirkung. Kerker und Brunnen sind Gelände-Markierungen ohne
+  neue Kampf-/Heilregeln. Portalreisen, Sichtlinien, Zusammenhängigkeit und Mission fehlen noch.
+  Ein isolierter Raum wird nicht automatisch mit unbekannten zusätzlichen Teilen verbunden.
+- Clients zeigen im Spiel den gespeicherten tatsächlichen Plan; am Portal ist er unter
+  **Raumgefüge anzeigen** mit aktuellen Figurenpositionen wieder abrufbar. Der native Plan vergrößert
+  den belegten Ausschnitt für Lesbarkeit, ohne Koordinaten zu ändern. Das 20×20-Modell bleibt erhalten.
+- Vorhandene bereits laufende Spielstände aus Format 1–6 bleiben auf ihrem bisherigen freien
+  6×6-Testfeld, damit ein Update keine Partie zurücksetzt. In **Spielleitung → Raumgefüge erfassen /
+  bearbeiten** kann man eine laufende Partie ausdrücklich pausieren und die Auswahl nachholen.
+  Nach Bestätigung bleibt ein vorhandener Plan als Entwurf erhalten; Runde, Zug, Würfel und
+  Go-Status bleiben gespeichert. Alte Testfeldpositionen werden durch sichtbare Aufbauplätze ersetzt.
+- Eine lokale Partie und ihr Plan sind über App-Neustarts und korrekt signierte Updates dauerhaft
+  gespeichert. Weiterhin kein Menü für mehrere Partien, kein Export/Import und kein Schutz vor
+  Deinstallation oder Löschen der App-Daten. Keine Sicherung auf GitHub der privaten Spielerdaten.
+
+### Portalereignisse und Technik
+
+- Großflächige Portalhinweise für Zusage, Ablehnung, verbindliche Portalwahl und gemeldete Angriffe.
+  Jeder Hinweis hat eine gespeicherte ID. Native Ansicht zeigt neue Hinweise nacheinander jeweils
+  **3 Sekunden**; danach Live-Aufbau oder normale Spielansicht. Gesehene Hinweise werden pro Partie
+  in privaten Einstellungen gemerkt. Go-Karte wartet weiterhin bis zur tatsächlichen Bestätigung.
+- Auswahl- und Startfilm haben gespeicherte Host-Deadlines; sie sind keine zweiten Zufallsquellen.
+  Host-Oberfläche aktualisiert alle 500 ms, Clients wie bisher etwa alle 1,5 Sekunden. Keine perfekte
+  Synchronität behaupten. Native TARDIS fliegt/rotiert mit lokal gezeichnetem Zeitwirbel ohne Medien-
+  Download. Androids abgeschaltete Systemanimationen und Browser-Reduced-Motion beachten.
+- **Speicherformat 7**, ältere Formate **1–6** lesbar. Enthält Auswahl-ID/-phase/-deadline, Kandidat,
+  bereits Gefragte, Raummeister, verbindliche Wahl, vollständigen Kachelplan und Portalhinweise.
+  Das Kopieren/Validieren des Zustands prüft Rand, Kollisionen und belegte Figurenpositionen.
+- **API-Protokoll 3 / App 0.8.0 / Code 10**. Aufbauaktionen laufen authentisiert über bestehendes
+  `/api/command`, weiterhin kein entfernter Host-Administrationsendpunkt. Rollen-, Revisions- und
+  Quittungsprüfung am Host. Verlorene Antwort nur mit gleicher Anfrage-ID erneut senden. Keine
+  gesamte Karte aus dem Browser blind übernehmen. Größenlimits gelten weiter.
+
+## 9. Technische Grundlage 0.8.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -618,7 +723,9 @@ behaupten. IP-Erreichbarkeit bestätigt allein nicht die Namensauflösung.
 - Spieler melden sich mit Namen und Code an und wählen eine Figur. Erst nach Auswahl aller
   beigetretenen Spieler kann der Spielleiter starten. Charakterwechsel vor Start ist möglich;
   die vorherige Figur wird erst nach erfolgreichem Speichern der neuen Wahl freigegeben.
-- Freies 6×6-Technikfeld A1–F6: orthogonale Einzelschritte, kein Stapeln, keine Wände.
+- Neue Partien: tatsächlich platzierter 20×20-Plan A1–T20. Nur vorhandene Felder, feste Wände
+  blockieren, kein Stapeln. Bereits laufende Altpartien behalten ihr freies 6×6-Feld, bis der Host
+  über die Spielleitung ausdrücklich den Aufbau nachtragen lässt. Raummeister vor erstem Go.
 - Jeder menschliche Zug wartet zunächst auf gespeichertes Go, danach folgt der W6. Bei 1–4 direkt bewegen, bei 5/6
   Bewegung oder Aktionswahl. Bewegung endet erst nach genau der gewürfelten Schrittzahl.
 - Kein freies Passen und kein zweiter Wurf innerhalb desselben Zugs. Die Aktionswahl ersetzt
@@ -649,6 +756,10 @@ behaupten. IP-Erreichbarkeit bestätigt allein nicht die Namensauflösung.
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
+Raummeister und manueller Aufbau sind seit 0.8.0 der nächste Testschwerpunkt: echte Touch-
+Bedienung, Portal-Lesbarkeit und Wiederaufbau am Tisch mit realem Inventar prüfen. Die noch
+fehlenden Stückzahlen/Abmessungen dienen danach dem Generator; keine unbekannten Teile ergänzen.
+
 Der vorgemerkte TARDIS-Icon-Wunsch ist mit 0.5.0 umgesetzt. Die konkreten Startbildschirm-
 Anpassungen sind in Abschnitt 8a dokumentiert und bei weiteren Änderungen zu bewahren.
 
@@ -662,6 +773,35 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.8.0 am 26.10.2026:
+
+- `bash scripts/test-core.sh`: **411 Prüfungen bestanden**. Auswahl ohne Wiederholung, fehlende
+  Berechtigungen, Speicherfehler, Retry/Neustart, alle Nein, verbindliche Portalwahl, sieben
+  Kacheltypen in allen Drehungen, Rand/Kollisionen, Portal über zwei Felder, Verschieben/Entfernen,
+  Startfiguren, Abschluss/Startdeadline, sparse Bewegung/Wände und Migration Formate 1–6.
+- `npm test`: **155 DOM-Prüfungen bestanden**. Raummeister-Popups, Ja/Nein-Retry, erzwungene Wahl,
+  Hintergrund/Fokus, 400 Rasterstellen, sieben Typen, Tipp-Alternative/Drehen/Mülleimer, Startfiguren,
+  Bestätigungsfehler, Erhalt unveränderter Kacheln und gespeicherte Karte vor erstem Go.
+- Zwei echte mobile Chromium-Clients am echten Java-HTTP-Server: Auswahl/Ablehnung/Zusage,
+  Maus- und echte Touch-Pointer-Ziehbewegung, Drehen, Mülleimer, alle sieben Typen, Live-Hostzustand,
+  fremde Bearbeitung abgewiesen, 390/320 px ohne Seitenüberlauf, Reload/Host-Neustart mit Plan,
+  Startfilm vor Go, gerichteter erster Zug und erneuter Aufbau samt Alle-Nein-Portalentscheidung.
+  Zweite Portalhälfte als Startfeld sowie Platzieren/Entfernen im äußersten Feld T20 geprüft.
+  Den gefundenen Touch-Tap-Fehler bei Pointer-Capture durch explizite Touch-Tap-Verarbeitung und
+  Unterdrücken doppelter Kompatibilitätsklicks behoben, einschließlich leerer Tipp-Ziele
+  und Startfiguren auf der zweiten Portalhälfte. Screenshots visuell geprüft; Editor als fester Handybildschirm mit eigener Palettenzeile,
+  damit die Palette keine unteren Rasterfelder überdeckt. Fester Meldungsplatz verhindert,
+  dass eine verschwindende Speicherbestätigung das Raster während des Ziehens verschiebt.
+  Polling mitten in Touch-Ziehbewegungen sowie Verschieben/Kollisionen werden im Systemtest geprüft.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, nochmals
+  **411 Kernprüfungen**, Lint **0 Fehler / 15 Warnungen**. APK-Version 0.8.0 / Code 10, Zertifikat
+  identisch zu 0.5.x–0.7.0. Nach abschließender Touch-/Auswahlkorrektur erneut gebaut und geprüft.
+  Native Portaloptik und reales WLAN/mDNS bleiben Gerätetests.
+- Reproduzierbarer Systemtest eingecheckt: `scripts/test-browser.cjs` und ausschließlich im Test-
+  Quellbaum liegende `BrowserPortalFixture.java`. Optional `npm run test:browser` nach Kerntest-
+  Kompilierung, vorhandenes Playwright/Chromium vorausgesetzt. Kein neuer Laufzeitdienst und
+  kein entfernter Host-Administrationsendpunkt. Screenshots bleiben interne temporäre Testdateien.
 
 Für 0.7.0 am 26.10.2026:
 
@@ -800,7 +940,7 @@ Die optionalen npm-Abhängigkeiten dienen nur den DOM-Tests, nicht dem Offline-S
 Noch ausstehend: echter Telefon-/Hotspottest mit vier Geräten, visuelle und Energie-/Lebenszyklus-
 Prüfung am Host, Bildschirm-Timeouts der Spieler, App-Abbruch und Wiederbeitritt bei geänderter IP.
 DOM-Tests ersetzen keine Sichtprüfung auf realen Handys. Fotos, verbindliche Attribute, wirkende
-Charakterfähigkeiten, Gegner-KI, echte Karte und eine vollständige Mission sind noch offen.
+Charakterfähigkeiten, Gegner-KI, Inventargenerator und eine vollständige Mission sind noch offen.
 
 ### APK-Signierung und Fortsetzung ab 0.5.0
 
@@ -834,6 +974,7 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 25.10.2026 | 0.5.1 | Automatischer Versions-/Protokoll-/Partieabgleich; ungültige Anmeldung führt zurück zum Beitritt, Metadaten ohne Token, kein Übertragen alter Aktionen und Schutz vor verspäteten alten Antworten; gleicher Signierschlüssel wie 0.5.0 |
 | 25.10.2026 | 0.6.0 | Drei Spieler-Tabs und aufklappbarer Verlauf; sichtbare Zughinweise, Steckbrief als Warteansicht mit vollständigem Bild; sechs feste Würfelseiten und Landedrehung passend zum gespeicherten Ergebnis ohne Zahlentausch |
 | 26.10.2026 | 0.7.0 | Gespeicherter Zugstart Your move... / Go mit Portal-Charakterkarte, gerichtete Aktionen per Popup, Story mit Host-Zeitstempeln und Sprecher in erster Person sowie einmalig gespeicherter Dalek-Klangtext; Format 6 / Protokoll 2 |
+| 26.10.2026 | 0.8.0 | Raummeister-Auswahl mit Ja/Nein und verbindlicher Portalwahl, gespeicherter 20×20-Kacheleditor mit zweifeldrigem Portal/Startfiguren, Live-Aufbau am Portal, Startfilm, sparse Karte und Wandprüfung, große 3-Sekunden-Ereignisse, Altpartien-Aufbau nachtragen; Format 7 / Protokoll 3 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

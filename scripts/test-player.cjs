@@ -19,7 +19,7 @@ async function main(){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.8.0',protocolVersion:3,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
    if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
    if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
@@ -167,7 +167,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.8.0',protocolVersion:3,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -193,7 +193,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
    w.setInterval=callback=>{recoveryPoll=callback;return 0};
    w.fetch=async(path,options)=>{
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'old-session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.8.0',protocolVersion:3,sessionId:'old-session'})};
     if(path==='/api/state'){
      if(!valid)return await new Promise(resolve=>held.push(resolve));
      return {ok:true,status:200,json:async()=>copy(base)};
@@ -228,7 +228,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
    w.fetch=async(path,options)=>{
     if(options.method==='POST')postRequests++;
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.7.1':'0.7.0',protocolVersion:mismatch==='protocol'?3:2,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.8.1':'0.8.0',protocolVersion:mismatch==='protocol'?4:3,sessionId:mismatch==='party'?'new-party':'session'})};
     if(path==='/api/state')stateRequests++;
     return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
    };
@@ -247,6 +247,54 @@ async function main(){
    check(['playerArea','game','selection','idle','helper','battle'].every(id=>$(id).hidden),'mismatch never leaves an interactive old view visible');
   }finally{guarded.window.close()}
  }
- console.log('PASS: '+checks+' total player-page behavior checks including expired registrations');
+ // Roommaster negotiation and editor on an authenticated client.
+ {
+  let current=copy(base),offline=false,bad=false;const posts=[];current.started=true;current.current=null;current.turn.accepted=false;
+  current.setup={stage:'selecting',id:'selection-one',roomMaster:'',candidate:'',forced:false,saved:false,legacy:false};current.board={size:20,tiles:[]};current.players.forEach(p=>{p.x=-1;p.y=-1});
+  const editor=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
+   w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token',sessionId:'session'}));
+   w.fetch=async(path,options)=>{if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.8.0',protocolVersion:3,sessionId:'session'})};
+    if(options.method==='POST'){posts.push(new URLSearchParams(String(options.body)));if(offline)throw new Error('offline');if(bad)return {ok:false,status:400,json:async()=>({error:'Dort liegt bereits eine Kachel.'})};}
+    return {ok:true,status:200,json:async()=>copy(current)};};
+  }});
+  try{
+   const w=editor.window,$=id=>w.document.getElementById(id);await tick();
+   check(!$('setupArea').hidden&&$('selection').hidden&&$('playerArea').hidden,'preparation replaces lobby and blocks normal game');
+   check($('setupTitle').textContent==='der Raummeister wird gerade ausgewählt...'&&$('turnDialog').hidden,'selection has exact text and no premature Go');
+   current.revision++;current.setup.stage='offering';current.setup.candidate='B';w.render(copy(current));check($('roomDialog').hidden,'noncandidate sees no roommaster question');
+   current.revision++;current.setup.candidate='A';w.render(copy(current));check(!$('roomDialog').hidden&&$('setupArea').inert&&w.document.activeElement===$('roomYes'),'only candidate gets modal with focus and inert background');
+   w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));check(!$('roomDialog').hidden,'roommaster question requires explicit yes or no');
+   offline=true;$('roomNo').click();await tick();const noId=posts.at(-1).get('requestId');check($('roomYes').disabled&&!$('roomNo').disabled,'lost no confirmation only permits same answer');
+   current.revision++;current.setup.candidate='B';offline=false;$('roomNo').click();await tick();check(posts.at(-1).get('requestId')===noId&&$('roomDialog').hidden,'decline retries same ID and closes only on host state');
+   current.revision++;current.setup.stage='building';current.setup.candidate='';current.setup.roomMaster='B';w.render(copy(current));check($('boardEditor').hidden&&$('setupTitle').textContent.includes('Bob'),'nonmaster waits for the named builder');
+   current.revision++;current.setup.roomMaster='A';current.setup.forced=true;w.render(copy(current));check(!$('forcedDialog').hidden&&$('forcedDialog').textContent.includes('Alle haben abgelehnt'),'forced player sees portal decision popup');
+   $('openBoard').click();check($('forcedDialog').hidden&&!$('boardEditor').hidden,'forced roommaster opens editor explicitly');w.render(copy(current));check($('forcedDialog').hidden,'polling does not repeat acknowledged forced popup');
+   check($('tilePalette').children.length===7&&$('editorGrid').querySelectorAll('.board-empty').length===400,'seven tile types and exactly twenty by twenty empty locations');
+   $('tilePalette').querySelector('[data-kind="corner"]').click();check($('boardStatus').textContent.includes('Ecke gewählt'),'palette supports tap-to-place alternative');
+   current.revision++;current.board.tiles=[{x:0,y:0,kind:'corner',rotation:0}];current.players[0].x=0;current.players[0].y=0;
+   $('editorGrid').querySelector('[data-cell="0,0"]').click();await tick();check(posts.at(-1).get('action')==='tilePlace'&&posts.at(-1).get('direction')==='0,0,corner,0','tap placement sends only authoritative tile operation');
+   check($('editorGrid').querySelectorAll('[data-tile]').length===1&&$('boardLegend').textContent.includes('Alice · A1'),'committed tile and automatic start field visible');
+   current.revision++;current.board.tiles[0].rotation=1;$('editorGrid').querySelector('[data-tile]').click();await tick();check(posts.at(-1).get('action')==='tileRotate'&&posts.at(-1).get('direction')==='0,0','tile tap requests exact 90 degree turn');
+   const displayed=$('editorGrid').querySelector('[data-tile]');check(displayed.querySelector('g').getAttribute('transform')==='rotate(90 50 50)','rotation uses saved orientation');
+   w.render(copy(current));check(displayed===$('editorGrid').querySelector('[data-tile]'),'unchanged polling preserves focused tile DOM');
+   const beforeTouch=posts.length;current.revision++;current.board.tiles[0].rotation=2;const touchTile=$('editorGrid').querySelector('[data-tile]');
+   for(const type of ['pointerdown','pointerup']){const event=new w.MouseEvent(type,{bubbles:true,clientX:10,clientY:10});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:9}});touchTile.dispatchEvent(event)}await tick();
+   check(posts.length===beforeTouch+1&&posts.at(-1).get('action')==='tileRotate','touch pointer tap rotates without waiting for compatibility click');
+   $('editorGrid').querySelector('[data-tile]').dispatchEvent(new w.MouseEvent('click',{bubbles:true,detail:1}));await tick();check(posts.length===beforeTouch+1,'delayed compatibility click cannot rotate twice');
+
+   current.revision++;current.board.tiles.push({x:4,y:4,kind:'portal',rotation:1});w.render(copy(current));const portal=$('editorGrid').querySelector('[data-cell="4,4"]');check(portal.style.height.includes('* 2')&&!$('editorGrid').querySelector('[data-cell="4,5"]'),'portal visually occupies two cells and removes covered empty target');
+   $('spawnMode').click();check(!$('spawnList').hidden&&$('boardStatus').textContent.includes('Startfeld'),'explicit mode avoids confusing start placement with tile rotation');
+   current.revision++;current.players[0].x=4;current.players[0].y=4;$('editorGrid').querySelector('[data-cell="4,4"]').click();await tick();check(posts.at(-1).get('action')==='setSpawn'&&posts.at(-1).get('direction')==='A,4,4','start marker set on selected player cell');
+   $('clearPalette').click();const existing=$('editorGrid').querySelector('[data-cell="0,0"]');current.revision++;current.board.tiles[0].rotation=2;existing.click();await tick();current.revision++;current.board.tiles.shift();$('boardTrash').click();await tick();check(posts.at(-1).get('action')==='tileRemove'&&posts.at(-1).get('direction')==='0,0','trash button provides accessible removal alternative');
+   current.revision++;current.setup.forced=false;w.render(copy(current));offline=true;$('tilePalette').querySelector('[data-kind="well"]').click();$('editorGrid').querySelector('[data-cell="2,2"]').click();await tick();const placeId=posts.at(-1).get('requestId');check(!$('retry').hidden&&$('saveBoard').disabled,'unconfirmed placement blocks saving and allows retry');
+   offline=false;current.revision++;current.board.tiles.push({x:2,y:2,kind:'well',rotation:0});$('retry').click();await tick();check(posts.at(-1).get('requestId')===placeId&&$('editorGrid').querySelector('[data-cell="2,2"][data-tile]'),'retry confirms same tile without duplicate placement');
+   bad=true;$('editorGrid').querySelector('[data-cell="2,2"]').click();await tick();check($('boardStatus').textContent.includes('bereits eine Kachel')&&$('retry').hidden,'host rejection visible without speculative board change');bad=false;
+   current.revision++;current.setup.stage='launching';current.setup.saved=true;$('saveBoard').click();await tick();check(posts.at(-1).get('action')==='boardSave'&&$('boardEditor').hidden&&$('setupTitle').textContent.includes('Abenteuer beginnt'),'save starts launch screen rather than immediate die controls');
+   current.revision++;current.setup.stage='play';current.current='A';w.render(copy(current));check($('setupArea').hidden&&!$('turnDialog').hidden&&!$('gameMapViewport').hidden&&$('grid').hidden,'saved real map and Go appear only when setup completes');
+   check($('gameBoard').querySelectorAll('.board-tile').length===2,'game uses persisted sparse map instead of inventing missing fields');
+  }finally{editor.window.close()}
+ }
+
+ console.log('PASS: '+checks+' total player-page behavior checks including roommaster and editor');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});

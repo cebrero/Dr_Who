@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 6, MAGIC = 0x4457484f;
+    private static final int FORMAT = 7, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private final Clock clock;
@@ -38,6 +38,12 @@ public final class GameEngine {
         List<String> log = new ArrayList<>();
         List<StoryEntry> story = new ArrayList<>();
         boolean turnAccepted;
+        String setupStage="lobby", setupId="", roomMaster="", candidate="";
+        long setupDeadline;
+        boolean forcedRoomMaster, boardSaved, legacyBoard;
+        List<String> asked=new ArrayList<>();
+        BoardPlan board=new BoardPlan();
+        List<PortalNotice> notices=new ArrayList<>();
         LinkedHashSet<String> receipts = new LinkedHashSet<>();
         String phase = "players", helperId = "", attackId = "", attackEnemy = "", attackTarget = "", attackText = "";
         int enemyIndex;
@@ -73,9 +79,18 @@ public final class GameEngine {
     /** Public pre-join occupancy only; no player names, codes, tokens or game state. */
     public synchronized String lobbyStatus() { return "{\"occupied\":" + state.players.size() + ",\"capacity\":4}"; }
     /** Consistent host-only presentation data; never exposed as a public HTTP route. */
+    public static final class PortalNotice {
+        public String id,text;
+        PortalNotice(String id,String text){this.id=id;this.text=text;}
+    }
     public static final class PortalState {
         public String sessionId, rollId, rollPlayer, headline, detail;
         public int round, die;
+        public String setupStage, setupTitle;
+        public boolean preparing, boardSaved, legacyBoard;
+        public List<BoardPlan.Tile> tiles;
+        public List<PortalNotice> notices;
+        public List<String[]> boardPlayers;
         public boolean awaitingGo;
         public String activePlayerName="";
         public CharacterProfile activeCharacter;
@@ -83,6 +98,14 @@ public final class GameEngine {
     }
     public synchronized PortalState portalState() {
         PortalState view = new PortalState();
+        view.setupStage=state.setupStage;view.preparing=state.started&&!state.setupStage.equals("play");
+        view.boardSaved=state.boardSaved;view.legacyBoard=state.legacyBoard;view.tiles=state.board.tiles();
+        view.notices=new ArrayList<>(state.notices);view.boardPlayers=new ArrayList<>();
+        for(Player p:state.players)view.boardPlayers.add(new String[]{p.name,p.characterId,String.valueOf(p.x),String.valueOf(p.y)});
+        view.setupTitle=state.setupStage.equals("selecting")?"der Raummeister wird gerade ausgewählt...":
+            state.setupStage.equals("offering")?playerName(state.candidate)+", möchtest du das Raumgefüge wiederherstellen?":
+            state.setupStage.equals("building")?playerName(state.roomMaster)+" stellt das Raumgefüge wieder her…":
+            state.setupStage.equals("launching")?"Das Raumgefüge steht. Das Abenteuer beginnt!":"";
         view.sessionId=state.id;view.rollId=state.rollEventId;view.rollPlayer=playerName(state.rollPlayerId);
         view.round=state.round;view.die=state.lastRoll;for(StoryEntry entry:state.story)view.events.add(entry.display());
         for(Player p:state.players)view.positions.add(p.name+" · "+characterName(p.characterId)+" · Feld "+cell(p));
@@ -156,15 +179,28 @@ public final class GameEngine {
         if (state.players.isEmpty()) throw new IllegalArgumentException("Zuerst mindestens einen Spieler anmelden.");
         if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
         if (state.started) return;
-        State next = copy(); next.started = true;
-        addLog(next, "Spiel gestartet: zuerst Go bestätigen und würfeln; 1–4 ziehen, bei 5/6 Bewegung oder Aktion wählen.");
+        State next = copy(); next.started = true;next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
+        for(Player p:next.players){p.x=-1;p.y=-1;}
+        addLog(next,"Das Portal sucht den Raummeister. Das Spiel wartet auf den gespeicherten Aufbau.");
         commit(next);
+    }
+    /** Host-only: preserve an existing adventure while recording or correcting its physical plan. */
+    public synchronized void rebuildBoard() throws IOException {
+        if(!playing())throw new IllegalArgumentException("Zuerst Partie starten oder laufenden Aufbau abschließen.");
+        State next=copy();next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
+        next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
+        if(next.legacyBoard)for(Player p:next.players){p.x=-1;p.y=-1;}
+        next.legacyBoard=false;addLog(next,"Die Partie pausiert zum Erfassen des Raumgefüges. Runde und Zug bleiben erhalten.");commit(next);
     }
     public synchronized String snapshot(String token) {
         Player self = authenticated(state, token);
         StringBuilder b = new StringBuilder("{\"sessionId\":" + quote(state.id));
         b.append(",\"revision\":").append(state.revision).append(",\"started\":").append(state.started)
             .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
+            .append(",\"setup\":{\"stage\":").append(quote(state.setupStage)).append(",\"id\":").append(quote(state.setupId)).append(",\"roomMaster\":").append(quote(state.roomMaster))
+            .append(",\"candidate\":").append(quote(state.candidate)).append(",\"forced\":").append(state.forcedRoomMaster)
+            .append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard).append("}")
+            .append(",\"board\":").append(state.board.json())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
             .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append("}")
             .append(",\"turn\":{\"stage\":").append(quote(state.turnStage)).append(",\"roll\":").append(state.turnRoll)
@@ -215,6 +251,8 @@ public final class GameEngine {
         String receipt = actor.id + ":" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token); // Retry never rerolls or moves twice.
         if (revision != state.revision) throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
+        if(Arrays.asList("roomYes","roomNo","tilePlace","tileMove","tileRotate","tileRemove","setSpawn","boardSave").contains(action))
+            return setupCommand(actor,token,receipt,action,direction);
         if ("confirmMovement".equals(action)) {
             if (!playing() || !state.phase.equals("enemies") || !actor.id.equals(state.helperId)) throw new IllegalArgumentException("Du wurdest nicht für diese Bewegung ausgewählt.");
             State next = copy(); next.helperId = ""; next.movementDone = true;
@@ -248,7 +286,9 @@ public final class GameEngine {
                     default: throw new IllegalArgumentException("Ungültige Richtung.");
                 }
                 int x = p.x + dx, y = p.y + dy;
-                if (x < 0 || x >= 6 || y < 0 || y >= 6) throw new IllegalArgumentException("Außerhalb des Demo-Spielfelds.");
+                if(next.legacyBoard){if(x<0||x>=6||y<0||y>=6)throw new IllegalArgumentException("Außerhalb des bisherigen Testfelds.");}
+                else if(!next.board.exists(x,y))throw new IllegalArgumentException("Hier existiert kein Spielfeld.");
+                else if(!next.board.canStep(p.x,p.y,x,y))throw new IllegalArgumentException("Eine Wand versperrt diesen Weg.");
                 for (Player other : next.players) if (other != p && other.x == x && other.y == y)
                     throw new IllegalArgumentException("Dieses Feld ist belegt.");
                 String from = cell(p); p.x = x; p.y = y;
@@ -289,6 +329,96 @@ public final class GameEngine {
         commit(next);
         return snapshot(token);
     }
+    /** Progress only host-clock presentation stages; the committed choice is never rerolled by polling. */
+    public synchronized void tick() throws IOException {
+        if((state.setupStage.equals("selecting")||state.setupStage.equals("launching"))&&clock.millis()>=state.setupDeadline){
+            State next=copy();
+            if(next.setupStage.equals("selecting"))offerNext(next);
+            else{next.setupStage="play";next.setupDeadline=0;addLog(next,"Das Abenteuer beginnt. Bestätige deinen Zug mit Go.");}
+            commit(next);
+        }
+    }
+    public synchronized boolean preparing(){return state.started&&!state.setupStage.equals("play");}
+    private void offerNext(State next){
+        List<Player> choices=new ArrayList<>();for(Player p:next.players)if(!next.asked.contains(p.id))choices.add(p);
+        next.setupDeadline=0;
+        if(choices.isEmpty()){
+            Player p=next.players.get(random.nextInt(next.players.size()));next.roomMaster=p.id;next.candidate="";
+            next.forcedRoomMaster=true;next.setupStage="building";
+            notice(next,"Alle haben abgelehnt. Das Portal entscheidet: "+p.name+" ist Raummeister.");
+            addLog(next,"Das Portal bestimmt "+p.name+" zum Raummeister, nachdem alle abgelehnt haben.");
+        }else{
+            Player p=choices.get(random.nextInt(choices.size()));next.candidate=p.id;next.asked.add(p.id);next.setupStage="offering";
+        }
+    }
+    private void notice(State next,String text){next.notices.add(new PortalNotice(UUID.randomUUID().toString(),text));while(next.notices.size()>40)next.notices.remove(0);}
+    private String setupCommand(Player actor,String token,String receipt,String action,String payload)throws IOException{
+        State next=copy();
+        if(action.equals("roomYes")||action.equals("roomNo")){
+            if(!next.setupStage.equals("offering")||!actor.id.equals(next.candidate))throw new IllegalArgumentException("Gerade wird ein anderer Spieler gefragt.");
+            if(action.equals("roomYes")){
+                next.roomMaster=actor.id;next.candidate="";next.setupStage="building";
+                notice(next,actor.name+" hat zugesagt und ist Raummeister!");addLog(next,actor.name+" stellt das Raumgefüge wieder her.");
+            }else{
+                notice(next,actor.name+" hat abgelehnt. Das Portal sucht weiter…");addLog(next,actor.name+" lehnt die Raummeister-Rolle ab.");offerNext(next);
+            }
+        }else{
+            if(!next.setupStage.equals("building")||!actor.id.equals(next.roomMaster))throw new IllegalArgumentException("Nur der Raummeister kann jetzt den Aufbau bearbeiten.");
+            String[] args=(payload==null?"":payload).split(",",-1);
+            try{
+                switch(action){
+                    case "tilePlace":requireArgs(args,4);next.board.place(number(args[0]),number(args[1]),args[2],number(args[3]));break;
+                    case "tileMove":requireArgs(args,4);next.board.move(number(args[0]),number(args[1]),number(args[2]),number(args[3]));break;
+                    case "tileRotate":requireArgs(args,2);next.board.rotate(number(args[0]),number(args[1]));break;
+                    case "tileRemove":requireArgs(args,2);next.board.remove(number(args[0]),number(args[1]));break;
+                    case "setSpawn":
+                        requireArgs(args,3);Player target=null;for(Player p:next.players)if(p.id.equals(args[0]))target=p;
+                        int x=number(args[1]),y=number(args[2]);if(target==null||!next.board.exists(x,y))throw new IllegalArgumentException("Startfeld muss auf einer Kachel liegen.");
+                        for(Player other:next.players)if(other!=target&&other.x==x&&other.y==y)throw new IllegalArgumentException("Dieses Startfeld ist bereits belegt.");
+                        target.x=x;target.y=y;break;
+                    case "boardSave":
+                        if(next.board.cells()<next.players.size())throw new IllegalArgumentException("Für jeden Spieler wird mindestens ein eigenes Startfeld benötigt.");
+                        repairSpawns(next);
+                        for(Player p:next.players)if(!next.board.exists(p.x,p.y))throw new IllegalArgumentException("Zuerst für alle Spieler ein Startfeld platzieren.");
+                        next.boardSaved=true;next.setupStage="launching";next.setupDeadline=clock.millis()+3000;
+                        addLog(next,actor.name+" hat das Raumgefüge gespeichert: "+next.board.tiles().size()+" Kacheln, "+next.board.cells()+" Felder. Startfiguren wie im Plan aufstellen.");break;
+                    default:throw new IllegalArgumentException("Unbekannte Aufbauaktion.");
+                }
+            }catch(NumberFormatException e){throw new IllegalArgumentException("Ungültige Rasterkoordinate.");}
+            repairSpawns(next);
+        }
+        remember(next,receipt);commit(next);return snapshot(token);
+    }
+    private static void requireArgs(String[] args,int n){if(args.length!=n)throw new IllegalArgumentException("Unvollständige Aufbauaktion.");}
+    private static int number(String value){if(!value.matches("[0-9]{1,2}"))throw new NumberFormatException();return Integer.parseInt(value);}
+    private static void repairSpawns(State s){
+        Set<String> occupied=new HashSet<>();
+        for(Player p:s.players){
+            if(!s.board.exists(p.x,p.y)||!occupied.add(p.x+","+p.y)){p.x=-1;p.y=-1;}
+        }
+        for(Player p:s.players)if(p.x<0){
+            outer:for(int y=0;y<20;y++)for(int x=0;x<20;x++)if(s.board.exists(x,y)&&occupied.add(x+","+y)){p.x=x;p.y=y;break outer;}
+        }
+    }
+    private static void validateSetup(State s,Set<String> ids)throws IOException{
+        if(!Arrays.asList("lobby","selecting","offering","building","launching","play").contains(s.setupStage)||
+            (!s.started)!=s.setupStage.equals("lobby")||s.setupDeadline<0||
+            (!s.setupId.isEmpty()&&!s.setupId.matches("[a-f0-9-]{36}"))||
+            (!s.candidate.isEmpty()&&!s.setupStage.equals("offering"))||
+            (Arrays.asList("selecting","launching").contains(s.setupStage)!=(s.setupDeadline>0))||
+            (!s.roomMaster.isEmpty()&&!ids.contains(s.roomMaster))||(!s.candidate.isEmpty()&&!ids.contains(s.candidate))||
+            new HashSet<>(s.asked).size()!=s.asked.size()||!ids.containsAll(s.asked)||
+            (s.setupStage.equals("offering")&&(s.candidate.isEmpty()||!s.asked.contains(s.candidate)))||
+            (Arrays.asList("building","launching").contains(s.setupStage)&&s.roomMaster.isEmpty())||
+            (s.boardSaved&&(!Arrays.asList("launching","play").contains(s.setupStage)||s.board.cells()<s.players.size()))||
+            (s.setupStage.equals("play")&&!s.legacyBoard&&!s.boardSaved))throw new IOException("Ungültiger Aufbauzustand.");
+        Set<String> occupied=new HashSet<>();
+        for(Player p:s.players){
+            if(p.x>=0&&!occupied.add(p.x+","+p.y))throw new IOException("Doppelte Figurenposition.");
+            if(s.boardSaved&&!s.board.exists(p.x,p.y))throw new IOException("Figur steht außerhalb des Aufbaus.");
+            if(s.legacyBoard&&(p.x<0||p.x>=6||p.y>=6))throw new IOException("Ungültige alte Position.");
+        }
+    }
     private static void endPlayerTurn(State next) {
         next.turnStage = "roll"; next.turnRoll = 0; next.remaining = 0; next.turnAccepted = false;
         next.current = (next.current + 1) % next.players.size();
@@ -297,12 +427,12 @@ public final class GameEngine {
             else { next.phase = "enemies"; next.enemyIndex = 0; next.movementDone = false; }
         }
     }
-    private static String cell(Player p) { return "" + (char)('A' + p.x) + (p.y + 1); }
+    private static String cell(Player p) { return p.x<0?"noch nicht aufgestellt":BoardPlan.cell(p.x,p.y); }
     public synchronized int selectedCount() {
         int n = 0; for (Player p : state.players) if (!p.characterId.isEmpty()) n++; return n;
     }
     public synchronized boolean readyForPlay() { return !state.players.isEmpty() && selectedCount() == state.players.size(); }
-    public synchronized boolean playing() { return state.started && readyForPlay(); }
+    public synchronized boolean playing() { return state.started && state.setupStage.equals("play") && readyForPlay(); }
     private String playerName(String id) { for (Player p : state.players) if (p.id.equals(id)) return p.name; return "Spieler"; }
     public synchronized List<String[]> playersForHost() {
         List<String[]> result = new ArrayList<>();
@@ -331,6 +461,7 @@ public final class GameEngine {
         if (text.isEmpty() || text.length() > 400 || text.codePoints().anyMatch(c -> Character.isISOControl(c) && c != '\n')) throw new IllegalArgumentException("Angriffsfolge: 1–400 Zeichen.");
         State next = copy(); next.attackId = UUID.randomUUID().toString(); next.attackEnemy = next.enemies.get(next.enemyIndex);
         next.attackTarget = targetId; next.attackText = text; next.attackPending = true;
+        notice(next,characterName(next.attackEnemy)+" greift "+playerName(targetId)+" an!\n"+text);
         addSpeech(next,characterName(next.attackEnemy)+" → "+playerName(targetId)+": "+text,next.attackEnemy,"","Ich greife "+playerName(targetId)+" an. "+text,""); commit(next);
     }
     public synchronized void finishEnemyTurn() throws IOException {
@@ -352,7 +483,7 @@ public final class GameEngine {
         Player actor = authenticated(state, token); requireRequest(requestId); profile(characterId);
         String receipt = actor.id + ":choose:" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token);
-        if (playing()) throw new IllegalArgumentException("Die Charakterauswahl ist nach Spielstart geschlossen.");
+        if (state.started && !(state.legacyBoard && actor.characterId.isEmpty())) throw new IllegalArgumentException("Die Charakterauswahl ist nach Spielstart geschlossen.");
         if (state.enemies.contains(characterId)) throw new IllegalArgumentException("Diese Figur ist bereits als Gegner hinzugefügt.");
         for (Player p : state.players) if (!p.id.equals(actor.id) && p.characterId.equals(characterId))
             throw new IllegalArgumentException("Diese Figur wurde gerade von einem anderen Spieler gewählt.");
@@ -376,6 +507,7 @@ public final class GameEngine {
     /** Host-only call. Intentionally not exposed as an HTTP route. */
     public synchronized void addEnemy(String characterId) throws IOException {
         profile(characterId);
+        if(state.started)throw new IllegalArgumentException("Gegner vor dem Start hinzufügen.");
         if (!readyForPlay()) throw new IllegalArgumentException("Zuerst wählen alle Spieler ihre Figuren.");
         if (state.enemies.contains(characterId)) return;
         for (Player p : state.players) if (p.characterId.equals(characterId)) throw new IllegalArgumentException("Diese Figur gehört einem Partner.");
@@ -429,6 +561,10 @@ public final class GameEngine {
         out.writeUTF(s.rollEventId); out.writeUTF(s.rollPlayerId);
         out.writeBoolean(s.turnAccepted);out.writeInt(s.story.size());
         for(StoryEntry e:s.story){out.writeUTF(e.id);out.writeLong(e.timestampMillis);out.writeUTF(e.dateTime);out.writeUTF(e.speaker);out.writeUTF(e.playerName);out.writeUTF(e.text);out.writeUTF(e.direction);}
+        out.writeUTF(s.setupStage);out.writeUTF(s.setupId);out.writeUTF(s.roomMaster);out.writeUTF(s.candidate);out.writeLong(s.setupDeadline);
+        out.writeBoolean(s.forcedRoomMaster);out.writeBoolean(s.boardSaved);out.writeBoolean(s.legacyBoard);
+        out.writeInt(s.asked.size());for(String id:s.asked)out.writeUTF(id);s.board.write(out);
+        out.writeInt(s.notices.size());for(PortalNotice notice:s.notices){out.writeUTF(notice.id);out.writeUTF(notice.text);}
         out.flush(); return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -444,7 +580,7 @@ public final class GameEngine {
             Player p = new Player(); p.id = in.readUTF(); p.token = in.readUTF(); p.name = in.readUTF();
             p.joinRequest = in.readUTF(); p.x = in.readInt(); p.y = in.readInt();
             if (format >= 2) p.characterId = in.readUTF();
-            if (p.x < 0 || p.x >= 6 || p.y < 0 || p.y >= 6) throw new IOException("Ungültige Position.");
+            if (p.x < (format>=7?-1:0) || p.x >= (format>=7?20:6) || p.y < (format>=7?-1:0) || p.y >= (format>=7?20:6) || (p.x==-1)!=(p.y==-1)) throw new IOException("Ungültige Position.");
             s.players.add(p);
         }
         if (format >= 2) { int enemies = count(in, 256); for (int i = 0; i < enemies; i++) s.enemies.add(in.readUTF()); }
@@ -473,6 +609,12 @@ public final class GameEngine {
                 StoryEntry e=new StoryEntry();e.id=UUID.nameUUIDFromBytes((s.id+":"+i+":"+s.log.get(i)).getBytes(StandardCharsets.UTF_8)).toString();e.timestampMillis=0;e.dateTime="";e.speaker="Archiv";e.playerName="";e.text=s.log.get(i);e.direction="";s.story.add(e);
             }
         }
+        if(format>=7){
+            s.setupStage=in.readUTF();s.setupId=in.readUTF();s.roomMaster=in.readUTF();s.candidate=in.readUTF();s.setupDeadline=in.readLong();
+            s.forcedRoomMaster=in.readBoolean();s.boardSaved=in.readBoolean();s.legacyBoard=in.readBoolean();
+            int asked=count(in,4);for(int i=0;i<asked;i++)s.asked.add(in.readUTF());s.board=BoardPlan.read(in);
+            int notices=count(in,40);for(int i=0;i<notices;i++){String id=in.readUTF(),text=in.readUTF();if(!id.matches("[a-f0-9-]{36}")||text.length()>800)throw new IOException("Ungültige Portalanzeige.");s.notices.add(new PortalNotice(id,text));}
+        }else{s.setupStage=s.started?"play":"lobby";s.legacyBoard=s.started;}
         if((!s.turnAccepted&&!s.turnStage.equals("roll"))||(s.phase.equals("enemies")&&s.turnAccepted))throw new IOException("Ungültige Zugbestätigung.");
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
             s.turnStage.equals("choice") && s.turnRoll >= 5 && s.turnRoll <= 6 && s.remaining == s.turnRoll ||
@@ -481,6 +623,7 @@ public final class GameEngine {
         Set<String> playerIds = new HashSet<>(); for (Player p : s.players) playerIds.add(p.id);
         if ((!s.rollEventId.isEmpty() && (!s.rollEventId.matches("[a-f0-9-]{36}") || !playerIds.contains(s.rollPlayerId) || s.lastRoll < 1)) ||
             (s.rollEventId.isEmpty() && !s.rollPlayerId.isEmpty())) throw new IOException("Ungültiges Würfelereignis.");
+        validateSetup(s,playerIds);
         if (!(s.phase.equals("players") || s.phase.equals("enemies")) || s.enemyIndex < 0 ||
             (s.phase.equals("enemies") && (!s.started || s.enemyIndex >= s.enemies.size())) ||
             (!s.helperId.isEmpty() && (!s.phase.equals("enemies") || !playerIds.contains(s.helperId) || s.movementDone)) ||

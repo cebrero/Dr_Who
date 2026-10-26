@@ -1,0 +1,66 @@
+// Optional real browser test. No Playwright dependency is shipped to players.
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE_PATH||'playwright');
+const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {spawn}=require('node:child_process'),readline=require('node:readline'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),base=fs.mkdtempSync(path.join(os.tmpdir(),'drwho-browser-'));
+const javaBinary=process.env.JAVA_HOME?path.join(process.env.JAVA_HOME,'bin',process.platform==='win32'?'java.exe':'java'):'java';
+const java=spawn(javaBinary,['-cp',root+'/core/build/smoke','de.cebrero.drwho.core.BrowserPortalFixture',root],{stdio:['pipe','pipe','inherit']});
+const queued=[],waiters=[];java.on('error',error=>{for(const waiter of waiters.splice(0)){clearTimeout(waiter.timer);waiter.reject(error)}});java.on('exit',code=>{for(const waiter of waiters.splice(0)){clearTimeout(waiter.timer);waiter.reject(new Error('Java test host exited: '+code))}});readline.createInterface({input:java.stdout}).on('line',line=>{try{const value=JSON.parse(line);const waiter=waiters.shift();if(waiter){clearTimeout(waiter.timer);waiter.resolve(value)}else queued.push(value)}catch(e){console.error(line)}});
+function next(){return queued.length?Promise.resolve(queued.shift()):new Promise((resolve,reject)=>{const entry={resolve,reject,timer:setTimeout(()=>reject(new Error('Host test response timeout')),10000)};waiters.push(entry)})}
+async function host(command){java.stdin.write(command+'\n');return await next()}
+async function command(page,action,direction=''){return await page.evaluate(async({action,direction})=>{const latest=await api('/api/state');const result=await api('/api/command',{requestId:uuid(),revision:String(latest.revision),action,direction});render(result);return result},{action,direction})}
+async function poll(page){await page.evaluate(()=>poll())}
+async function mouseDrag(page,source,target){const s=await source.boundingBox();assert(s);await page.mouse.move(s.x+s.width/2,s.y+s.height/2);await page.mouse.down();await page.mouse.move(target.x,target.y,{steps:20});await page.mouse.up()}
+async function touchDrag(page,source,target){const box=await source.boundingBox(),cdp=await page.context().newCDPSession(page);const x=box.x+box.width/2,y=box.y+box.height/2;await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x,y}]});const top=(await page.locator('#editorGrid').boundingBox()).y;for(let i=1;i<=14;i++){await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:x+(target.x-x)*i/14,y:y+(target.y-y)*i/14}]});if(i===7){await poll(page);assert.equal((await page.locator('#editorGrid').boundingBox()).y,top,'polling must not shift the map under a finger')}}await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await cdp.detach()}
+async function target(page,x,y){const r=await page.locator('#editorGrid').boundingBox();return {x:r.x+(x+.5)*36,y:r.y+(y+.5)*36}}
+(async()=>{
+ const info=await next(),url='http://127.0.0.1:'+info.port+'/?code='+info.code;
+ const browser=await chromium.launch({headless:true,...(process.env.CHROMIUM_EXECUTABLE_PATH?{executablePath:process.env.CHROMIUM_EXECUTABLE_PATH}:{})});
+ try{
+  const contexts=await Promise.all([browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true}),browser.newContext({viewport:{width:320,height:740},isMobile:true,hasTouch:true})]);
+  const [a,b]=await Promise.all(contexts.map(c=>c.newPage()));const errors=[];for(const page of[a,b])page.setDefaultTimeout(10000);for(const page of[a,b])page.on('pageerror',e=>{errors.push(e.message);console.error('Browser error:',e.message)});
+  for(const [page,name,char]of[[a,'Alice','doctor'],[b,'Bob','dalek']]){await page.goto(url);await page.locator('#name').fill(name);await page.locator('#joinButton').click();await page.waitForSelector('#selection:visible');if(char==='dalek')await page.locator('#nextCard').click();await page.locator('[data-character-id="'+char+'"] .choose').click();await page.waitForFunction(id=>document.querySelector('[data-character-id="'+id+'"]').classList.contains('chosen'),char);}
+  let status=await host('START');assert.equal(status.stage,'selecting');assert.equal(status.awaitingGo,false);await poll(a);await poll(b);assert.equal(await a.locator('#setupTitle').textContent(),'der Raummeister wird gerade ausgewählt...');assert.equal(await a.locator('#turnDialog').isVisible(),false);
+  await host('TICK');await poll(a);await poll(b);await b.waitForSelector('#roomDialog:visible');assert.equal(await a.locator('#roomDialog').isVisible(),false);
+  await b.locator('#roomNo').click();await b.waitForSelector('#roomDialog',{state:'hidden'});await poll(a);await a.waitForSelector('#roomDialog:visible');await a.screenshot({path:base+'/room-offer-080-check.png'});
+  await a.locator('#roomYes').click();await a.waitForSelector('#boardEditor:visible');await a.waitForFunction(()=>!document.getElementById('saveBoard').disabled||document.querySelectorAll('#editorGrid .board-empty').length===400);
+  status=await host('STATUS');assert.equal(status.stage,'building');assert.match(status.notices.at(-1),/Alice hat zugesagt/);
+  // Real pointer drag from the palette, then tap rotation and dragging into trash.
+  await mouseDrag(a,a.locator('[data-kind="corner"]'),await target(a,1,1));await a.waitForSelector('#editorGrid [data-cell="1,1"][data-tile]');
+  await a.locator('#editorGrid [data-cell="1,1"][data-tile]').tap();await a.waitForFunction(()=>state.board.tiles.find(t=>t.x===1&&t.y===1)?.rotation===1);
+  const trash=await a.locator('#boardTrash').boundingBox();await mouseDrag(a,a.locator('#editorGrid [data-cell="1,1"][data-tile]'),{x:trash.x+trash.width/2,y:trash.y+trash.height/2});await a.waitForFunction(()=>state.board.tiles.length===0);
+  // Touch dragging as a real mobile input stream (not HTML drag-and-drop events).
+  const cdp=await contexts[0].newCDPSession(a),source=await a.locator('[data-kind="floor"]').boundingBox(),drop=await target(a,0,0);
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:source.x+source.width/2,y:source.y+source.height/2}]});
+  for(let i=1;i<=12;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:source.x+source.width/2+(drop.x-source.x-source.width/2)*i/12,y:source.y+source.height/2+(drop.y-source.y-source.height/2)*i/12}]});await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await a.waitForSelector('#editorGrid [data-cell="0,0"][data-tile]');
+  await mouseDrag(a,a.locator('[data-kind="portal"]'),await target(a,3,2));await a.waitForFunction(()=>state.board.tiles.some(t=>t.kind==='portal'));await a.locator('#editorGrid [data-cell="3,2"]').tap();await a.waitForFunction(()=>state.board.tiles.find(t=>t.kind==='portal')?.rotation===1);
+  await command(a,'tilePlace','1,0,floor,0');await command(a,'tilePlace','0,1,floor,0');await command(a,'tilePlace','1,1,door,2');await command(a,'tilePlace','2,1,parallel,0');await command(a,'tilePlace','2,2,well,0');await command(a,'tilePlace','2,3,dungeon,0');
+  await command(a,'tilePlace','0,2,corner,3');await command(a,'tilePlace','0,3,floor,0');await poll(b);status=await host('STATUS');assert.equal(status.tiles,10);assert.match(await b.locator('#setupTitle').textContent(),/Alice/);assert.equal(await b.locator('#boardEditor').isVisible(),false);
+  const forbidden=await b.evaluate(async()=>{try{await api('/api/command',{requestId:uuid(),revision:String(state.revision),action:'tileRemove',direction:'0,0'});return 0}catch(e){return e.status}});assert.equal(forbidden,400);
+  // Existing tiles move only after confirmation; a collision keeps the source selected.
+  await touchDrag(a,a.locator('#editorGrid [data-cell="2,2"]'),await target(a,5,1));await a.waitForFunction(()=>state.board.tiles.some(t=>t.kind==='well'&&t.x===5&&t.y===1));
+  await touchDrag(a,a.locator('#editorGrid [data-cell="5,1"]'),await target(a,3,2));await a.waitForFunction(()=>document.getElementById('boardStatus').textContent.includes('bereits eine Kachel'));
+  assert.equal(await a.locator('#editorGrid [data-cell="5,1"]').getAttribute('class'),'board-tile selected');
+  await touchDrag(a,a.locator('#editorGrid [data-cell="5,1"]'),await target(a,2,2));await a.waitForFunction(()=>state.board.tiles.some(t=>t.kind==='well'&&t.x===2&&t.y===2));
+  // Both portal halves can be selected as real start fields using touch.
+  await a.locator('#spawnMode').tap();await a.locator('#spawnList button').first().tap();
+  let portalBox=await a.locator('#editorGrid [data-cell="3,2"]').boundingBox();await a.touchscreen.tap(portalBox.x+portalBox.width/2,portalBox.y+portalBox.height*.75);await a.waitForFunction(()=>state.players.find(p=>p.id===state.you).y===3);
+  await a.locator('#editorGrid [data-cell="0,0"]').tap();await a.waitForFunction(()=>state.players.find(p=>p.id===state.you).x===0);await a.locator('#clearPalette').tap();
+  // The far corner remains reachable through the scrollable map, with palette unobscured.
+  await a.locator('#boardViewport').evaluate(e=>{e.scrollLeft=e.scrollWidth;e.scrollTop=e.scrollHeight});
+  await mouseDrag(a,a.locator('[data-kind="floor"]'),await target(a,19,19));await a.waitForSelector('#editorGrid [data-cell="19,19"][data-tile]');
+  const farTrash=await a.locator('#boardTrash').boundingBox();await mouseDrag(a,a.locator('#editorGrid [data-cell="19,19"][data-tile]'),{x:farTrash.x+farTrash.width/2,y:farTrash.y+farTrash.height/2});await a.waitForFunction(()=>!state.board.tiles.some(t=>t.x===19&&t.y===19));
+  await a.locator('#boardViewport').evaluate(e=>{e.scrollLeft=0;e.scrollTop=0});
+  await a.screenshot({path:base+'/room-editor-080-check.png',fullPage:true});assert.equal(await a.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  // Show full raster and pan controls at the narrower width too.
+  await a.setViewportSize({width:320,height:740});await a.locator('#boardZoom').click();await a.screenshot({path:base+'/room-editor-small-080-check.png',fullPage:true});assert.equal(await a.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);await a.setViewportSize({width:390,height:844});
+  const before=await a.evaluate(()=>JSON.stringify(state.board));await host('RESTORE');await a.reload();await a.waitForSelector('#boardEditor:visible');assert.equal(await a.evaluate(()=>JSON.stringify(state.board)),before);
+  await a.locator('#saveBoard').click();await a.waitForFunction(()=>state.setup.stage==='launching');status=await host('STATUS');assert.equal(status.stage,'launching');assert.equal(status.awaitingGo,false);await a.screenshot({path:base+'/room-launch-080-check.png'});
+  await host('TICK');await poll(a);await poll(b);await a.waitForSelector('#turnDialog:visible');assert.equal((await host('STATUS')).awaitingGo,true);await a.locator('#goButton').click();await a.waitForSelector('#turnDialog',{state:'hidden'});
+  assert.equal(await a.locator('#gameBoard .board-tile').count(),10);await a.locator('#rollButton').click();await a.waitForSelector('#turnChoices:visible');await a.locator('#actionChoiceButton').click();await a.locator('[data-action-dir="E"]').click();await poll(b);await b.waitForSelector('#turnDialog:visible');
+  // Existing game can pause, retain its real map, and negotiate again. Test all-no fallback.
+  status=await host('REBUILD');assert.equal(status.stage,'selecting');await poll(a);await poll(b);await host('TICK');await poll(b);await b.waitForSelector('#roomDialog:visible');await b.locator('#roomNo').click();await b.waitForSelector('#roomDialog',{state:'hidden'});await poll(a);await a.waitForSelector('#roomDialog:visible');await a.locator('#roomNo').click();await a.waitForSelector('#roomDialog',{state:'hidden'});await poll(b);await b.waitForSelector('#forcedDialog:visible');await b.screenshot({path:base+'/room-forced-080-check.png'});await b.locator('#openBoard').click();await b.waitForSelector('#boardEditor:visible');assert.equal(await b.locator('#editorGrid [data-tile]').count(),10);
+  status=await host('STATUS');assert.match(status.notices.at(-1),/Alle haben abgelehnt.*Bob/);await host('RESTORE');await b.reload();await b.waitForSelector('#boardEditor:visible');assert.equal(await b.locator('#forcedDialog').isVisible(),false);assert.equal(await b.locator('#editorGrid [data-tile]').count(),10);
+  assert.deepEqual(errors,[]);console.log('PASS: two real mobile Chromium clients + real Java HTTP engine: selection, decline/accept, real mouse/touch drag, rotate, trash, all seven tiles, live host state, authorization, narrow view, reload/restart, saved board, launch-before-Go, directional turn, retained rebuild and all-no forced selection.');
+ }finally{await browser.close();java.stdin.write('EXIT\n');java.stdin.end();}
+})().catch(e=>{console.error(e);java.kill();process.exitCode=1});

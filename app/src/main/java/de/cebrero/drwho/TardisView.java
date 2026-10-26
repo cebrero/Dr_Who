@@ -14,8 +14,10 @@ final class TardisView extends View {
     private final float[] depths = new float[4];
     private final int[] order = {0,1,2,3};
     private boolean visible;
-    TardisView(Context context) {
-        super(context); setContentDescription("Eine sich drehende TARDIS im Zeitwirbel");
+    private final boolean flying;
+    TardisView(Context context) {this(context,false);}
+    TardisView(Context context,boolean flying) {
+        super(context);this.flying=flying;setContentDescription(flying?"Eine fliegende TARDIS im Zeitwirbel":"Eine sich drehende TARDIS im Zeitwirbel");
         Canvas c = new Canvas(facade); c.drawColor(Color.rgb(22,61,111));
         paint.setColor(Color.rgb(48,99,157)); c.drawRect(4,0,156,9,paint); c.drawRect(4,270,156,280,paint);
         paint.setColor(Color.rgb(7,21,42)); c.drawRect(11,13,149,41,paint);
@@ -46,12 +48,19 @@ final class TardisView extends View {
     }
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        float a=(SystemClock.uptimeMillis()%24000)/24000f*(float)(Math.PI*2),scale=Math.min(getWidth()/2.8f,getHeight()/2.3f);
+        boolean animate=android.animation.ValueAnimator.areAnimatorsEnabled();
+        long duration=flying?8000:24000;float a=(animate?SystemClock.uptimeMillis()%duration:0)/(float)duration*(float)(Math.PI*2),scale=Math.min(getWidth()/2.8f,getHeight()/2.3f);
         float cx=getWidth()/2f,cy=getHeight()/2f+(float)Math.sin(a*1.7f)*5;
+        if(flying){
+            scale*=.78f+(float)Math.sin(a*1.3f)*.08f;cx+=(float)Math.sin(a*.8f)*getWidth()*.12f;cy+=(float)Math.cos(a*1.1f)*getHeight()*.07f;
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(2);
+            for(int i=0;i<28;i++){double angle=i*2.399963+a*.14;float travel=(i*.137f+a*.23f)%1f;float distance=scale*(.7f+travel*2.3f);paint.setColor(Color.argb((int)(25+70*travel),110,218,245));float sx=getWidth()/2f+(float)Math.cos(angle)*distance,sy=getHeight()/2f+(float)Math.sin(angle)*distance*.8f;canvas.drawLine(sx,sy,sx+(float)Math.cos(angle)*scale*.14f,sy+(float)Math.sin(angle)*scale*.11f,paint);}
+        }
         paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1.5f);paint.setColor(Color.argb(50,85,223,244));
         for(int r=0;r<4;r++)canvas.drawOval(cx-scale*(.7f+r*.17f),cy-scale*(.7f+r*.08f),cx+scale*(.7f+r*.17f),cy+scale*(.7f+r*.08f),paint);
         for(int f=0;f<4;f++){float t=f*(float)Math.PI/2;depths[f]=z((float)Math.sin(t)*.42f,-(float)Math.cos(t)*.42f,a);order[f]=f;}
         for(int i=0;i<4;i++)for(int j=i+1;j<4;j++)if(depths[order[i]]<depths[order[j]]){int t=order[i];order[i]=order[j];order[j]=t;}
+        int bank=canvas.save();if(flying)canvas.rotate((float)Math.sin(a*1.7f)*13,cx,cy);
         paint.setStyle(Paint.Style.FILL);paint.setColor(Color.WHITE);
         for(int f:order){
             float t=f*(float)Math.PI/2,c=(float)Math.cos(t),s=(float)Math.sin(t);
@@ -62,6 +71,7 @@ final class TardisView extends View {
         }
         paint.setColor(Color.rgb(118,224,246));canvas.drawCircle(cx,cy-scale*.96f,scale*.045f,paint);
         paint.setColor(Color.argb(50,118,224,246));canvas.drawCircle(cx,cy-scale*.96f,scale*.10f,paint);
-        if(visible)postInvalidateOnAnimation();
+        canvas.restoreToCount(bank);
+        if(visible&&animate)postInvalidateOnAnimation();
     }
 }

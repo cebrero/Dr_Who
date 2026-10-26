@@ -8,7 +8,7 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.7.0
+## Stand 0.8.0
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
@@ -34,7 +34,16 @@ betroffenen Spieler. Nicht beteiligte Spieler sehen standardmäßig ihren eigene
 die fliegende TARDIS bleibt optional im Spieltab. Die Portal-Lobby zeigt
 Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespeichert.
 
-Ein freies 6×6-Demofeld dient weiterhin zum Testen von Zugfolge, Bewegung und W6-Zufall.
+Nach Start fliegt die TARDIS drei Sekunden während der Raummeister-Auswahl. Echte Spieler
+werden zufällig mit Ja/Nein gefragt. Nach allen Nein wählt das Portal verbindlich einen Spieler.
+Der Raummeister erfasst den Tisch per **20×20-Editor**: Ecke, Boden, Gang, Tür, Kerker, Brunnen
+und ein **zweifeldriges Portal**. Kacheln ziehen, antippen zum Drehen, verschieben und in den
+Mülleimer ziehen; alternativ per Tipp/Tastatur bedienen. Startfiguren sind sichtbar und versetzbar.
+Jede Änderung wird gespeichert und am Portal live gezeigt. Erst Abschluss und Startfilm öffnen
+die erste Spielrunde. Große Portalereignisse erscheinen je drei Sekunden. Leere Rasterstellen
+existieren nicht; massive Wände blockieren Bewegungen. Türzustände folgen noch.
+Altpartien behalten ihr 6×6-Testfeld; unter Spielleitung lässt sich der reale Plan nachtragen,
+ohne Runde und Zug zu verwerfen. Der Plan bleibt zum Wiederaufbau abrufbar.
 Jeder Spieler bestätigt zuerst **Your move... / Go** am eigenen Handy und würfelt danach. Bei 1–4 zieht er genau diese Anzahl Felder;
 bei 5/6 wählt er Bewegung um genau die Augenzahl oder eine Charakteraktion. Bewegungen
 verlaufen orthogonal mit Richtungswechseln. Reststrecke und Würfelzustand werden gespeichert.
@@ -49,7 +58,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 309 Kern-/HTTP-Prüfungen und 125 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 411 Kern-/HTTP-Prüfungen und 155 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -111,14 +120,17 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
    Die direkte IP bleibt als Ausweichweg sichtbar. `.local` muss am echten Gerät geprüft werden.
 4. Namen und sechsstelligen Portalcode eingeben. Das WLAN-Passwort ist davon getrennt.
 5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
-   der Host übrige Figuren als Gegner hinzufügen und die Technikdemo starten.
-6. Der aktive Spieler bestätigt das Popup **Your move...** mit **Go**, danach würfelt er am eigenen Gerät. Bei 1–4 zieht er genau diese Anzahl
+   der Host übrige Figuren als Gegner hinzufügen und die Raummeister-Auswahl starten.
+6. Raummeister-Anfrage am ausgewählten Handy beantworten. Aufbau im Editor erfassen, Startfiguren
+   wie angezeigt aufstellen und **Speichern & starten**. Das Portal zeigt den Plan und danach
+   den Startfilm.
+7. Der aktive Spieler bestätigt das Popup **Your move...** mit **Go**, danach würfelt er am eigenen Gerät. Bei 1–4 zieht er genau diese Anzahl
    Felder, bei 5/6 wählt er Bewegung oder Aktion. Jeden Bewegungsschritt am eigenen Handy
    eingeben und auf dem Tisch nachvollziehen. Nach der vollen Strecke folgt der nächste Spieler.
-7. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,
+8. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,
    eine Angriffsfolge beim Ziel anzeigen und anschließend den Gegnerzug abschließen.
    Offene Bewegungen bestätigt nur der Helfer, Angriffe nur das Ziel am eigenen Handy.
-8. Verwaltung ist hinter „Spielleitung“ verborgen. Dort öffnet „TARDIS groß anzeigen“ die
+9. Verwaltung ist hinter „Spielleitung“ verborgen. Dort öffnet „TARDIS groß anzeigen“ die
    große Animation; Antippen bringt die Portal-Lobby zurück.
 
 App im Vordergrund geöffnet lassen. Nach Änderungen wird automatisch gespeichert;
@@ -132,6 +144,15 @@ fernentsperrt. Bildschirm-Timeout und Energiesparen am realen Gerät berücksich
 Echte Figurenfotos später als JPEG in `app/src/main/assets/portraits/` ergänzen: `doctor.jpg`, `dalek.jpg`
 und `weeping-angel.jpg`. Die nativen Avatare bevorzugen diese Fotos. Die Browser-Steckbriefe und nativen Avatare
 verwenden dieselben mitgelieferten, realistisch generierten JPEGs; Bildpfade stehen im Charakterkatalog.
+
+## Optionale Browserprüfung
+
+Nach `bash scripts/test-core.sh` kann `npm run test:browser` zwei getrennte mobile Browser
+mit dem echten Java-HTTP-Server prüfen. Dafür werden zusätzlich Playwright und Chromium benötigt;
+sie gehören nicht zur ausgelieferten App. `JAVA_HOME`, optional `PLAYWRIGHT_MODULE_PATH` und
+`CHROMIUM_EXECUTABLE_PATH` wählen vorhandene lokale Werkzeuge. Der Test legt interne Screenshots
+im temporären Verzeichnis ab. Sein Host-Testzugang läuft ausschließlich über Prozess-stdin,
+nicht über einen zusätzlichen HTTP-Administrationsendpunkt.
 
 ## Struktur
 
