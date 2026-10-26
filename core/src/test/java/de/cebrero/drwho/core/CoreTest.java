@@ -76,12 +76,13 @@ public final class CoreTest {
         e.startDemo();advance(e);Map<String,String> tokens=tokens(e);String any=tokens.values().iterator().next();
         String master=tokens.get(text(e.snapshot(any),"candidate"));cmd(e,master,"roomYes","");
         for(int y=0;y<6;y++)for(int x=0;x<6;x++)cmd(e,master,"tilePlace",x+","+y+",floor,0");
+        int index=0;for(String player:tokens.keySet())cmd(e,master,"setSpawn",player+","+(index++)+",0");
         cmd(e,master,"boardSave","");advance(e);
         // Setup has its own random draw; historical helper checks count only the gameplay phase.
         java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice)((Dice)rng).helperDraws=0;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -262,7 +263,7 @@ public final class CoreTest {
         e=engine(store,dice);check(e.sessionId().equals(rolled.sessionId),"party identity survives normal restart and update");check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
         e.command(token,id(),revision(e.snapshot(token)),"chooseMove","");
         e.command(token,id(),revision(e.snapshot(token)),"move","S");
-        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Dr WHO: Ich gehe von Feld A1 zu Feld A2"),"movement event records origin and destination");
+        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Dr WHO: Ich gehe von Feld A1·1 zu Feld A1·3"),"movement event records origin and destination");
         check(e.portalState().rollId.equals(rolled.rollId),"movement does not replay dice event");
         for(int i=0;i<4;i++)e.command(token,id(),revision(e.snapshot(token)),"move","S");
         begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");
@@ -288,7 +289,7 @@ public final class CoreTest {
         check(restored.snapshot(a).equals(accepted)&&!restored.portalState().awaitingGo,"Go survives app restart");
         e.command(a,id(),revision(e.snapshot(a)),"roll","");e.command(a,id(),revision(e.snapshot(a)),"chooseMove","");e.command(a,id(),revision(e.snapshot(a)),"move","S");
         String line=e.portalState().events.get(e.portalState().events.size()-1);
-        check(line.startsWith("20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1 zu Feld A2."),"Story uses host date, time, character speaker and first person");
+        check(line.startsWith("20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1·1 zu Feld A1·3."),"Story uses host date, time, character speaker and first person");
         check(e.snapshot(a).contains("\"playerName\":\"Alice\"")&&e.snapshot(a).contains("\"direction\":\"S\""),"Story preserves player association and chosen direction");
         for(int i=0;i<4;i++)e.command(a,id(),revision(e.snapshot(a)),"move","S");
         check(e.portalState().awaitingGo&&e.portalState().activePlayerName.equals("Bob")&&e.snapshot(b).contains("\"accepted\":false"),"next partner must confirm own Go");
@@ -302,7 +303,7 @@ public final class CoreTest {
         GameEngine again=engine(dalekStore,rules,CharacterProfile.known(),clock,new Random(90));
         check(again.snapshot(d).equals(done)&&again.command(d,action,rev,"action","E").equals(done),"Dalek sentence and timestamp survive restart/retry without resampling");
         for(int i=0;i<45;i++){begin(again,d);again.command(d,id(),revision(again.snapshot(d)),"roll","");again.command(d,id(),revision(again.snapshot(d)),"action","W");}
-        check(again.portalState().events.size()==60,"Story stays bounded with log retention");
+        check(again.portalState().events.size()>100,"complete Story is retained beyond sixty entries");
     }
     static void directedActions() throws Exception {
         for(String character:Arrays.asList("doctor","dalek","weeping-angel"))for(String direction:Arrays.asList("N","E","S","W")){
@@ -369,7 +370,7 @@ public final class CoreTest {
         cmd(e,master,"tileMove","19,19,4,4");check(e.snapshot(a).contains("\"x\":4,\"y\":4,\"kind\":\"portal\""),"moving second half normalizes to tile anchor");
         cmd(e,master,"tilePlace","7,5,dungeon,0");cmd(e,master,"tilePlace","8,5,door,3");
         rejects(IllegalArgumentException.class,()->cmd(e,master,"setSpawn",masterId+",19,19"));
-        cmd(e,master,"setSpawn",masterId+",4,4");String otherId=text(e.snapshot(outsider),"you");rejects(IllegalArgumentException.class,()->cmd(e,master,"setSpawn",otherId+",4,4"));
+        cmd(e,master,"setSpawn",masterId+",8,8");String otherId=text(e.snapshot(outsider),"you");rejects(IllegalArgumentException.class,()->cmd(e,master,"setSpawn",otherId+",8,8"));
         cmd(e,master,"tileRemove","0,0");check(!e.snapshot(a).contains("\"x\":0,\"y\":0,\"kind\""),"removed tile becomes a nonexistent field");
         String beforeSave=e.snapshot(a);store.fail=true;rejects(IOException.class,()->cmd(e,master,"boardSave",""));check(beforeSave.equals(e.snapshot(a)),"failed final save cannot start game");store.fail=false;
         String saveReq=id();long saveRev=revision(beforeSave);e.command(master,saveReq,saveRev,"boardSave","");check(!e.playing()&&e.snapshot(a).contains("\"stage\":\"launching\""),"successful save starts three-second launch animation");
@@ -382,25 +383,54 @@ public final class CoreTest {
         for(String kind:Arrays.asList("corner","floor","parallel","door","dungeon","well","portal")){
             BoardPlan board=new BoardPlan();board.place(10,10,kind,0);for(int i=0;i<4;i++){check(board.at(10,10).rotation==i,"all tile types rotate through four orientations");board.rotate(10,10);}check(board.at(10,10).rotation==0,"four taps restore original orientation");
         }
-        BoardPlan walls=new BoardPlan();walls.place(1,1,"corner",0);walls.place(2,1,"floor",0);walls.place(1,2,"door",0);walls.place(0,1,"parallel",0);
+        BoardPlan walls=new BoardPlan(false);walls.place(1,1,"corner",0);walls.place(2,1,"floor",0);walls.place(1,2,"door",0);walls.place(0,1,"parallel",0);
         check(!walls.canStep(1,1,2,1)&&!walls.canStep(2,1,1,1),"corner wall blocks both directions");check(walls.canStep(1,1,1,2),"door is provisional passage");check(walls.canStep(1,1,0,1),"unwalled side is open");check(!walls.canStep(1,1,1,0)&&!walls.canStep(1,1,2,2),"missing fields and diagonals never exist");
-        BoardPlan portal=new BoardPlan();portal.place(0,0,"portal",0);check(portal.cells()==2&&portal.canStep(0,0,1,0),"portal has exactly two connected cells");portal.rotate(1,0);check(!portal.exists(1,0)&&portal.exists(0,1),"portal rotation updates occupied cells");
+        BoardPlan portal=new BoardPlan(false);portal.place(0,0,"portal",0);check(portal.cells()==2&&portal.canStep(0,0,1,0),"portal has exactly two connected cells");portal.rotate(1,0);check(!portal.exists(1,0)&&portal.exists(0,1),"portal rotation updates occupied cells");
         // Production move rejection on sparse plans, with no loss of rolled distance.
-        cmd(yes,y,"tilePlace","10,10,floor,0");cmd(yes,y,"tilePlace","11,10,corner,0");cmd(yes,y,"tilePlace","11,9,floor,0");cmd(yes,y,"setSpawn",text(yes.snapshot(y),"you")+",10,10");cmd(yes,y,"boardSave","");advance(yes);begin(yes,y);cmd(yes,y,"roll","");
-        String beforeMove=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","S"));check(beforeMove.equals(yes.snapshot(y)),"missing field rejected without consuming movement");cmd(yes,y,"move","E");String inside=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","N"));check(inside.equals(yes.snapshot(y)),"actual wall between existing neighbors does not consume distance");
+        cmd(yes,y,"tilePlace","10,10,floor,0");cmd(yes,y,"tilePlace","11,10,corner,0");cmd(yes,y,"tilePlace","11,9,floor,0");cmd(yes,y,"setSpawn",text(yes.snapshot(y),"you")+",21,20");cmd(yes,y,"boardSave","");advance(yes);begin(yes,y);cmd(yes,y,"roll","");
+        String beforeMove=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","N"));check(beforeMove.equals(yes.snapshot(y)),"missing field rejected without consuming movement");cmd(yes,y,"move","E");String inside=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","N"));check(inside.equals(yes.snapshot(y)),"actual wall between existing neighbors does not consume distance");
         String boardJson=portal.json();check(boardJson.contains("\"size\":20"),"serialized board includes explicit size");
         int round=yes.portalState().round;String roll=yes.portalState().rollId;yes.rebuildBoard();check(!yes.playing()&&yes.portalState().tiles.size()==3,"host-confirmed rebuild retains plan and pauses game");
         advance(yes);cmd(yes,y,"roomYes","");cmd(yes,y,"boardSave","");advance(yes);check(yes.playing()&&yes.portalState().round==round&&yes.portalState().rollId.equals(roll),"rebuild preserves current round and rolled result");
         check(yes.snapshot(y).contains("\"remaining\":3")&&yes.snapshot(y).contains("\"accepted\":true"),"rebuild resumes the saved in-progress turn");
     }
 
+    static void completeSaveAndQuartered()throws Exception{
+        BoardPlan q=new BoardPlan();q.place(0,0,"floor",0);check(q.cells()==4,"one new tile has four steps");
+        for(int y=0;y<2;y++)for(int x=0;x<2;x++)check(q.exists(x,y),"all four subfields exist");check(!q.exists(2,0),"empty tile has no subfields");
+        check(q.canStep(0,0,1,0)&&q.canStep(1,0,1,1)&&!q.canStep(0,0,1,1),"subfield movement is orthogonal and one step");
+        check(q.fieldName(1,1).equals("A1·4"),"subfield has stable tile and quadrant name");q.place(1,0,"single",3);check(!q.canStep(1,0,2,0)&&!q.canStep(2,0,1,0),"outer red wall blocks both ways");check(q.canStep(2,0,3,0),"outer wall does not divide a tile internally");
+        BoardPlan dungeon=new BoardPlan();dungeon.place(0,0,"dungeon",0);dungeon.place(1,0,"floor",0);check(!dungeon.canStep(1,0,2,0),"closed dungeon blocks boundary");dungeon.toggleDungeon(0,0);check(dungeon.canStep(1,0,2,0),"open dungeon allows boundary");dungeon.rotate(0,0);check(!dungeon.at(0,0).closed,"rotation preserves dungeon condition");
+        for(String kind:Arrays.asList("floor","corner","single","parallel","dungeon","cemetery","compass","lava","lava-stone","well")){BoardPlan b=new BoardPlan();b.place(19,19,kind,3);check(b.cells()==4&&b.exists(39,39),"new tile available at outermost subfield: "+kind);}
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();advance(e);Map<String,String> ts=tokens(e);String master=ts.get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");
+        cmd(e,master,"tilePlace","4,4,floor,0");cmd(e,master,"tilePlace","5,4,lava-stone,2");cmd(e,master,"tilePlace","4,5,dungeon,1");cmd(e,master,"setSpawn","enemy:weeping-angel,10,8");
+        cmd(e,master,"setSpawn",text(e.snapshot(a),"you")+",8,8");cmd(e,master,"setSpawn",text(e.snapshot(b),"you")+",9,8");cmd(e,master,"boardSave","");advance(e);begin(e,a);cmd(e,a,"roll","");cmd(e,a,"action","E");
+        String snapshot=e.snapshot(b);byte[] saved=e.exportGame();check(snapshot.contains("\"x\":10,\"y\":8")&&snapshot.contains("\"closed\":true"),"save contains enemy position and dungeon state");String id=e.sessionId();int entries=e.portalState().events.size();
+        store.fail=true;rejects(IOException.class,()->e.resetGame());check(e.sessionId().equals(id)&&e.snapshot(b).equals(snapshot),"failed reset changes nothing");store.fail=false;
+        e.resetGame();check(e.lobbyStatus().contains("\"occupied\":0")&&!e.sessionId().equals(id)&&e.portalState().tiles.isEmpty(),"reset clears only running game and invalidates old clients");String resetId=e.sessionId();
+        rejects(IOException.class,()->e.loadGame(new byte[]{1,2,3}));check(e.sessionId().equals(resetId),"invalid import cannot damage current game");store.fail=true;rejects(IOException.class,()->e.loadGame(saved));check(e.sessionId().equals(resetId),"failed import write preserves current game");store.fail=false;
+        e.loadGame(saved);check(!e.sessionId().equals(id)&&!e.sessionId().equals(resetId),"loading gets a fresh client epoch");rejects(SecurityException.class,()->e.snapshot(a));String a2=text(e.joinLocal("Alice",id()),"token"),request=id(),b2=text(e.joinLocal("Bob",request),"token");
+        check(text(e.joinLocal("Bob",request),"token").equals(b2),"rejoin after load idempotent");rejects(IllegalArgumentException.class,()->e.joinLocal("Bob",id()));
+        String loaded=e.snapshot(b2);check(loaded.contains("\"remaining\":0")&&loaded.contains("\"current\":"+GameEngine.quote(text(loaded,"you")))&&e.portalState().events.size()==entries+2,"load preserves turn and Story, adding only rejoin records");
+        check(loaded.contains("\"x\":10,\"y\":8")&&loaded.contains("\"kind\":\"lava-stone\",\"rotation\":2")&&loaded.contains("\"closed\":true"),"full plan, all figure positions and tile states restored");
+        e.toggleDungeon(4,5);check(e.snapshot(a2).contains("\"kind\":\"dungeon\",\"rotation\":1,\"closed\":false"),"host can change dungeon during game");
+        GameEngine restored=engine(store,dice);check(restored.snapshot(b2).equals(e.snapshot(b2)),"full loaded game survives app restart");
+        MemoryStore anonStore=new MemoryStore();GameEngine anon=engine(anonStore,new Dice());String credentials=anon.joinLocal("Nora",id());check(!credentials.contains(anon.code())&&anon.lobbyStatus().contains("\"occupied\":1"),"name-only join needs no secret room code");rejects(IllegalArgumentException.class,()->anon.joinLocal("nora",id()));
+    }
+
+    static void actualFormatSeven()throws Exception{
+        MemoryStore store=new MemoryStore();store.data=Base64.getDecoder().decode("RFdITwAAAAcAJDlhNjkwZjQ1LTI3MTAtNDgyNS05ZmEzLTAyZjA4ZWE5M2RlZAAGNDcyODk3AQAAAAEAAAAAAAAAAAAAAAAAAAAIAAAAAQAkMjZiM2M2MzktZTFiYS00ZGRiLWI5ZmYtMmIzYjNjYTU2ZjAyAEhmY2M1OTc3MS05NDZjLTQ1MzMtYjY0Mi1lZTY4Y2U0ZDEzMmQ0ZDhiYjMxMS02NjQ4LTRmZmYtOTAzYS0zYzU4M2FjMmY3MDgABkxlZ2FjeQAkNmVmZWE5MzgtYzhiYi00YzY2LThjMWEtNTk2NGY4M2ZmNmFlAAAABAAAAAQABmRvY3RvcgAAAAAAAAAHADhUZWNobmlrZGVtbyBiZXJlaXQuIE5vY2gga2VpbmUgZW5kZ8O8bHRpZ2VuIFNwaWVscmVnZWxuLgAXTGVnYWN5IGlzdCBiZWlnZXRyZXRlbi4AJExlZ2FjeSB3w6RobHQgRGVyIERvY3RvciDCtyBQYXJ0bmVyLgBQRGFzIFBvcnRhbCBzdWNodCBkZW4gUmF1bW1laXN0ZXIuIERhcyBTcGllbCB3YXJ0ZXQgYXVmIGRlbiBnZXNwZWljaGVydGVuIEF1ZmJhdS4AKUxlZ2FjeSBzdGVsbHQgZGFzIFJhdW1nZWbDvGdlIHdpZWRlciBoZXIuAGFMZWdhY3kgaGF0IGRhcyBSYXVtZ2Vmw7xnZSBnZXNwZWljaGVydDogMSBLYWNoZWxuLCAxIEZlbGRlci4gU3RhcnRmaWd1cmVuIHdpZSBpbSBQbGFuIGF1ZnN0ZWxsZW4uADREYXMgQWJlbnRldWVyIGJlZ2lubnQuIEJlc3TDpHRpZ2UgZGVpbmVuIFp1ZyBtaXQgR28uAAAABABQMjZiM2M2MzktZTFiYS00ZGRiLWI5ZmYtMmIzYjNjYTU2ZjAyOmNob29zZTplODBjZDA0YS0wZWE4LTQ2Y2UtOGI0Yi1mYTJlYzA2YWQwMzMASTI2YjNjNjM5LWUxYmEtNGRkYi1iOWZmLTJiM2IzY2E1NmYwMjo0NjdjMDUyYS0xYjc1LTQ0ODgtYmJmMi00YmE2NTNjMmViNTMASTI2YjNjNjM5LWUxYmEtNGRkYi1iOWZmLTJiM2IzY2E1NmYwMjo4NWEyN2NkYi03MmY0LTRjMjMtYjBhNi1jMWQ0ZDZhMmYzOTQASTI2YjNjNjM5LWUxYmEtNGRkYi1iOWZmLTJiM2IzY2E1NmYwMjowMDQyNWRlYy02NTMyLTQ3MTktOTI3ZS01ODgzZjM4NzI2MDMAB3BsYXllcnMAAAAAAAAAAAAAAAAAAAAAAARyb2xsAAAAAAAAAAAAAAAAAAAAAAcAJDkzZWU4ZTEzLTBkZmEtNDQzYi05NDlhLTQ5NTBmM2VjNzhlYwAAAaMYXFAAABQxNS4wMS4yMDI3IDA4OjAwIFVocgAGUG9ydGFsAAAAOFRlY2huaWtkZW1vIGJlcmVpdC4gTm9jaCBrZWluZSBlbmRnw7xsdGlnZW4gU3BpZWxyZWdlbG4uAAAAJGYwMWQ5MjFlLTljNWYtNDJkOS1iMWZkLTU0NmZlYzExODBhZgAAAaMYXFAAABQxNS4wMS4yMDI3IDA4OjAwIFVocgAGUG9ydGFsAAAAF0xlZ2FjeSBpc3QgYmVpZ2V0cmV0ZW4uAAAAJDY5NWViODFmLWY5ZDYtNDBjMC1iNTI1LTVjNDE1ZTI5ZDkwOQAAAaMYXFAAABQxNS4wMS4yMDI3IDA4OjAwIFVocgAGRHIgV0hPAAZMZWdhY3kAJUljaCBiZWdsZWl0ZSBMZWdhY3kgYXVmIGRpZXNlciBSZWlzZS4AAAAkMzE3N2Q1YWEtYjRhYy00OGNiLThjYmItNTMyZjU0YTUzNTc5AAABoxhcUAAAFDE1LjAxLjIwMjcgMDg6MDAgVWhyAAZQb3J0YWwAAABQRGFzIFBvcnRhbCBzdWNodCBkZW4gUmF1bW1laXN0ZXIuIERhcyBTcGllbCB3YXJ0ZXQgYXVmIGRlbiBnZXNwZWljaGVydGVuIEF1ZmJhdS4AAAAkYTI4MTI0NGUtMDUzOS00N2FlLWI3MzAtYzYwZjJjN2ViMWU2AAABoxhcW7gAFDE1LjAxLjIwMjcgMDg6MDAgVWhyAAZQb3J0YWwAAAApTGVnYWN5IHN0ZWxsdCBkYXMgUmF1bWdlZsO8Z2Ugd2llZGVyIGhlci4AAAAkOGE4NGMwYTctMjY0Yy00MTEzLTg4MTUtN2E0ZDY3MjlhNDE0AAABoxhcW7gAFDE1LjAxLjIwMjcgMDg6MDAgVWhyAAZQb3J0YWwAAABhTGVnYWN5IGhhdCBkYXMgUmF1bWdlZsO8Z2UgZ2VzcGVpY2hlcnQ6IDEgS2FjaGVsbiwgMSBGZWxkZXIuIFN0YXJ0ZmlndXJlbiB3aWUgaW0gUGxhbiBhdWZzdGVsbGVuLgAAACQxOTVlYjIzMi04YzAzLTQyY2EtODMyOC03YzE3MjZmMTUwNTQAAAGjGFxncAAUMTUuMDEuMjAyNyAwODowMCBVaHIABlBvcnRhbAAAADREYXMgQWJlbnRldWVyIGJlZ2lubnQuIEJlc3TDpHRpZ2UgZGVpbmVuIFp1ZyBtaXQgR28uAAAABHBsYXkAJDBlNzZlMmFmLTYxN2YtNGExYS05ZjVmLTAyYjY3NjVkYWJkYwAkMjZiM2M2MzktZTFiYS00ZGRiLWI5ZmYtMmIzYjNjYTU2ZjAyAAAAAAAAAAAAAAABAAAAAAEAJDI2YjNjNjM5LWUxYmEtNGRkYi1iOWZmLTJiM2IzY2E1NmYwMgAAAAEAAAAEAAAABAAFZmxvb3IAAAAAAAAAAQAkNTBjMTY0NWItOTM2NC00MDhmLThlZDEtOGUxMzQ1NGI1ZWUyAChMZWdhY3kgaGF0IHp1Z2VzYWd0IHVuZCBpc3QgUmF1bW1laXN0ZXIh");
+        GameEngine e=engine(store);DataInputStream in=new DataInputStream(new ByteArrayInputStream(store.data));in.readInt();in.readInt();in.readUTF();in.readUTF();in.readBoolean();in.readInt();in.readInt();in.readInt();in.readLong();in.readInt();in.readUTF();String token=in.readUTF();
+        check(e.playing()&&e.snapshot(token).contains("\"subdivisions\":1")&&e.snapshot(token).contains("\"x\":4,\"y\":4"),"real 0.8.1 save keeps its original single-cell positions and rules");
+        e.rebuildBoard();advance(e);cmd(e,token,"roomYes","");check(e.snapshot(token).contains("\"subdivisions\":2")&&e.snapshot(token).contains("\"x\":8,\"y\":8"),"explicit board rebuild upgrades old coordinates exactly once");
+    }
     static void http() throws Exception {
         GameEngine e = engine(new MemoryStore());
         try(LocalServer server=new LocalServer(e,"<h1>Dr_Who</h1>".getBytes(StandardCharsets.UTF_8),0,name->null,"0.5.1")){
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             Response info=call(server,"/api/info",null,null,false);
-            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":3,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":4,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");

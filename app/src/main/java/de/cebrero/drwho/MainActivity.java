@@ -80,10 +80,10 @@ public class MainActivity extends Activity {
     private TextView text(String value,int size,int color){TextView v=new TextView(this);v.setText(value);v.setTextSize(size);v.setTextColor(color);v.setPadding(0,dp(3),0,dp(3));return v;}
     private Button button(String label,Runnable action){Button b=new Button(this);b.setAllCaps(false);b.setText(label);b.setTextColor(CYAN);b.setTextSize(14);b.setOnClickListener(v->action.run());return b;}
     private LinearLayout card(LinearLayout parent){
-        LinearLayout c=column();c.setPadding(dp(17),dp(15),dp(17),dp(15));
+        LinearLayout c=column();c.setPadding(dp(12),dp(9),dp(12),dp(9));
         GradientDrawable bg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(14,38,60),Color.rgb(9,25,44)});
         bg.setCornerRadius(dp(18));bg.setStroke(dp(1),Color.rgb(35,77,101));c.setBackground(bg);
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(14);parent.addView(c,lp);return c;
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.bottomMargin=dp(8);parent.addView(c,lp);return c;
     }
     private ScrollView screen(LinearLayout content){ScrollView s=new ScrollView(this);s.setFillViewport(true);s.addView(content);root.addView(s,new FrameLayout.LayoutParams(-1,-1));return s;}
     private LinearLayout padded(){LinearLayout c=column();c.setPadding(dp(18),dp(14),dp(18),dp(20));return c;}
@@ -91,7 +91,8 @@ public class MainActivity extends Activity {
         LinearLayout content=padded();lobby=screen(content);
         LinearLayout heading=row();LinearLayout titles=column();TextView title=text("Dr WHO",32,WHITE);title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));titles.addView(title);
         heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));countBadge=text("0 / 4",22,WHITE);heading.addView(countBadge);content.addView(heading);
-        Space artwork=new Space(this);content.addView(artwork,new LinearLayout.LayoutParams(-1,dp(110)));
+        Space artwork=new Space(this);content.addView(artwork,new LinearLayout.LayoutParams(-1,dp(10)));
+        LinearLayout lobbyTabs=row();Button connectionTab=button("WLAN & Zugang",()->{}),teamTab=button("Spieler",()->{});lobbyTabs.addView(connectionTab,new LinearLayout.LayoutParams(0,-2,1));lobbyTabs.addView(teamTab,new LinearLayout.LayoutParams(0,-2,1));content.addView(lobbyTabs);
         LinearLayout connection=card(content);connection.addView(text("1  MIT DEM WLAN VERBINDEN",11,MUTED));
         wifiName=text("WLAN starten",22,WHITE);connection.addView(wifiName);wifiName.setTextIsSelectable(true);
         wifiPassword=text("",18,CYAN);wifiPassword.setTextIsSelectable(true);connection.addView(wifiPassword);
@@ -100,41 +101,36 @@ public class MainActivity extends Activity {
         connection.addView(text("2  SPIELSEITE ÖFFNEN",11,MUTED));website=text("Warte auf WLAN …",22,CYAN);website.setTextIsSelectable(true);connection.addView(website);
         fallback=text("",12,MUTED);fallback.setTextIsSelectable(true);connection.addView(fallback);
         LinearLayout qrButtons=row();qrButtons.addView(button("WLAN-QR",()->showQr(true)),new LinearLayout.LayoutParams(0,-2,1));qrButtons.addView(button("Seiten-QR",()->showQr(false)),new LinearLayout.LayoutParams(0,-2,1));connection.addView(qrButtons);
-        code=text("PORTALCODE  "+engine.code(),18,WHITE);connection.addView(code);
+        code=text("Nur Name eingeben · keinen Portalcode nötig",13,CYAN);connection.addView(code);
         LinearLayout players=card(content);playerCount=text("DEIN TEAM · 0 / 4",16,CYAN);players.addView(playerCount);playerRows=column();players.addView(playerRows);
+        connectionTab.setOnClickListener(v->{connection.setVisibility(View.VISIBLE);players.setVisibility(View.GONE);});teamTab.setOnClickListener(v->{connection.setVisibility(View.GONE);players.setVisibility(View.VISIBLE);});
+        if(ssid.isEmpty())players.setVisibility(View.GONE);else connection.setVisibility(View.GONE);
         startButton=button("Abenteuer starten",()->{if(engine.playing())showPlay();else startGame();});content.addView(startButton);
-        content.addView(button("Spielleitung",this::showDirector));
+        LinearLayout footer=row();footer.addView(button("Einstellungen",this::settingsDialog),new LinearLayout.LayoutParams(0,-2,1));footer.addView(button("Zurücksetzen",this::resetDialog),new LinearLayout.LayoutParams(0,-2,1));content.addView(footer);
     }
     private void buildDirector(){
         LinearLayout content=padded();director=screen(content);director.setVisibility(View.GONE);
-        content.addView(button("← Zur Portal-Lobby",this::showLobby));content.addView(text("Spielleitung",27,CYAN));
-        gameStatus=text("",17,WHITE);content.addView(gameStatus);
-        content.addView(button("Übrige Figur als Gegner hinzufügen",this::enemyDialog));
-        content.addView(button("Partie starten / fortsetzen",this::startGame));
-        content.addView(button("Raumgefüge erfassen / bearbeiten",()->new AlertDialog.Builder(this).setTitle("Raumgefüge bearbeiten?").setMessage("Die Partie pausiert für eine neue Raummeister-Auswahl. Ein vorhandener Plan bleibt als Entwurf erhalten. Runde und Zug bleiben gespeichert; Startfelder lassen sich neu setzen.").setPositiveButton("Aufbau beginnen",(d,w)->{try{engine.rebuildBoard();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}).setNegativeButton("Abbrechen",null).show()));
-        content.addView(button("Gespeicherten Aufbau anzeigen",this::showBoard));
-        content.addView(button("TARDIS groß anzeigen",()->{lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.VISIBLE);}));
-        content.addView(text("Gegnerzug",20,CYAN));content.addView(text("Bewegung und Angriffsfolgen werden bis zur fertigen Gegnersteuerung hier vorgegeben.",14,MUTED));
-        content.addView(button("Bewegungshelfer bestimmen",()->{try{toast(engine.requestEnemyMovement()+" bewegt die Gegnerfigur.");updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
-        content.addView(button("Angriff auf Spieler anzeigen",this::attackDialog));
-        content.addView(button("Gegnerzug abschließen",()->{try{engine.finishEnemyTurn();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));
-        content.addView(button("WLAN einrichten / ändern",this::wifiOptions));
-        content.addView(button("Automatischen Hotspot beenden",()->{if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}updatePortal();}));
-        content.addView(text("Dr WHO · Version "+BuildConfig.VERSION_NAME,12,MUTED));
+        content.addView(button("← Portal",()->{if(engine.playing())showPlay();else showLobby();}));content.addView(text("Spielleitung",26,CYAN));
+        gameStatus=text("",15,WHITE);gameStatus.setMaxLines(3);content.addView(gameStatus);
+        content.addView(button("Gegner hinzufügen",this::enemyDialog));
+        content.addView(button("Bewegungshelfer bestimmen",()->{try{toast(engine.requestEnemyMovement()+" bewegt die Gegnerfigur.");updatePortal();}catch(Exception e){toast(e.getMessage());}}));
+        content.addView(button("Angriff anzeigen",this::attackDialog));
+        content.addView(button("Gegnerzug abschließen",()->{try{engine.finishEnemyTurn();updatePortal();}catch(Exception e){toast(e.getMessage());}}));
+        content.addView(button("Speichern / Laden / Zurücksetzen",this::settingsDialog));
     }
     private void buildPlay(){
         LinearLayout content=padded();play=screen(content);play.setVisibility(View.GONE);
         LinearLayout top=row();top.addView(text("Dr WHO",27,WHITE),new LinearLayout.LayoutParams(0,-2,1));playRound=text("RUNDE 1",17,CYAN);top.addView(playRound);content.addView(top);
         LinearLayout turn=card(content);turn.addView(text("JETZT AM ZUG",11,MUTED));playActor=text("",25,WHITE);turn.addView(playActor);playDetail=text("",17,CYAN);turn.addView(playDetail);
-        goCard=column();turn.addView(goCard);goPortrait=new ImageView(this);goPortrait.setScaleType(ImageView.ScaleType.FIT_CENTER);goPortrait.setAdjustViewBounds(true);goCard.addView(goPortrait,new LinearLayout.LayoutParams(-1,dp(240)));
+        goCard=column();turn.addView(goCard);goPortrait=new ImageView(this);goPortrait.setScaleType(ImageView.ScaleType.FIT_CENTER);goPortrait.setAdjustViewBounds(true);goCard.addView(goPortrait,new LinearLayout.LayoutParams(-1,dp(140)));
         goCharacter=text("",23,CYAN);goDescription=text("",15,WHITE);goStats=text("",15,CYAN);goAbilities=text("",14,MUTED);
-        goCard.addView(goCharacter);goCard.addView(goDescription);goCard.addView(goStats);goCard.addView(goAbilities);goCard.setVisibility(View.GONE);
+        goCard.addView(goCharacter);goDescription.setVisibility(View.GONE);goCard.addView(goDescription);goCard.addView(goStats);goAbilities.setVisibility(View.GONE);goCard.addView(goAbilities);goCard.setVisibility(View.GONE);
         playDiceLabel=text("Noch kein Wurf",14,MUTED);playDiceLabel.setGravity(Gravity.CENTER);turn.addView(playDiceLabel);
-        playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(200)));
-        LinearLayout events=card(content);events.addView(text("STORY",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(5),1);events.addView(playEvents);
+        playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(150)));
+        LinearLayout events=card(content);events.addView(text("STORY",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(3),1);playEvents.setMaxLines(4);playEvents.setEllipsize(android.text.TextUtils.TruncateAt.END);events.addView(playEvents);
         LinearLayout positions=card(content);positions.addView(text("DEIN TEAM AUF DEM SPIELFELD",12,CYAN));playPositions=text("",15,WHITE);positions.addView(playPositions);
-        LinearLayout actions=row();content.addView(button("Raumgefüge anzeigen",this::showBoard));
-        actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Spielleitung",this::showDirector),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
+        LinearLayout actions=row();actions.addView(button("Aufbau",this::showBoard),new LinearLayout.LayoutParams(0,-2,1));
+        actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Einstellungen",this::settingsDialog),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
     }
     private void showPlay(){lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);play.setVisibility(View.VISIBLE);updatePortal();}
     private void buildStage(){
@@ -151,7 +147,7 @@ public class MainActivity extends Activity {
         setupHeading=text("",30,WHITE);setupHeading.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));setupHeading.setGravity(Gravity.CENTER);layout.addView(setupHeading);
         FrameLayout visual=new FrameLayout(this);layout.addView(visual,new LinearLayout.LayoutParams(-1,0,1));
         setupFlight=new TardisView(this,true);visual.addView(setupFlight,new FrameLayout.LayoutParams(-1,-1));setupBoard=new BoardView(this);visual.addView(setupBoard,new FrameLayout.LayoutParams(-1,-1));
-        setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);
+        setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);layout.addView(button("Einstellungen",this::settingsDialog));
         noticeScreen=new FrameLayout(this);noticeScreen.setBackgroundColor(INK);root.addView(noticeScreen,new FrameLayout.LayoutParams(-1,-1));noticeScreen.setVisibility(View.GONE);noticeScreen.setClickable(true);
         noticeScreen.addView(new TardisView(this,true),new FrameLayout.LayoutParams(-1,-1));noticeText=text("",32,WHITE);noticeText.setGravity(Gravity.CENTER);noticeText.setAutoSizeTextTypeUniformWithConfiguration(18,32,2,android.util.TypedValue.COMPLEX_UNIT_SP);noticeText.setPadding(dp(25),dp(24),dp(25),dp(24));noticeText.setBackgroundColor(0xb807111e);noticeScreen.addView(noticeText,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
         noticeScreen.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);noticeText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -161,10 +157,10 @@ public class MainActivity extends Activity {
         if(info.preparing){
             lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.GONE);
             setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building");setupFlight.setVisibility(building?View.GONE:View.VISIBLE);setupBoard.setVisibility(building?View.VISIBLE:View.GONE);
-            if(building)setupBoard.setPlan(info.tiles,info.boardPlayers);
-            StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);if(team.length()>0)team.append("\n");team.append(i+1).append(" · ").append(p[0]);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x>=0)team.append(" · ").append(BoardPlan.cell(x,y));}
+            if(building)setupBoard.setPlan(info.tiles,info.boardPlayers,info.subdivisions);
+            StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);if(team.length()>0)team.append("\n");team.append(i+1).append(" · ").append(p[0]);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x>=0)team.append(" · ").append(engine.fieldName(x,y));}
             setupTeam.setText(team.toString());setupTeam.setVisibility(building?View.VISIBLE:View.GONE);
-            setupHint.setText(building?"Der gespeicherte Aufbau vom Raummeister-Handy erscheint hier live. Nummern zeigen die Startfelder.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
+            setupHint.setText(building?"↑ NORDEN · PORTAL\nDer gespeicherte Aufbau vom Raummeister-Handy erscheint hier live. Nummern zeigen die Startfelder.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
         }
         boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}
         if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")){
@@ -219,17 +215,37 @@ public class MainActivity extends Activity {
         playDiceLabel.setText(info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
         StringBuilder events=new StringBuilder();
         if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");
-        else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-5);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
+        else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-1);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
         playEvents.setText(events.toString());playPositions.setText(android.text.TextUtils.join("\n",info.positions));
     }
     private String summary(){StringBuilder b=new StringBuilder(engine.hostText().split("\n")[0]);for(String line:engine.hostText().split("\n"))if(line.startsWith("Am Zug:")||line.startsWith("Gegnerzug:")||line.startsWith("Noch ")||line.startsWith("Wurf "))b.append('\n').append(line);return b.append("\n\nAntippen · Portal-Lobby").toString();}
     private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing())showPlay();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
     private void showBoard(){
         GameEngine.PortalState info=engine.portalState();if(info.tiles.isEmpty()){toast("Bisher ist nur das alte Testfeld gespeichert. Unter Spielleitung kannst du euren Aufbau erfassen.");return;}
-        LinearLayout content=column();BoardView board=new BoardView(this);board.setPlan(info.tiles,info.boardPlayers);content.addView(board,new LinearLayout.LayoutParams(-1,dp(360)));
-        StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);team.append(i+1).append(" · ").append(p[0]).append(" · ").append(x<0?"noch nicht aufgestellt":BoardPlan.cell(x,y)).append("\n");}TextView positions=text(team.toString(),16,CYAN);positions.setPadding(dp(15),dp(10),dp(15),dp(10));content.addView(positions);
+        LinearLayout content=column();BoardView board=new BoardView(this);board.setPlan(info.tiles,info.boardPlayers,info.subdivisions);content.addView(board,new LinearLayout.LayoutParams(-1,dp(360)));
+        StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);team.append(i+1).append(" · ").append(p[0]).append(" · ").append(x<0?"noch nicht aufgestellt":engine.fieldName(x,y)).append("\n");}TextView positions=text(team.toString(),16,CYAN);positions.setPadding(dp(15),dp(10),dp(15),dp(10));content.addView(positions);
         new AlertDialog.Builder(this).setTitle("Euer Raumgefüge · aktuelle Positionen").setView(content).setPositiveButton("Zurück",null).show();
     }
+    private void settingsDialog(){
+        String[] options={"Spiel speichern","Spiel laden","Spielstand als Datei exportieren","Spielstanddatei importieren","Spiel zurücksetzen","Kerker öffnen / schließen","Raumgefüge anzeigen","Raumgefüge bearbeiten","Gegner verwalten","WLAN / Verbindung"};
+        new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(options,(d,i)->{switch(i){case 0:saveDialog();break;case 1:loadDialog();break;case 2:exportDialog();break;case 3:startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),92);break;case 4:resetDialog();break;case 5:dungeonDialog();break;case 6:showBoard();break;case 7:new AlertDialog.Builder(this).setMessage("Partie zum Bearbeiten des Raumgefüges pausieren?").setPositiveButton("Bearbeiten",(a,b)->{try{engine.rebuildBoard();updatePortal();}catch(Exception e){toast(e.getMessage());}}).setNegativeButton("Zurück",null).show();break;case 8:showDirector();break;case 9:wifiOptions();break;}}).setNegativeButton("Zurück",null).show();
+    }
+    private File archiveDir(){File dir=new File(getFilesDir(),"saved-games");dir.mkdirs();return dir;}
+    private void saveNamed(String name)throws IOException{
+        String stamp=new java.text.SimpleDateFormat("yyyy-MM-dd_HH-mm-ss-SSS",Locale.GERMANY).format(new Date());
+        String safe=name.replaceAll("[^a-zA-Z0-9äöüÄÖÜß _-]","").trim();if(safe.isEmpty())safe="Abenteuer";if(safe.length()>40)safe=safe.substring(0,40);
+        new AndroidStore(new File(archiveDir(),stamp+"_"+safe+".drwho")).save(engine.exportGame());
+    }
+    private void saveDialog(){EditText name=new EditText(this);name.setHint("Name des Spielstands");name.setText("Abenteuer");new AlertDialog.Builder(this).setTitle("Gesamtes Spiel speichern").setMessage("Raumplanung, alle Figurenpositionen, Runde, Würfel und Story werden gespeichert.").setView(name).setPositiveButton("Speichern",(d,w)->{try{saveNamed(name.getText().toString());toast("Gesamtes Spiel gespeichert.");}catch(IOException e){toast("Speichern fehlgeschlagen: "+e.getMessage());}}).setNegativeButton("Zurück",null).show();}
+    private void loadDialog(){File[] files=archiveDir().listFiles((dir,n)->n.endsWith(".drwho"));if(files==null||files.length==0){toast("Noch kein Spielstand gespeichert.");return;}Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));String[] names=new String[files.length];for(int i=0;i<files.length;i++)names[i]=files[i].getName().replace(".drwho","");new AlertDialog.Builder(this).setTitle("Gespeichertes Spiel laden").setItems(names,(d,i)->new AlertDialog.Builder(this).setTitle("Spiel laden?").setMessage("Der aktuelle Stand wird vorher automatisch gesichert. Spieler treten danach mit ihrem gespeicherten Namen erneut bei.").setPositiveButton("Laden",(a,b)->{try{byte[] bytes=new AndroidStore(files[i]).load();saveNamed("Vor_Laden");engine.loadGame(bytes);afterGameChange();toast("Geladen. Spieler mit ihrem bisherigen Namen beitreten lassen.");}catch(IOException e){toast("Laden fehlgeschlagen. Aktuelle Partie bleibt erhalten. "+e.getMessage());}}).setNegativeButton("Zurück",null).show()).setNegativeButton("Zurück",null).show();}
+    private void resetDialog(){new AlertDialog.Builder(this).setTitle("Laufendes Spiel zurücksetzen?").setMessage("Ein vollständiger Sicherungsstand wird vorher angelegt. Anschließend beginnt eine neue Partie ohne Spieler und Aufbau.").setPositiveButton("Sichern und zurücksetzen",(d,w)->{try{saveNamed("Vor_Reset");engine.resetGame();afterGameChange();}catch(IOException e){toast("Zurücksetzen abgebrochen: "+e.getMessage());}}).setNegativeButton("Zurück",null).show();}
+    private void afterGameChange(){handler.removeCallbacks(finishNotice);activeNotice="";noticeScreen.setVisibility(View.GONE);wasPreparing=false;rosterSignature="";showLobby();if(engine.playing())showPlay();updatePortal();}
+    private void exportDialog(){startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE,"Dr_Who_Spielstand.drwho"),91);}
+    @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{
+        if(request==91){try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new IOException("Datei nicht erreichbar.");out.write(engine.exportGame());}toast("Spielstanddatei exportiert.");}
+        if(request==92){byte[] bytes;try(InputStream in=getContentResolver().openInputStream(data.getData());ByteArrayOutputStream out=new ByteArrayOutputStream()){if(in==null)throw new IOException("Datei nicht erreichbar.");byte[] b=new byte[4096];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>8*1024*1024)throw new IOException("Spielstand zu groß.");}bytes=out.toByteArray();}new AlertDialog.Builder(this).setTitle("Datei als Spielstand laden?").setMessage("Der aktuelle Stand wird vorher gesichert. Danach treten Spieler mit ihrem gespeicherten Namen bei.").setPositiveButton("Laden",(d,w)->{try{saveNamed("Vor_Import");engine.loadGame(bytes);afterGameChange();}catch(IOException e){toast("Datei ungültig. Aktuelle Partie bleibt erhalten.");}}).setNegativeButton("Zurück",null).show();}
+    }catch(IOException e){toast("Datei konnte nicht verarbeitet werden: "+e.getMessage());}}
+    private void dungeonDialog(){java.util.List<String[]> list=engine.dungeonStates();if(list.isEmpty()){toast("Kein Kerker im Aufbau.");return;}String[] labels=new String[list.size()];for(int i=0;i<labels.length;i++)labels[i]=list.get(i)[2];new AlertDialog.Builder(this).setTitle("Kerkerzustand ändern").setItems(labels,(d,i)->{try{engine.toggleDungeon(Integer.parseInt(list.get(i)[0]),Integer.parseInt(list.get(i)[1]));updatePortal();}catch(Exception e){toast(e.getMessage());}}).setNegativeButton("Zurück",null).show();}
     private void enemyDialog(){
         java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
         String[] names=new String[available.size()];for(int i=0;i<names.length;i++)names[i]=available.get(i).name;
@@ -293,7 +309,7 @@ public class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7){String p=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;if(checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED)startAutomaticHotspot();else toast("Bitte den Android-Hotspot verwenden.");}}
     private void showQr(boolean wifi){
         String value;
-        try{value=wifi?ConnectionLinks.wifiQr(ssid,password):ConnectionLinks.join(network.address,server.port(),engine.code());}
+        try{value=wifi?ConnectionLinks.wifiQr(ssid,password):ConnectionLinks.site(network.address,server.port());}
         catch(IllegalArgumentException error){toast("Zuerst das WLAN einrichten und auf die Adresse warten.");return;}
         try{
             Map<EncodeHintType,Object> hints=new EnumMap<>(EncodeHintType.class);hints.put(EncodeHintType.CHARACTER_SET,"UTF-8");

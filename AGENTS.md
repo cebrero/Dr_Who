@@ -99,3 +99,13 @@
     (`saved.registration`) trotz falscher Korrektur erhalten. Nie neuen Platz still belegen.
     Beim Rücksprung alle vier Modals, inert und Aufbau-/Editor-/Spielansichten vollständig lösen.
     Versionswechsel ebenfalls aus altem Editor befreien. Netzwerkfehler ist kein Codefehler.
+
+33. Seit 0.9.0 neue Wünsche vor älteren Texten: Name ohne Raumcode im privaten Spiel-WLAN.
+    Vollständige benannte Sicherungen/Datei-Export/-Import/Reset nur am Portal. Vor Reset/Laden
+    sichern; Dateivalidierung vor Ersetzen. Nach Laden neue Sitzung und einmalige Namensübernahme.
+34. Format 8 / Protokoll 4: neue Kacheln 2×2 Bewegungsfelder; alter Plan bleibt unverändert, bis
+    Host bewusst bearbeitet. Zehn neue Typen, rote Außenwände, Kerkerzustand, alle Figurenpositionen.
+    Keine Lava-/Heilregel erfinden. Kompass ist je Browser drehbar, Welt-Norden bleibt Portal.
+35. Ganze Story ab 0.9.0 bis 8-MiB-Dateigrenze erhalten, nicht mehr 60 abschneiden. Alte verworfene
+    Story nicht rekonstruieren behaupten. Captive Portal auf normalem Android-Hotspot ist nicht
+    zuverlässig steuerbar; QR-Einstieg erhalten und keinen automatischen Browserstart versprechen.

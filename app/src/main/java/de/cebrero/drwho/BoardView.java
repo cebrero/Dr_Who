@@ -8,11 +8,13 @@ import java.util.*;
 
 /** Live host view of the committed physical plan. Empty grid locations are deliberately dark. */
 public final class BoardView extends View {
+    private int subdivisions=1;
     private final Paint paint=new Paint(3);
     private List<BoardPlan.Tile> tiles=Collections.emptyList();
     private List<String[]> players=Collections.emptyList();
     public BoardView(Context context){super(context);setLayerType(View.LAYER_TYPE_SOFTWARE,null);}
     public void setPlan(List<BoardPlan.Tile> tiles,List<String[]> players){this.tiles=tiles;this.players=players;setContentDescription("Gespeicherter Aufbau mit "+tiles.size()+" Kacheln. Startfiguren entsprechen der nummerierten Teamliste.");invalidate();}
+    public void setPlan(List<BoardPlan.Tile> tiles,List<String[]> players,int subdivisions){this.subdivisions=subdivisions;setPlan(tiles,players);}
     @Override protected void onDraw(Canvas c){
         super.onDraw(c);float width=getWidth(),height=getHeight();c.drawColor(Color.rgb(6,24,37));
         if(tiles.isEmpty()){
@@ -28,19 +30,22 @@ public final class BoardView extends View {
         for(int x=minX;x<=maxX+1;x++)c.drawLine(ox+x*unit,oy+minY*unit,ox+x*unit,oy+(maxY+1)*unit,paint);
         for(BoardPlan.Tile t:tiles){
             float l=ox+t.x*unit,top=oy+t.y*unit,r=ox+(t.endX()+1)*unit,b=oy+(t.endY()+1)*unit;
-            paint.setStyle(Paint.Style.FILL);paint.setColor(t.kind.equals("portal")?0xff17596a:0xffd8c59a);c.drawRoundRect(l+1,top+1,r-1,b-1,3,3,paint);
+            paint.setStyle(Paint.Style.FILL);paint.setColor(t.kind.equals("portal")?0xff17596a:t.kind.equals("lava")?0xffb93d16:t.kind.equals("cemetery")?0xff8c9590:0xffd8c59a);c.drawRoundRect(l+1,top+1,r-1,b-1,3,3,paint);
             paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(Math.max(1,unit*.018f));paint.setColor(0xffab9a70);c.drawRoundRect(l+1,top+1,r-1,b-1,3,3,paint);
+            if(subdivisions==2){paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(1);paint.setColor(0xff756d59);for(float tx=l;tx<r;tx+=unit){c.drawLine(tx+unit/2,top,tx+unit/2,b,paint);}for(float ty=top;ty<b;ty+=unit)c.drawLine(l,ty+unit/2,r,ty+unit/2,paint);}
+            if(t.kind.equals("lava-stone")){paint.setStyle(Paint.Style.FILL);paint.setColor(0xffcb4c1b);int sv=c.save();c.rotate(t.rotation*90,l+unit/2,top+unit/2);c.drawRect(l+2,top+2,l+unit/2,top+unit-2,paint);c.restoreToCount(sv);}
+            if(t.kind.equals("compass")||t.kind.equals("cemetery")){paint.setStyle(Paint.Style.FILL);paint.setColor(0xff26484c);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(unit*.5f);c.drawText(t.kind.equals("compass")?"N↑":"†",l+unit/2,top+unit*.65f,paint);}
             if(t.kind.equals("portal")){paint.setColor(0xff89e9ef);paint.setStrokeWidth(unit*.055f);c.drawOval(l+unit*.18f,top+unit*.16f,r-unit*.18f,b-unit*.16f,paint);c.drawOval(l+unit*.3f,top+unit*.28f,r-unit*.3f,b-unit*.28f,paint);}
             if(t.kind.equals("well")){paint.setColor(0xff386775);paint.setStyle(Paint.Style.FILL);c.drawOval(l+unit*.22f,top+unit*.29f,r-unit*.22f,b-unit*.22f,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(0xff8c895f);paint.setStrokeWidth(unit*.09f);c.drawOval(l+unit*.22f,top+unit*.24f,r-unit*.22f,b-unit*.33f,paint);}
             if(t.kind.equals("dungeon")){paint.setColor(0xff29474c);paint.setStyle(Paint.Style.FILL);c.drawRoundRect(l+unit*.24f,top+unit*.18f,r-unit*.24f,b-unit*.16f,unit*.13f,unit*.13f,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(0xffa4b7b3);paint.setStrokeWidth(unit*.035f);for(int i=0;i<3;i++)c.drawLine(l+unit*(.35f+i*.15f),top+unit*.28f,l+unit*(.35f+i*.15f),b-unit*.2f,paint);}
-            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(unit*.09f);paint.setColor(0xff253f40);
+            paint.setStyle(Paint.Style.STROKE);paint.setStrokeWidth(unit*.13f);paint.setColor(0xffe12e2e);
             for(int d=0;d<4;d++)if(t.wall(d))edge(c,l,top,unit,d,paint);
             if(t.kind.equals("door")){paint.setColor(0xff9c713e);paint.setStrokeWidth(unit*.11f);float midX=l+unit/2,midY=top+unit/2;int save=c.save();c.rotate(t.rotation*90,midX,midY);c.drawLine(l+unit*.28f,top+unit*.07f,l+unit*.72f,top+unit*.07f,paint);c.restoreToCount(save);}
             paint.setStyle(Paint.Style.FILL);paint.setColor(t.kind.equals("portal")?0xffd6ffff:0xff34534f);paint.setTextAlign(Paint.Align.LEFT);paint.setTextSize(Math.max(8,unit*.19f));c.drawText(BoardPlan.cell(t.x,t.y),l+unit*.07f,b-unit*.06f,paint);
         }
         for(int i=0;i<players.size();i++){
             String[] p=players.get(i);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x<0)continue;
-            float cx=ox+(x+.72f)*unit,cy=oy+(y+.28f)*unit,r=unit*.21f;paint.setStyle(Paint.Style.FILL);paint.setColor(0xff126f7d);c.drawCircle(cx,cy,r,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(0xffd8faff);paint.setStrokeWidth(1);c.drawCircle(cx,cy,r,paint);paint.setStyle(Paint.Style.FILL);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(unit*.26f);c.drawText(String.valueOf(i+1),cx,cy+unit*.09f,paint);
+            float cx=ox+((x+.5f)/subdivisions)*unit,cy=oy+((y+.5f)/subdivisions)*unit,r=Math.max(4,unit*.2f/subdivisions);paint.setStyle(Paint.Style.FILL);paint.setColor(0xff126f7d);c.drawCircle(cx,cy,r,paint);paint.setStyle(Paint.Style.STROKE);paint.setColor(0xffd8faff);paint.setStrokeWidth(1);c.drawCircle(cx,cy,r,paint);paint.setStyle(Paint.Style.FILL);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(Math.max(8,unit*.26f/subdivisions));Paint.FontMetrics fm=paint.getFontMetrics();c.drawText(String.valueOf(i+1),cx,cy-(fm.ascent+fm.descent)/2,paint);
         }
     }
     private static void edge(Canvas c,float l,float t,float u,int d,Paint p){float pad=u*.05f;if(d==0)c.drawLine(l,t+pad,l+u,t+pad,p);if(d==1)c.drawLine(l+u-pad,t,l+u-pad,t+u,p);if(d==2)c.drawLine(l,t+u-pad,l+u,t+u-pad,p);if(d==3)c.drawLine(l+pad,t,l+pad,t+u,p);}

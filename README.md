@@ -8,22 +8,24 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.8.1
+## Stand 0.9.0
 
-Neu in 0.8.1: Falscher Portalcode wird direkt im Formular markiert und ist sofort korrigierbar.
-Name und ursprüngliche Anmeldung bleiben erhalten. Alte Popups und Aufbauansichten werden
-beim Rücksprung vollständig geschlossen. Eine Korrektur erzeugt keinen zweiten Spielerplatz.
+Neu in 0.9.0: Name eingeben und Figur wählen, ohne Raumcode. Portal-Einstellungen bieten
+benannte vollständige Spielstände, Laden, Datei-Export/Import und Reset mit vorheriger Sicherung.
+Neue Kacheln enthalten vier Bewegungsfelder; zehn Typen, dicke rote Wände und gespeicherter
+Kerkerzustand. Pro Handy drehbarer Himmelsrichtungskompass; Portal steht immer im Norden.
+Größere verschiebbare Karte und kompakte Ansichten mit Tabs. Alte Spielstände bleiben ladbar.
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
 und Typografiegrundlage ist umgesetzt. Die Portal-Lobby zeigt einen statischen Doctor-Who-Hintergrund, vier
 Spielerplätze mit Charakterporträts, Spieleranzahl und kompakte Zugangsdaten. Echte Figurenfotos
 folgen noch; Doctor, Dalek und Engel besitzen realistische KI-generierte Offline-Porträts.
-Starttexte wurden vereinfacht („Dr WHO“ am Portal, „Dr. Who“ bei Spielern, „Portalcode“).
+Starttexte wurden vereinfacht („Dr WHO“ am Portal, „Dr. Who“ bei Spielern); der zusätzliche Portalcode entfällt.
 Spieler sehen schon vor dem Beitritt die aktuelle Belegung. Das App-Icon ist eine blaue TARDIS.
 Die Steckbriefe lassen sich als Karten seitlich durchwischen; die Sichtkanten blenden weich aus.
-Im Spiel stehen oben **Spiel / Steckbrief / Story** zur Wahl; der Verlauf ist
-aufklappbar. Ein fester Hinweis meldet den eigenen Zug. Das vollständige Steckbriefbild bleibt
+Im Spiel stehen oben **Spiel / Steckbrief / Karte / Story** zur Wahl; der Verlauf lässt sich
+aufklappen und eintragsweise durchblättern. Ein fester Hinweis meldet den eigenen Zug. Das vollständige Steckbriefbild bleibt
 unbeschnitten. Der Client-Würfel besitzt sechs feste Seiten und landet auf dem gespeicherten
 Ergebnis; nach der Animation werden keine Augen ausgetauscht.
 Nach dem Spielstart zeigt das Portal Runde, aktiven Spieler, Wege von Feld zu Feld, Aktionen,
@@ -31,7 +33,7 @@ Teampositionen und letzte Ereignisse. Portal und Spieler zeigen einen 2,6 Sekund
 Würfel mit Nebel und kurzem Lichtimpuls. Ergebnis und Ereignis-ID werden zuerst gespeichert;
 die Animation verändert keinen Wurf und startet nicht bei jedem Polling erneut.
 
-Android-Host mit lokalem HTTP-Server, Code-Lobby und exklusiver Charakterauswahl über Steckbriefe.
+Android-Host mit lokalem HTTP-Server, Namens-Lobby und exklusiver Charakterauswahl über Steckbriefe.
 Alle Spieler sind Partner. Der Host kann übrige Figuren als Gegner hinzufügen. Nach den Partnern
 folgt eine Gegnerphase mit zufällig ausgewähltem Bewegungshelfer und einer Angriffsanzeige beim
 betroffenen Spieler. Nicht beteiligte Spieler sehen standardmäßig ihren eigenen Steckbrief;
@@ -40,12 +42,13 @@ Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespei
 
 Nach Start fliegt die TARDIS drei Sekunden während der Raummeister-Auswahl. Echte Spieler
 werden zufällig mit Ja/Nein gefragt. Nach allen Nein wählt das Portal verbindlich einen Spieler.
-Der Raummeister erfasst den Tisch per **20×20-Editor**: Ecke, Boden, Gang, Tür, Kerker, Brunnen
-und ein **zweifeldriges Portal**. Kacheln ziehen, antippen zum Drehen, verschieben und in den
+Der Raummeister erfasst den Tisch per **20×20-Kacheleditor** mit vier Bewegungsfeldern pro Kachel:
+Stein, Ecke, einseitige/gegenüberliegende Wände, Kerker, Friedhof, Kompass, Lava, Lava/Stein und Brunnen. Kacheln ziehen, antippen zum Drehen, verschieben und in den
 Mülleimer ziehen; alternativ per Tipp/Tastatur bedienen. Startfiguren sind sichtbar und versetzbar.
 Jede Änderung wird gespeichert und am Portal live gezeigt. Erst Abschluss und Startfilm öffnen
 die erste Spielrunde. Große Portalereignisse erscheinen je drei Sekunden. Leere Rasterstellen
-existieren nicht; massive Wände blockieren Bewegungen. Türzustände folgen noch.
+existieren nicht; massive rote Außenwände blockieren Bewegungen. Kerker lassen sich öffnen/schließen;
+Lava-, Brunnen- und andere Geländewirkungen sind noch nicht festgelegt.
 Altpartien behalten ihr 6×6-Testfeld; unter Spielleitung lässt sich der reale Plan nachtragen,
 ohne Runde und Zug zu verwerfen. Der Plan bleibt zum Wiederaufbau abrufbar.
 Jeder Spieler bestätigt zuerst **Your move... / Go** am eigenen Handy und würfelt danach. Bei 1–4 zieht er genau diese Anzahl Felder;
@@ -62,7 +65,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 415 Kern-/HTTP-Prüfungen und 201 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 458 Kern-/HTTP-Prüfungen und 180 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -97,12 +100,12 @@ Optionale Tests der Spieleransicht mit Node.js 22: `npm ci --ignore-scripts` und
 Diese Entwicklungsabhängigkeiten werden weder in der App noch auf den Spielerhandys benötigt.
 
 Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer neuen Partie führt
-statt einer blockierenden Fehlermeldung die Anmeldung zurück zum aktuellen Portalcode. Bei einer
+statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.7.0
+## Installationshinweis 0.9.0
 
-**Über 0.5.x/0.6.0 als normales Update installieren – die App vorher nicht deinstallieren.**
+**Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
 
 ### Ältere Version 0.4.0
@@ -119,10 +122,10 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
    mit **Dr_Who / drwho123** einrichten und die tatsächlichen Daten in der App bestätigen.
    Alternativ „Automatisch starten“: Android vergibt dafür eigene Zugangsdaten.
 3. Spieler scannen zuerst „WLAN-QR“, danach „Seiten-QR“. Der Seiten-QR enthält die direkte
-   Adresse mit vorausgefülltem Portalcode. Alternativ die angezeigte `http://drwho.local`-
+   Adresse ohne zusätzlichen Portalcode. Alternativ die angezeigte `http://drwho.local`-
    Adresse öffnen; wenn Port 80 nicht verfügbar ist, erscheint zusätzlich `:8080`.
    Die direkte IP bleibt als Ausweichweg sichtbar. `.local` muss am echten Gerät geprüft werden.
-4. Namen und sechsstelligen Portalcode eingeben. Das WLAN-Passwort ist davon getrennt.
+4. Nur den eigenen Namen eingeben; ein Portalcode ist nicht mehr nötig.
 5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
    der Host übrige Figuren als Gegner hinzufügen und die Raummeister-Auswahl starten.
 6. Raummeister-Anfrage am ausgewählten Handy beantworten. Aufbau im Editor erfassen, Startfiguren
@@ -134,14 +137,14 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
 8. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,
    eine Angriffsfolge beim Ziel anzeigen und anschließend den Gegnerzug abschließen.
    Offene Bewegungen bestätigt nur der Helfer, Angriffe nur das Ziel am eigenen Handy.
-9. Verwaltung ist hinter „Spielleitung“ verborgen. Dort öffnet „TARDIS groß anzeigen“ die
-   große Animation; Antippen bringt die Portal-Lobby zurück.
+9. „Einstellungen“ am Portal enthält benanntes Speichern/Laden, Datei-Export/-Import, Reset,
+   Kerkerzustand und weitere Spielleitung. Vor Reset und Laden wird automatisch gesichert.
 
 App im Vordergrund geöffnet lassen. Nach Änderungen wird automatisch gespeichert;
 beim erneuten Öffnen wird die vorhandene Partie geladen. Keine fertige Spielversion:
-Aktuell ein lokaler Spielstand, noch kein Auswahlmenü für mehrere Partien, kein Export/Import
-und kein Zurücksetzen über die Oberfläche. Browser-Anmeldungen gehören zur Host-Adresse;
-ein Adresswechsel oder gelöschte Browserdaten brauchen später eine Wiederbeitrittsfunktion.
+Der aktuelle Stand wird automatisch gesichert, benannte Sicherungen lassen sich separat laden oder
+exportieren. Beim Laden treten Spieler mit ihrem gespeicherten Namen erneut bei. Browser-Anmeldungen
+gehören zur Host-Adresse; ein Adresswechsel während laufender Partie benötigt weiterhin Recovery.
 Die Website wechselt bei Beteiligung zur aktiven Ansicht; gesperrte Handys werden damit nicht
 fernentsperrt. Bildschirm-Timeout und Energiesparen am realen Gerät berücksichtigen.
 

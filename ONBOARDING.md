@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.8.1 · Portalcode korrigieren und sichere Rückkehr zur Anmeldung**
-<!-- app-version: 0.8.1 -->
-<!-- reviewed-source-sha256: cd94372af81b2e445ec2a5b0ff7f838d0dda9c6b21831aa86c178945dc68c81a -->
+Stand: **26.10.2026 · Version 0.9.0 · Vollständige Spielstände, Vierer-Kacheln und Sitzplatz-Kompass**
+<!-- app-version: 0.9.0 -->
+<!-- reviewed-source-sha256: 85a3e02fe2ec0e783af7c8d9628d3360e5ae39e5d8200a8cbb232a0e744cdb45 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.8.1
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.0
 
 ### Vor der Partie
 
@@ -125,7 +125,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.8.1 |
+| Schritt | Regel | Umsetzung 0.9.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -312,22 +312,24 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 7, ältere Formate
-1–6 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 8, ältere Formate
+1–7 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
-Würfelereignis-ID und zugehöriger Spieler-ID, Go-Bestätigung, Zustandsrevision, 60 Protokollzeilen
-und 60 strukturierte Story-Einträge (Zeitstempel, gespeicherte Datumsanzeige, Sprecher, Spieler,
+Würfelereignis-ID und zugehöriger Spieler-ID, Go-Bestätigung, Zustandsrevision, 60 alte Protokollzeilen
+und vollständige strukturierte Story-Einträge bis zur 8-MiB-Dateigrenze (Zeitstempel, gespeicherte Datumsanzeige, Sprecher, Spieler,
 Aussage, Richtung), Raummeister-Auswahl/-ID/-phase/-deadline, Gefragte/Kandidat,
-vollständigen 20×20-Kachelplan mit Ausrichtung, Portalhinweise und die letzten 128 Anfragequittungen. Android `AtomicFile`
+vollständigen 20×20-Kachelplan mit Ausrichtung, Teilfeldraster, Kerkerzuständen und Gegnerpositionen, Portalhinweise und die letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
-**Noch nicht:** Inventar-/Szenariogenerator, verbindliche Charakterwerte und ausgeführte Spezialregeln, Auswahl mehrerer Partien, Export/Import,
-Auswahl einer neuen Partie im UI, umfassende zukünftige Migrationen, vollwertiges Ereignisjournal oder Host-Wechsel.
+Benannte Sicherungen, Reset sowie Datei-Export/-Import sind in den Portal-Einstellungen verfügbar (Abschnitt 8d).
+**Noch nicht:** Inventar-/Szenariogenerator, verbindliche Charakterwerte und ausgeführte Spezialregeln,
+umfassende zukünftige Migrationen, vollwertiges Ereignisjournal oder Host-Wechsel.
 Der gespeicherte Aufbau ist bereits am Portal und im Spiel abrufbar.
-Eine Deinstallation bzw. das Löschen der App-Daten entfernt bisher den lokalen Spielstand.
+Eine Deinstallation bzw. das Löschen der App-Daten entfernt den lokalen Spielstand und interne Sicherungen;
+exportierte Dateien deshalb separat aufbewahren.
 
 ## 8. Portal und Bedienidee
 
@@ -735,7 +737,104 @@ räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die 
 - App/Client **0.8.1 / Code 11**; API-Protokoll **3** und Speicherformat **7** bleiben gleich.
   Keine Spielregeländerung. Bestehende Partien, Raumgefüge, Figuren und Züge werden erhalten.
 
-## 9. Technische Grundlage 0.8.1
+## 8d. Vierer-Kacheln, vollständige Spielstände und einfacher Beitritt ab 0.9.0
+
+Neue verbindliche Nutzerwünsche: Reset am Portalstart und in Einstellungen während der Partie;
+vollständiges Speichern/Laden einschließlich Planung, aller Figuren und Story; wesentlich
+weniger Anmeldung; kompakte Bildschirmseiten; größere Kacheln mit verschiebbarem Ausschnitt;
+automatisches Einpassen des Portal-Plans; je Spieler drehbarer Himmelsrichtungskompass.
+**Das Portal steht immer im Norden. Jede neue Kachel enthält 2×2 Bewegungsfelder.**
+
+### Beitritt und Bedienung
+
+- Neuer Client braucht **nur den Namen**, danach Figur wählen. Kein zusätzlicher Raum-/Portalcode.
+  WLAN-Passwort bleibt. QR für WLAN und QR für Spielseite; die Spielseite enthält keinen Code mehr.
+  Alte API-Anfragen mit Code werden aus Kompatibilitätsgründen weiterhin geprüft; neue lassen
+  `code` weg. Spielertokens, maximal vier Plätze, exklusive Figuren und Hostverwaltung bleiben.
+- Diese Vereinfachung vertraut auf das private Spiel-WLAN. Keine Freigabe ins Internet. Namen
+  müssen eindeutig sein. Normale laufende Partie lässt keine neue fremde Person nachrücken.
+- Clientseiten sind als feste Handyansichten angelegt: Auswahlkarussell, Spiel, Steckbrief,
+  separate Karte und Story. Story blättert einen Eintrag pro Seite; lange Texte und Dialoge dürfen
+  intern scrollen. Die Brettansicht selbst ist ausdrücklich verschiebbar. Keine vollständige
+  Scrollfreiheit für beliebige Schriftvergrößerung/kleinste Geräte behaupten.
+- Portal-Lobby mit Umschaltung **WLAN & Zugang / Spieler** statt aller langen Karten übereinander;
+  Einstellungen als Menüliste, kompaktere Spielleitung und Statusansicht. Realgerätetest ausstehend.
+- Pro Browser Kompass mit links/rechts-Drehtasten in 90°-Schritten. Orientierung bleibt lokal nach
+  Neuladen erhalten. N/O/S/W bewegen sich optisch passend zum Sitzplatz, gesendet werden immer
+  dieselben Welt-Richtungen. Aktionsrichtung und Gegnerhelfer-Kompass verwenden diese Orientierung.
+- Raummeister erhält vor dem Aufbau ein verpflichtendes Hinweis-Popup: **Das Portal steht im
+  Norden!** Nord ist im Plan oben. Die Bestätigung gilt pro Partie und Aufbauauswahl; nach Laden
+  mit neuer Partie-Epoche erneut bestätigen. Am Portal ist Norden ebenfalls sichtbar benannt.
+
+### Kacheln und Bewegung
+
+Die neue Palette enthält genau zehn Typen: glatte Steinplatten, Eckwände, einseitige Wand,
+gegenüberliegende Wände, Kerker, Friedhof, Kompassfeld, Lava, Lava/Stein (zwei/zwei), Brunnen.
+Alle belegen eine Kachel und vier Bewegungsfelder. Großflächige Symbole für Friedhof, Kompass
+und Brunnen belegen grafisch die ganze Kachel. **Fette rote Außenbalken** markieren Wände,
+innere dünne Teilung markiert die vier Schritte. Lava/Stein dreht mit der Kachel.
+
+- Standard-Editor-Kachel 64 px statt 36 px; 20×20 Kachelplätze bleiben zur Abwärtskompatibilität
+  erhalten. Der Ausschnitt lässt sich scrollen; **10 Kacheln breit / Große Kacheln** schaltet die
+  Übersicht um. Das ist keine Verkleinerung/Abschneidung alter Pläne auf 10×10.
+- Neue Bewegungskoordinaten 0–39 je Achse, Kachelkoordinaten weiter 0–19. Feldname z. B.
+  **A1·1, A1·2, A1·3, A1·4** (oben links, oben rechts, unten links, unten rechts). Ein orthogonaler
+  Teilfeldwechsel kostet genau einen gewürfelten Schritt. Keine Änderung der W6-/5/6-/Go-Regeln.
+- Außenwände blockieren den Übergang zwischen Kacheln beidseitig, nicht die inneren Teilfelder.
+  Kein Feld ohne platzierte Kachel. Figuren teilen weiterhin kein einzelnes Bewegungsfeld.
+- Kerkerzustand offen/geschlossen wird gespeichert. Geschlossener Kerker sperrt seine Außenkanten;
+  offene Kanten sind begehbar. Raummeister kann den Zustand im Editor mit eigener Taste ändern,
+  während der Partie die Spielleitung über Einstellungen. Kein ungefragt erfundener Charakter-
+  Aktionspreis oder neue Reichweite des Schallschraubenziehers.
+- Lava-Schaden, Erholung am Brunnen, Friedhofseffekte und spezielle Missionen sind **noch offen**.
+  Farben/Gelände sind vorhanden, aber nicht als fertige Schadens-/Heilregel ausgeben.
+- Portal und Tür aus älteren Plänen bleiben ladbar, sind auf ausdrücklichen neuen Palettenwunsch
+  nicht mehr in der neuen Auswahl. Früheres zweifeldriges Portal bleibt ein zusammenhängendes Teil.
+- Alle Figuren einschließlich hinzugefügter Gegner erhalten gespeicherte Positionen. Raummeister
+  kann auch deren Startfelder setzen. Der gewählte Gegnerhelfer kann physische orthogonale Schritte
+  am eigenen Kompass melden und anschließend bestätigen. Gegnerweite/KI bleibt moderiert, nicht
+  ungefragt neu festgelegt. Nicht positionierte alte Gegner müssen zunächst im Aufbau gesetzt werden.
+- Portal zeichnet den gesamten belegten Ausschnitt automatisch passend zur verfügbaren Fläche;
+  beim Anwachsen des Aufbaus ändern sich Ausschnitt/Maßstab ohne manuelles Zoomen.
+
+### Speichern, Laden und Reset
+
+- Portalstart: **Zurücksetzen**; laufende Partie: **Einstellungen**. Reset erst nach Bestätigung.
+  Vorher vollständige automatische Sicherung **Vor_Reset**. Die neue Partie hat neue Identität,
+  keine Spieler/Figuren/Karte und einen neuen Storybeginn. Frühere Sicherungsdateien bleiben erhalten.
+- **Spiel speichern** fragt einen Namen ab und schreibt einen eigenen datierten atomischen
+  Spielstand im privaten App-Speicher. **Spiel laden** zeigt vorhandene Sicherungen; davor wird
+  der aktuelle Stand als **Vor_Laden** gesichert. Kein Überschreiben aller bisherigen Sicherungen.
+- **Exportieren / Importieren** verwenden Androids Dateiauswahl und `.drwho`-Dateien. Darin sind
+  komplette Planung/Ausrichtung/Kerkerzustände, alle bekannten Figurenpositionen, Runde, Phase,
+  Go/Wurf/Reststrecke, Gegnerauftrag/Angriff, Story und Anmeldedaten enthalten. Private Spielstände
+  gehören nicht ins öffentliche GitHub-Repository. Export separat aufbewahren, wenn App gelöscht wird.
+- Laden validiert die ganze Datei vor Ersetzung und speichert zuerst erfolgreich. Kaputte,
+  unbekannte oder zu große Dateien beschädigen die laufende Partie nicht. Größenlimit **8 MiB**.
+- Laden erhält den Spielzustand, erneuert aber die Sitzungsidentität und Browser-Tokens. Dadurch
+  werden alte Anfragen und niedrigere geladene Revisionen nicht mit dem laufenden Client vermischt.
+  Spieler treten einmal mit ihrem gespeicherten Namen erneut bei. Nur nach explizitem Laden werden
+  gespeicherte Plätze einmalig zur Namensübernahme freigegeben; nach Übernahme kein zweites
+  Übernehmen desselben Platzes. Das ist eine bewusste Vereinfachung im vertrauenswürdigen Spiel-WLAN.
+- Story wird ab jetzt **nicht mehr bei 60 Einträgen abgeschnitten**. Vollständiger Verlauf bleibt bis
+  zur Dateigrößengrenze erhalten. Vor 0.9.0 bereits verworfene Alt-Einträge sind nicht rekonstruierbar.
+- **Speicherformat 8**, Formate 1–7 lesbar. Echte 0.8.1-Datei in Regression geprüft. Alte laufende
+  Pläne behalten ihre bisherigen Ein-Feld-Kacheln und Positionen. Erst bewusstes **Raumgefüge
+  bearbeiten** stellt auf vier Teilfelder um und verdoppelt die Koordinaten genau einmal.
+- App **0.9.0 / Code 12**, API-Protokoll **4**. Signierung ab 0.5.0 wiederverwenden. Als Update
+  installieren und Clients neu laden. Kein Verlust der aktuellen Partie durch normales Update.
+
+### Automatisch öffnen beim Verbinden mit WLAN (Nutzerfrage 26.10.2026)
+
+Gewünscht ist eine automatische WLAN-Anmeldeseite (Captive Portal). Android unterstützt dafür
+u. a. DHCP-Option 114 und Captive-Portal-Erkennung über Verbindungsproben. Unsere gewöhnliche
+App kann beim normalen Android-Hotspot den DHCP-/DNS-/Umleitungsdienst nicht frei konfigurieren;
+**kein zuverlässig automatisch öffnendes Captive Portal implementiert oder versprochen**.
+Vorerst zwei einfache QR-Schritte. Später mit separat steuerbarem Access Point untersuchen.
+Referenzen: https://developer.android.com/about/versions/11/features/captive-portal und
+https://developer.android.com/develop/connectivity/wifi/localonlyhotspot (geprüft 26.10.2026).
+
+## 9. Technische Grundlage 0.9.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -746,10 +845,10 @@ räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die 
 - REST-artige API: POST `/api/join`, GET `/api/state`, POST `/api/command`; kein Websocket
   nötig für den ersten Stand. Zusätzlich POST `/api/character` für die exklusive Auswahl.
   Browser fragt Zustand alle 1,5 Sekunden ab.
-- Spieler melden sich mit Namen und Code an und wählen eine Figur. Erst nach Auswahl aller
+- Spieler melden sich mit Namen ohne zusätzlichen Code an und wählen eine Figur. Erst nach Auswahl aller
   beigetretenen Spieler kann der Spielleiter starten. Charakterwechsel vor Start ist möglich;
   die vorherige Figur wird erst nach erfolgreichem Speichern der neuen Wahl freigegeben.
-- Neue Partien: tatsächlich platzierter 20×20-Plan A1–T20. Nur vorhandene Felder, feste Wände
+- Neue Partien: tatsächlich platzierter 20×20-Kachelplan A1–T20 mit 2×2 Bewegungsfeldern je Kachel. Nur vorhandene Felder, feste Wände
   blockieren, kein Stapeln. Bereits laufende Altpartien behalten ihr freies 6×6-Feld, bis der Host
   über die Spielleitung ausdrücklich den Aufbau nachtragen lässt. Raummeister vor erstem Go.
 - Jeder menschliche Zug wartet zunächst auf gespeichertes Go, danach folgt der W6. Bei 1–4 direkt bewegen, bei 5/6
@@ -777,7 +876,8 @@ räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die 
    Speichern des tatsächlichen Plans. Zuerst eine kleine Beispielmission.
 4. **Spielregeln:** bestätigte Charaktere, Türen, Sichtlinien, Dalek-Reichweite, Engelstatus,
    Ereignisse, Ziele, Gegnerphase und Sieg/Niederlage.
-5. **Fortsetzung:** mehrere Partien, Export/Import, Wiederaufbau, Wiederbeitritt und Recovery.
+5. **Fortsetzung:** vorhandene benannte Partien/Export/Import am echten Gerät prüfen; Wiederaufbau,
+   Wiederbeitritt bei Adresswechsel und Recovery weiterentwickeln.
 6. **Atmosphäre:** auf Halterung abgestimmtes Portal, gelieferte Medien, Soundoptionen und Feinschliff.
 
 ### Nächster konkreter Schritt mit dem Nutzer
@@ -799,6 +899,24 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.9.0 am 26.10.2026:
+
+- **458 Kern-/HTTP-Prüfungen bestanden**, einschließlich vier Teilfelder, Wandkanten, Kerkerzustand,
+  aller neuen Typen, ganzer Spielstand, Fehler beim Laden/Reset, Wiederbeitritt, Figuren/Gegner und
+  echter Format-7-Datei mit erhaltener alter Bewegung sowie bewusster Rasterumstellung.
+- **155 bisherige + 25 angepasste Beitrittsprüfungen = 180 DOM-Prüfungen bestanden.**
+- Zwei mobile Chromium-Ansichten mit echtem Java-HTTP-Server: Name ohne Code, Charakterwahl,
+  Raummeister/Nord-Popup, zehn Kacheln, vier Teilfelder, Startfigur per Touch, Kompassdrehung über
+  Reload, gleichbleibende Weltrichtung, Spielreset und vollständiges Laden mit Wiederbeitritt.
+  390×844 und 320×740 ohne Dokument-Seitenlauf geprüft; Screenshots des Editors/Plans betrachtet.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, erneut
+  **458 Kernprüfungen**, Lint **0 Fehler / 17 Warnungen** (u. a. feste UI-Texte, Updates, Icon und
+  ungenutzte Altressource). App **0.9.0 / Code 12**, Signatur identisch seit 0.5.0; finale Anleitung
+  und Spielerdatei werden vor Übergabe gegen die APK-Assets abgeglichen.
+- Native Dateidialoge, Portaloptik und reales WLAN sind weiterhin auf einem echten Telefon
+  zu prüfen. Import akzeptiert auch Dateien mit unbekanntem MIME-Typ; Inhalt wird unabhängig
+  davon validiert. Portal-Marker einschließlich Nummern skalieren mit dem Teilfeldraster.
 
 Für 0.8.1 am 26.10.2026:
 
@@ -991,7 +1109,7 @@ Charakterfähigkeiten, Gegner-KI, Inventargenerator und eine vollständige Missi
 Der ursprüngliche temporäre Debug-Schlüssel für APK 0.4.0 ist in der aktuellen Umgebung nicht
 mehr vorhanden. 0.5.0 wurde mit einem neuen Debug-Schlüssel signiert. Deshalb **kein direktes
 Update über 0.4.0 möglich**. Bestehende Installation nicht ohne Sicherung entfernen: Android
-löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch offen.
+löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 
 - Bisheriges Zertifikat SHA-256: `e0e73387152fbcc397aa5790717d35790a95d95c59845778e05df1494de7ade5`.
 - Zertifikat ab 0.5.0 SHA-256: `2940936793e828d87a8e2178dc62223c24bd9ebc66ab114241c71f52d1231b40`.
@@ -1020,6 +1138,7 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 26.10.2026 | 0.7.0 | Gespeicherter Zugstart Your move... / Go mit Portal-Charakterkarte, gerichtete Aktionen per Popup, Story mit Host-Zeitstempeln und Sprecher in erster Person sowie einmalig gespeicherter Dalek-Klangtext; Format 6 / Protokoll 2 |
 | 26.10.2026 | 0.8.0 | Raummeister-Auswahl mit Ja/Nein und verbindlicher Portalwahl, gespeicherter 20×20-Kacheleditor mit zweifeldrigem Portal/Startfiguren, Live-Aufbau am Portal, Startfilm, sparse Karte und Wandprüfung, große 3-Sekunden-Ereignisse, Altpartien-Aufbau nachtragen; Format 7 / Protokoll 3 |
 | 26.10.2026 | 0.8.1 | Eindeutige Portalcode-Prüfung mit Inlinefehler/Fokus, Korrektur ohne Sackgasse, vollständig aufgeräumte alte Popups und Editoransicht, erhaltene ursprüngliche Anmeldenachweise für sicheren Wiederbeitritt; Spielregeln/Format/Protokoll unverändert |
+| 26.10.2026 | 0.9.0 | Name ohne Raumcode, Reset mit Sicherung, komplette benannte Spielstände und Datei-Export/Import, Vierer-Kacheln/rote Wände/zehn Typen/Kerkerzustand, drehbarer Spielerkompass und Nord-Popup, volle Story, Format 8/Protokoll 4 und Migration alter Pläne |
 
 ## 13. Fortsetzung in einem anderen Chat
 

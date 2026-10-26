@@ -88,7 +88,7 @@ public final class LocalServer implements Closeable {
                     json(out, 200, engine.lobbyStatus()); return;
                 }
                 if (method.equals("GET") && path.equals("/api/info")) {
-                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":3,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
+                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":4,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
                 }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";
@@ -108,7 +108,7 @@ public final class LocalServer implements Closeable {
                 if (path.equals("/api/join")) {
                     String ip = client.getInetAddress().getHostAddress();
                     if (limited(ip)) { json(out, 429, "{\"error\":\"Zu viele Anmeldeversuche. Eine Minute warten.\"}"); return; }
-                    try { json(out, 200, engine.join(form.get("name"), form.get("code"), form.get("requestId"))); }
+                    try { json(out, 200, (form.containsKey("code")?engine.join(form.get("name"),form.get("code"),form.get("requestId")):engine.joinLocal(form.get("name"),form.get("requestId")))); }
                     catch (IllegalArgumentException e) { failed(ip); throw e; }
                 } else if (path.equals("/api/character")) json(out, 200, engine.chooseCharacter(token, form.get("requestId"), form.get("characterId")));
                 else json(out, 200, engine.command(token, form.get("requestId"), Long.parseLong(form.getOrDefault("revision", "-1")), form.get("action"), form.get("direction")));
