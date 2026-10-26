@@ -24,6 +24,9 @@ public class MainActivity extends Activity {
     private static final int INK=Color.rgb(7,17,30),CYAN=Color.rgb(104,227,246),WHITE=Color.rgb(224,241,250),MUTED=Color.rgb(145,177,197);
     private final Handler handler=new Handler(Looper.getMainLooper());
     private GameEngine engine;
+    private PortalAudio audio;
+    private PortalAudioEvents audioEvents;
+    private boolean foreground;
     private LocalServer server;
     private PortalNetwork network;
     private WifiManager.LocalOnlyHotspotReservation reservation;
@@ -31,7 +34,8 @@ public class MainActivity extends Activity {
     private int hotspotGeneration;
     private volatile int networkGeneration;
     private FrameLayout root,stage,setupScreen,noticeScreen;
-    private TardisView setupFlight;
+    private TardisView setupFlight,noticeFlight;
+    private KeyView noticeKey;
     private BoardView setupBoard;
     private TextView setupHeading,setupHint,setupTeam,noticeText;
     private boolean wasPreparing;
@@ -53,7 +57,7 @@ public class MainActivity extends Activity {
     private final Runnable refresh=new Runnable(){public void run(){updatePortal();handler.postDelayed(this,500);}};
 
     @Override public void onCreate(Bundle saved){
-        super.onCreate(saved);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        super.onCreate(saved);setVolumeControlStream(android.media.AudioManager.STREAM_MUSIC);getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         root=new FrameLayout(this);root.setBackgroundColor(INK);
         root.setOnApplyWindowInsetsListener((v,i)->{v.setPadding(i.getSystemWindowInsetLeft(),i.getSystemWindowInsetTop(),i.getSystemWindowInsetRight(),i.getSystemWindowInsetBottom());return i;});
         lobbyBackground=new ImageView(this);lobbyBackground.setImageResource(R.drawable.portal_background);
@@ -67,6 +71,7 @@ public class MainActivity extends Activity {
             try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}
             restartPortalNetwork();
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
+        audio=new PortalAudio(this);
         buildLobby();buildDirector();buildPlay();buildStage();buildSetup();if(engine.playing())showPlay();else showLobby();updatePortal();
     }
     private byte[] asset(String path)throws IOException{
@@ -146,7 +151,7 @@ public class MainActivity extends Activity {
         setupFlight=new TardisView(this,true);visual.addView(setupFlight,new FrameLayout.LayoutParams(-1,-1));setupBoard=new BoardView(this);visual.addView(setupBoard,new FrameLayout.LayoutParams(-1,-1));
         setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);layout.addView(button("Einstellungen",this::settingsDialog));
         noticeScreen=new FrameLayout(this);noticeScreen.setBackgroundColor(INK);root.addView(noticeScreen,new FrameLayout.LayoutParams(-1,-1));noticeScreen.setVisibility(View.GONE);noticeScreen.setClickable(true);
-        noticeScreen.addView(new TardisView(this,true),new FrameLayout.LayoutParams(-1,-1));noticeText=text("",32,WHITE);noticeText.setGravity(Gravity.CENTER);noticeText.setAutoSizeTextTypeUniformWithConfiguration(18,32,2,android.util.TypedValue.COMPLEX_UNIT_SP);noticeText.setPadding(dp(25),dp(24),dp(25),dp(24));noticeText.setBackgroundColor(0xb807111e);noticeScreen.addView(noticeText,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
+        noticeFlight=new TardisView(this,true);noticeScreen.addView(noticeFlight,new FrameLayout.LayoutParams(-1,-1));noticeKey=new KeyView(this);noticeScreen.addView(noticeKey,new FrameLayout.LayoutParams(-1,-1));noticeKey.setVisibility(View.GONE);noticeText=text("",32,WHITE);noticeText.setGravity(Gravity.CENTER);noticeText.setAutoSizeTextTypeUniformWithConfiguration(18,32,2,android.util.TypedValue.COMPLEX_UNIT_SP);noticeText.setPadding(dp(25),dp(24),dp(25),dp(24));noticeText.setBackgroundColor(0x4807111e);noticeScreen.addView(noticeText,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
         noticeScreen.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);noticeText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
     }
     private void updateSetup(GameEngine.PortalState info){
@@ -164,7 +169,7 @@ public class MainActivity extends Activity {
             String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
             for(int i=0;i<info.notices.size();i++)if(info.notices.get(i).id.equals(seen))next=i+1;
             if(next<info.notices.size()){
-                GameEngine.PortalNotice notice=info.notices.get(next);activeNotice=notice.id;noticeText.setText(notice.text);noticeScreen.setVisibility(View.VISIBLE);noticeScreen.bringToFront();handler.postDelayed(finishNotice,3000);
+                GameEngine.PortalNotice notice=info.notices.get(next);activeNotice=notice.id;boolean foundKey=notice.id.equals(info.keyEvent);noticeFlight.setVisibility(foundKey?View.GONE:View.VISIBLE);noticeKey.setVisibility(foundKey?View.VISIBLE:View.GONE);noticeText.setGravity(foundKey?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:Gravity.CENTER);noticeText.setText(notice.text);noticeScreen.setVisibility(View.VISIBLE);noticeScreen.bringToFront();handler.postDelayed(finishNotice,3000);
             }
         }
     }
@@ -199,7 +204,7 @@ public class MainActivity extends Activity {
         }
         startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":engine.preparing()?"Aufbau läuft…":"Abenteuer starten");
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
-        GameEngine.PortalState info=engine.portalState();updateSetup(info);
+        GameEngine.PortalState info=engine.portalState();updateSetup(info);updateAudio(info,players);
         playRound.setText("RUNDE "+info.round);playActor.setText(info.headline);
         goCard.setVisibility(info.awaitingGo?View.VISIBLE:View.GONE);playDice.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);playDiceLabel.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);
         if(info.awaitingGo&&info.activeCharacter!=null){
@@ -218,6 +223,12 @@ public class MainActivity extends Activity {
         if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");
         else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-1);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
         playEvents.setText(events.toString());playPositions.setText(android.text.TextUtils.join("\n",info.positions));
+    }
+    private void updateAudio(GameEngine.PortalState info,java.util.List<String[]> players){
+        java.util.List<String> ids=new ArrayList<>();for(String[] p:players)ids.add(p[0]);
+        if(audioEvents==null){audioEvents=new PortalAudioEvents(info.sessionId,info.setupStage,ids);return;}
+        PortalAudioEvents.Cue cue=audioEvents.observe(info.sessionId,info.setupStage,ids);if(!foreground||audio==null)return;
+        if(cue==PortalAudioEvents.Cue.THEME)audio.playTheme();else if(cue==PortalAudioEvents.Cue.JOIN)audio.playJoin();
     }
     private String summary(){StringBuilder b=new StringBuilder(engine.hostText().split("\n")[0]);for(String line:engine.hostText().split("\n"))if(line.startsWith("Am Zug:")||line.startsWith("Gegnerzug:")||line.startsWith("Noch ")||line.startsWith("Wurf "))b.append('\n').append(line);return b.append("\n\nAntippen · Portal-Lobby").toString();}
     private void startGame(){try{engine.startDemo();updatePortal();if(engine.playing())showPlay();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}
@@ -262,7 +273,7 @@ public class MainActivity extends Activity {
         WifiManager.LocalOnlyHotspotReservation active=reservation;reservation=null;ssid="";password="";
         if(active!=null)active.close();restartPortalNetwork();
     }
-    private void afterGameChange(){handler.removeCallbacks(finishNotice);activeNotice="";noticeScreen.setVisibility(View.GONE);wasPreparing=false;rosterSignature="";showLobby();if(engine.playing())showPlay();updatePortal();}
+    private void afterGameChange(){if(audio!=null)audio.stop();audioEvents=null;GameEngine.PortalState restored=engine.portalState();if(!restored.notices.isEmpty())prefs.edit().putString("seen-notice-"+restored.sessionId,restored.notices.get(restored.notices.size()-1).id).apply();handler.removeCallbacks(finishNotice);activeNotice="";noticeScreen.setVisibility(View.GONE);wasPreparing=false;rosterSignature="";showLobby();if(engine.playing())showPlay();updatePortal();}
     private void exportDialog(){startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE,"Dr_Who_Spielstand.drwho"),91);}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{
         if(request==91){try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new IOException("Datei nicht erreichbar.");out.write(engine.exportGame());}toast("Spielstanddatei exportiert.");}
@@ -314,9 +325,9 @@ public class MainActivity extends Activity {
         }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
-    @Override protected void onStart(){super.onStart();if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onStop(){handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);super.onStop();}
-    @Override protected void onDestroy(){destroyed=true;hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
+    @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
+    @Override protected void onStop(){foreground=false;if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);super.onStop();}
+    @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}
         @Override public byte[] load()throws IOException{try{return file.readFully();}catch(FileNotFoundException missing){return null;}}

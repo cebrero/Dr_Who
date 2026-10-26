@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.9.2 · Gemeinsame Kachelgrafik, Koordinaten je Teilfeld und Kartenzoom**
-<!-- app-version: 0.9.2 -->
-<!-- reviewed-source-sha256: 3480c28727ef5b601b4876228264f61185c654e0e4d3e23a3ffcf0015aa192b7 -->
+Stand: **26.10.2026 · Version 0.10.0 · Portal-Sounds, geheimer Portalschlüssel und Tasche**
+<!-- app-version: 0.10.0 -->
+<!-- reviewed-source-sha256: c2e3a58183ddee3f9b33696e4c81258b92f314b0a3a275ee24e61f2fd3e719cb -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,29 +104,32 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.2
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.0
 
 ### Vor der Partie
 
 1. Portal-Handy zeigt eine gemeinsame Startseite mit statischem Doctor-Who-Hintergrund, WLAN-Zugang,
    Spielseite und darunter dem Team. **Spiel-WLAN starten** startet direkt den Android-Lokalhotspot;
    nur erforderliche Android-Berechtigungen bleiben. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg.
+   Neue Registrierung am Portal mit bereitgestelltem TARDIS-Sound begrüßen; bestehende Plätze bleiben still.
 2. Bis zu vier Spieler treten am eigenen Handy mit Namen ohne zusätzlichen Portalcode bei.
 3. Jeder wählt eine Quartettkarte mit großem vollständigem Porträt oben und Eigenschaften darunter.
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
 4. Portal zeigt, wie viele bereits gewählt haben, plus Spielername und zugeordnete Figur.
 5. Nach der Spielerwahl kann der Host übrige bekannte Figuren als Gegner hinzufügen.
-6. Host drückt Start. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
+6. Host drückt Start; der bereitgestellte Themensong spielt einmal. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
    Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
-7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, zehn Typen, 90°-Drehung,
+7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, elf Typen einschließlich Portal über zwei Kacheln, 90°-Drehung,
    vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
-   dann drei Sekunden Startanimation und erster Spielerzug. Aktuelle Details siehe Abschnitte 8d/8e.
+   dann drei Sekunden Startanimation und erster Spielerzug. Vorher wird ein Portalschlüssel geheim auf
+   einem freien erreichbaren Feld versteckt. Beim Betreten Fund-Popup, Portalanimation und Tasche.
+   Aktuelle Details siehe Abschnitte 8d–8h.
 8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
    erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.9.2 |
+| Schritt | Regel | Umsetzung 0.10.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -313,8 +316,8 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 8, ältere Formate
-1–7 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 9, ältere Formate
+1–8 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
@@ -930,7 +933,85 @@ Verbindlicher Nutzerwunsch und Umsetzung vom 26.10.2026:
 - Build-Prüfung berücksichtigt die neuen JS-/CSS-Produktionsquellen und normalisiert wie bei
   Java/HTML auch deren Zeilenenden. Die manuelle Inhaltsprüfung und der explizite Prüfstempel bleiben.
 
-## 9. Technische Grundlage 0.9.2
+## 8g. Nutzer-Audio am Portal ab 0.10.0
+
+Nutzerdateien vom 26.10.2026, unverändert in die private APK eingebunden:
+
+| Datei | Format | Dauer | SHA-256 |
+| --- | --- | --- | --- |
+| theme_music_12.ogg | OGG/Vorbis, 32 kHz, mono | 38,860 s | 2d4ee018831f2e71618d22485f17149c5d1535616d85408c13bb058f042fa63f |
+| tardis_sound.ogg | OGG/Vorbis, 32 kHz, mono | 16,056 s | 2bfa67606f5b441fc3ce8b206a09c731ba8f1fef95d7ee055b0dbdb42c0904be |
+
+- **Abenteuer starten** nach erfolgreichem Speichern des Starts: Themensong einmal vollständig,
+  während der Raummeister-Auswahl. Kein Loop und kein zweiter Start nach dem Aufbau oder Laden.
+- **Neue Registrierung in der Einrichtungs-/Portal-Lobby:** TARDIS-Sound sofort. Neue Spieler-ID
+  erkennen, nicht bloß die Anzahl; Entfernen und neuer Beitritt bei gleicher Anzahl funktioniert.
+  Wiederbeitritt mit ursprünglichem Nachweis, Figurenwahl, Polling und bestehende Plätze beim
+  Wiederöffnen erzeugen keinen Sound. Mehrere Beitritte in einer Statusabfrage bilden einen Cue.
+- Eine Spur zur Zeit: neuer Beitritt startet den TARDIS-Sound von vorn. Abenteuerstart beendet
+  einen noch laufenden Beitrittssound und spielt den Themensong. Kein Überlagern von vier Handys:
+  Wiedergabe ausschließlich am Android-Portal über Medienlautstärke, ohne Browser-Autoplay.
+- `PortalAudioEvents` hält nur die Anzeigehistorie. `PortalAudio` lädt lokal mit MediaPlayer/
+  AudioAttributes und temporärem Audiofokus. Vorbereitung asynchron; alte Rückmeldungen dürfen
+  keine neuere Wiedergabe stoppen/starten. Abschluss/Fehler/Reset/Laden/Hintergrund/Fokusverlust
+  geben Player und Audiofokus frei. Zurückkehren spielt keine verpassten alten Begrüßungen nach.
+- Spielzustand und Zufall hängen nicht vom Erfolg der Tonwiedergabe ab. Echter Lautsprecher-,
+  Systemlautstärke- und Audiofokustest am Telefon steht noch aus.
+
+### Private Dateien für den nächsten Build wiederherstellen
+
+Das Spiel ist privat. **Die Originalaudios werden nicht ins Quellrepository hochgeladen.** Sie
+liegen bereits als persönliche ChatGPT-Dateien mit obigen exakten Namen vor. Für einen neuen
+Checkout beide Dateien daraus wiederherstellen und nach
+`app/src/privateAssets/audio/theme_music_12.ogg` sowie
+`app/src/privateAssets/audio/tardis_sound.ogg` kopieren. Bei Anhängen mit bereitgestellten lokalen
+Pfaden diese verwenden; Originaldateien nicht überschreiben. Obige Hashes vor Verwendung prüfen.
+
+`app/src/privateAssets/` ist Git-ignoriert, wird von Gradle als zusätzliche APK-Assetquelle geladen.
+Die OGGs müssen unkomprimiert im ZIP liegen, damit AssetFileDescriptor funktioniert. `verifyAudioAssets`
+verhindert Builds mit fehlenden/veränderten Dateien. Der Onboarding-Quellhash umfasst auch diese
+privaten Bytes. Nach Wiederherstellung auf unverändertem Checkout ist kein neuer Stempel nötig;
+bei absichtlicher Audioänderung Anleitung/Prüfhashes inhaltlich aktualisieren und neu stempeln.
+Kein fehlendes Audio durch eine leere Datei ersetzen. APK bleibt private Download-Datei.
+
+## 8h. Geheimer Portalschlüssel, Tasche und Portal ab 0.10.0
+
+Neuester verbindlicher Nutzerwunsch, umgesetzt:
+
+- Baupalette enthält wieder **Portal · 2 Kacheln**. Elf Typen auf drei Seiten (5/5/1), horizontale
+  Grundausrichtung mit genau zwei Kacheln, 90°-Drehung ergibt vertikale Ausrichtung. Acht beschriftete
+  Bewegungsteilfelder. Überlappung/Rasterrand weiter validieren, als ein zusammenhängendes Teil speichern.
+- Beim finalen Speichern eines **neuen** Aufbaus vor erster Runde versteckt der Host zufällig
+  **einen Portalschlüssel** auf einem freien, von mindestens einer Startfigur erreichbaren Feld.
+  BFS verwendet vorhandene Kacheln und massive Wände, keine erfundenen Lava-/Brunnenregeln.
+  Startplätze von Partnern/Gegnern ausschließen; unerreichbare Inseln ausschließen. Fehlt Platz,
+  verständlicher Fehler im Aufbau statt unwiederbringlich verlorenem Schlüssel.
+- Versteck und Status nur im privaten Host-Spielstand. Keine versteckten x/y, Eigentümer-Markierung
+  oder Fundnotiz in `/api/state`, Portalansicht, Karte oder Story vor dem Fund. Kein erneutes
+  Zufallsziehen durch Polling, Neustart oder Speichern/Laden. Bei bewusstem Umbau gültiges Versteck
+  behalten; nur wenn gelöscht, unerreichbar oder durch Startfigur belegt, beim finalen Speichern neu wählen.
+- Menschlicher **Bewegungsschritt auf das Feld**, auch mitten in einem gewürfelten Weg: Schlüssel
+  sofort dauerhaft in dessen Tasche legen, Fundereignis und Story speichern. Ein identischer Retry
+  gibt weder zweiten Schlüssel noch zweite Fundanimation. Gegner sammeln ihn nicht ein.
+- Finder erhält **Portalschlüssel gefunden!** mit Feld und **In die Tasche · weiter**. Pop-up hat
+  Vorrang vor neuem Go; bestätigt ohne Bewegungs-/Aktionskosten. Netzfehler erlaubt identischen Retry
+  innerhalb des Pop-ups. Offene Bestätigung wird gespeichert und nach Neustart/Laden fortgesetzt.
+- Portal zeigt für drei Sekunden **animierten goldenen Schlüssel** und **Spielername hat den
+  Portalschlüssel gefunden!**, mit derselben gespeicherten Ereignis-ID. Kein Schlüsselbild am
+  unbekannten Feld. Beim expliziten Laden alte Portalhinweise als bereits gesehen markieren.
+- Neuer Client-Reiter **Tasche**, fünf Tabs. Finder sieht Portalschlüssel mit Grafik. Andere Spieler
+  erhalten nicht dessen Inventar in ihrem Snapshot. Noch kein Benutzen-, Übergeben-, Verbrauchs-
+  oder Siegmechanismus; diese Spielregel legt der Nutzer später fest.
+- Technischer Schutz beim Entfernen des Trägers: Schlüssel bleibt auf dessen letztem gültigen Feld
+  zurück und kann mit neuem Ereignis wieder aufgenommen werden. Fehlt das Feld während eines Umbaus,
+  Versteck beim nächsten Planspeichern neu setzen. Nach letztem Spieler/neuer Partie alles leeren.
+  Dies ist Recovery-Verhalten, keine fertig entwickelte Weitergabe-/Inventarregel.
+- **Format 9 / Protokoll 5 / Version 0.10.0 / Code 15**. Alte Formate 1–8 bleiben ladbar. Laufende
+  Altpartien erhalten keinen plötzlich eingeblendeten Schlüssel; in alten noch nicht gestarteten
+  Lobbys wird er beim neuen Aufbau angelegt. Aktuelle Figurenpositionen und Feldnamen bleiben erhalten.
+  Für den neuen Schlüssel eine neue Partie starten; Clientseiten nach APK-Update neu laden.
+
+## 9. Technische Grundlage 0.10.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -995,6 +1076,29 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.10.0 am 26.10.2026:
+
+- **532 Kern-/HTTP-Prüfungen bestanden**. Neu Audio-Cues ohne Replay, neue ID bei gleicher
+  Platzanzahl, Hintergrund-/Ladebaseline, fehlgeschlagener Start; geheimer erreichbarer Fund,
+  keine Vorab-Leaks, atomarer Speicherfehler/Retry, eigene Tasche, fremde Bestätigung abgewiesen,
+  Ereignis-ID, Save/Load/Ack, Rückfall nach Entfernen und Rückwärtslesen eines Format-8-Präfixes.
+- **199 bisherige + 10 neue = 209 DOM-/Grafikprüfungen bestanden**: Fund-Popup/Fokus/Inert,
+  exakter Feldname, Tasche/Grafik, identischer Ack-Retry, keine doppelte Ausgabe, kein vorzeitiges
+  Benutzen, Rückkehr zur Anmeldung bei entferntem Finder aus offenem Pop-up.
+- Bisheriger mobiler Chromium-Ablauf weiterhin bestanden. Zusätzlich echte Einzelspieler-Partie:
+  Portal auf dritter Palettenseite per Touch, zweifache Breite, getrennte Karteninsel; Schlüssel nur
+  im erreichbaren Startbereich, Bewegung zu B2, Finder-Popup, Portal-Fundereignis und Tasche,
+  vollständiges Speichern/Reset/Laden mit erhaltener Tasche und ohne erneutes Pop-up nach Ack.
+  Popup und Tasche per Screenshots visuell geprüft; 390×844 ohne Dokument-Seitenlauf.
+- Beide Audio-Dateien mit ffprobe identifiziert und vollständig per ffmpeg decodiert. Negativprüfung:
+  `verifyAudioAssets` lehnt fehlende und manipulierte Audiodateien mit vorgesehener Meldung ab.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, erneut
+  **532 Kernprüfungen**, Lint **0 Fehler / 20 Warnungen**. App **0.10.0 / Code 15**; bestehender
+  Signierschlüssel seit 0.5.0. Finale Anleitung, gemeinsame Grafiken und beide unkomprimiert
+  eingebundenen Audiodateien vor Übergabe bytegenau gegen APK-Assets/Originale abgleichen.
+- Tatsächliche MediaPlayer-Ausgabe, System-Audiofokus und die native Schlüsselanimation müssen
+  weiterhin am echten Telefon geprüft werden.
 
 Für 0.9.2 am 26.10.2026:
 
@@ -1278,6 +1382,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.9.0 | Name ohne Raumcode, Reset mit Sicherung, komplette benannte Spielstände und Datei-Export/Import, Vierer-Kacheln/rote Wände/zehn Typen/Kerkerzustand, drehbarer Spielerkompass und Nord-Popup, volle Story, Format 8/Protokoll 4 und Migration alter Pläne |
 | 26.10.2026 | 0.9.1 | Drei Resetoptionen/ohne Archiv, vollständiger Portal-Hotspotreset, gemeinsame Lobby und rotes Spieler-×, direkter WLAN-Start, reduzierte Einstellungen, große Quartettbilder ohne Beschnitt, kurzer Nord-Hinweis, je Client synchrone Karten-/Kompassrotation |
 | 26.10.2026 | 0.9.2 | Kleine/Große Kacheln, identische lokale Vektorgrafiken auf Portal/Client samt Kompassdrehung, globale Koordinaten A1/B1/A2/B2 bis AN40 an jedem Teilfeld, Client-Kartenzoom per Tasten und Zwei-Finger-Geste sowie Sprung zur eigenen Figur, Format/Protokoll kompatibel |
+| 26.10.2026 | 0.10.0 | Private Portal-Musik/Beitrittssound mit einmaligen Cues, geheimer zufälliger erreichbarer Portalschlüssel, Finder-Popup, native Schlüsselanimation, gespeicherte Tasche, Zweikachel-Portal wieder in Palette; Format 9 / Protokoll 5 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

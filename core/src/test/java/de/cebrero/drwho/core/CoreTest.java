@@ -22,7 +22,7 @@ public final class CoreTest {
         @Override public int nextInt(int bound) {
             if (bound == 6) { rolls++; return face-1; }
             if (bound <= 4) { helperDraws++; return bound-1; }
-            return 123456;
+            return bound==1_000_000?123456:bound-1;
         }
     }
     static void check(boolean test, String message) { checks++; if (!test) throw new AssertionError(message); }
@@ -79,10 +79,10 @@ public final class CoreTest {
         int index=0;for(String player:tokens.keySet())cmd(e,master,"setSpawn",player+","+(index++)+",0");
         cmd(e,master,"boardSave","");advance(e);
         // Setup has its own random draw; historical helper checks count only the gameplay phase.
-        java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice)((Dice)rng).helperDraws=0;
+        java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice){((Dice)rng).helperDraws=0;((Dice)rng).rolls=0;}
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); sharedAssets(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -447,9 +447,37 @@ public final class CoreTest {
         check(e.playing()&&e.snapshot(token).contains("\"subdivisions\":1")&&e.snapshot(token).contains("\"x\":4,\"y\":4"),"real 0.8.1 save keeps its original single-cell positions and rules");
         e.rebuildBoard();advance(e);cmd(e,token,"roomYes","");check(e.snapshot(token).contains("\"subdivisions\":2")&&e.snapshot(token).contains("\"x\":8,\"y\":8"),"explicit board rebuild upgrades old coordinates exactly once");
     }
+    static List<String> audioIds(GameEngine e){List<String> ids=new ArrayList<>();for(String[] p:e.playersForHost())ids.add(p[0]);return ids;}
+    static PortalAudioEvents.Cue sound(PortalAudioEvents events,GameEngine e){return events.observe(e.sessionId(),e.portalState().setupStage,audioIds(e));}
+    static void portalAudio()throws Exception{
+        MemoryStore store=new MemoryStore();GameEngine e=engine(store);PortalAudioEvents cues=new PortalAudioEvents(e.sessionId(),"lobby",audioIds(e));
+        check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"first lobby is silent");String request=id(),a=text(e.joinLocal("Alice",request),"token");check(sound(cues,e)==PortalAudioEvents.Cue.JOIN,"new human registration plays TARDIS");
+        for(int i=0;i<5;i++)check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"poll does not replay TARDIS");e.joinLocal("Alice",request);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"retry keeps same seat without sound");
+        e.chooseCharacter(a,id(),"doctor");check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"portrait selection does not replay join");String aid=text(e.snapshot(a),"you");e.removePlayer(aid);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"removal is silent");String b=ready(e,"Bob","doctor");check(sound(cues,e)==PortalAudioEvents.Cue.JOIN,"replacement at same player count is still a new arrival");
+        PortalAudioEvents recreated=new PortalAudioEvents(e.sessionId(),"lobby",audioIds(e));check(sound(recreated,e)==PortalAudioEvents.Cue.NONE,"reopening portal does not greet old seats");
+        store.fail=true;rejects(IOException.class,e::startDemo);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"failed durable start cannot play theme");store.fail=false;
+        e.startDemo();check(sound(cues,e)==PortalAudioEvents.Cue.THEME,"successful adventure start plays theme once");e.startDemo();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"repeated start/poll does not restart music");advance(e);cmd(e,b,"roomYes","");cmd(e,b,"tilePlace","0,0,floor,0");cmd(e,b,"boardSave","");advance(e);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"building and launch do not replay theme");
+        e.rebuildBoard();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"editing physical board is not a fresh game start");byte[] save=e.exportGame();e.loadGame(save);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"loaded game is silent baseline");
+        e.resetGame();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"reset does not play anything");e.joinLocal("New",id());check(sound(cues,e)==PortalAudioEvents.Cue.JOIN,"new game can greet new players");
+        e.joinLocal("Background",id());cues.reset(e.sessionId(),"lobby",audioIds(e));check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"return from background skips old missed greetings");
+        check(cues.observe(e.sessionId(),"lobby",Arrays.asList("one","two"))==PortalAudioEvents.Cue.JOIN,"simultaneous arrivals form one non-overlapping cue");
+    }
+
+    static void portalKey()throws Exception{
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.startDemo();advance(e);String master=tokens(e).get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");cmd(e,master,"tilePlace","0,0,floor,0");cmd(e,master,"tilePlace","4,0,portal,0");cmd(e,master,"tilePlace","3,3,dungeon,0");cmd(e,master,"setSpawn",text(e.snapshot(a),"you")+",0,0");cmd(e,master,"setSpawn",text(e.snapshot(b),"you")+",1,0");cmd(e,master,"boardSave","");advance(e);
+        String hidden=e.snapshot(a);byte[] hiddenSave=e.exportGame();check(hidden.contains("\"bag\":[]")&&!hidden.contains("keyX")&&!hidden.contains("keyY")&&!hidden.contains("Portalschlüssel"),"hidden key has no marker, item or location in player snapshot");check(e.portalState().keyEvent.isEmpty()&&!e.hostText().contains("Portalschlüssel"),"host presentation also keeps hiding place secret");check(engine(store,dice).snapshot(a).equals(hidden),"hidden location survives restart without reroll");
+        byte[] eight=Arrays.copyOf(hiddenSave,hiddenSave.length-21);java.nio.ByteBuffer.wrap(eight).putInt(4,8);MemoryStore oldStore=new MemoryStore();oldStore.data=eight;GameEngine old=engine(oldStore,dice);check(old.playing()&&old.snapshot(a).contains("\"bag\":[]"),"format 8 saves still load without adding a surprise key mid-game");
+        begin(e,a);cmd(e,a,"roll","");cmd(e,a,"move","S");String before=e.snapshot(a),request=id();long rev=revision(before);store.fail=true;rejects(IOException.class,()->e.command(a,request,rev,"move","E"));check(before.equals(e.snapshot(a)),"failed pickup write moves nothing and gives no item");store.fail=false;
+        String found=e.command(a,request,rev,"move","E");String event=e.portalState().keyEvent;check(found.contains("\"bag\":[{\"id\":\"portal-key\"")&&found.contains("\"pending\":true,\"field\":\"B2\""),"walking across reachable hidden field gives key and pending finder popup");check(e.snapshot(b).contains("\"bag\":[]")&&e.snapshot(b).contains("\"keyPickup\":{\"id\":\"\",\"pending\":false"),"another player's bag and popup stay empty");check(!event.isEmpty()&&e.portalState().notices.get(e.portalState().notices.size()-1).id.equals(event),"one saved portal animation event names the finder");int stories=e.portalState().events.size();check(e.command(a,request,rev,"move","E").equals(found)&&e.portalState().events.size()==stories,"retried step cannot duplicate key, story or animation");rejects(IllegalArgumentException.class,()->cmd(e,b,"ackKey",""));
+        byte[] owned=e.exportGame();e.loadGame(owned);String a2=text(e.joinLocal("Alice",id()),"token"),b2=text(e.joinLocal("Bob",id()),"token");check(e.snapshot(a2).contains("\"portal-key\"")&&e.portalState().keyEvent.equals(event)&&e.snapshot(a2).contains("\"pending\":true,\"field\":\"B2\""),"save/load preserves item, exact event and unacknowledged popup");
+        String ack=cmd(e,a2,"ackKey","");check(ack.contains("\"pending\":false,\"field\":\"B2\"")&&ack.contains("\"remaining\":2"),"acknowledgement consumes no move and keeps item");check(engine(store,dice).snapshot(a2).equals(ack),"acknowledged bag survives restart without popup replay");e.removePlayer(text(e.snapshot(a2),"you"));begin(e,b2);cmd(e,b2,"roll","");cmd(e,b2,"move","S");check(e.snapshot(b2).contains("\"portal-key\"")&&!e.portalState().keyEvent.equals(event),"removed holder leaves key at last field for another finder");
+        e.resetGame();check(e.playersForHost().isEmpty()&&e.portalState().keyEvent.isEmpty(),"reset clears bag and key notification");
+        GameEngine packed=fourCharacterFixture(new MemoryStore(),new Dice());String one=ready(packed,"1","doctor");ready(packed,"2","dalek");ready(packed,"3","weeping-angel");ready(packed,"4","test-only");packed.startDemo();advance(packed);String pm=tokens(packed).get(text(packed.snapshot(one),"candidate"));cmd(packed,pm,"roomYes","");cmd(packed,pm,"tilePlace","0,0,floor,0");rejects(IllegalArgumentException.class,()->cmd(packed,pm,"boardSave",""));check(packed.portalState().setupStage.equals("building"),"full starting tile asks for a free reachable key field");cmd(packed,pm,"tilePlace","1,0,portal,0");cmd(packed,pm,"boardSave","");check(packed.portalState().tiles.size()==2,"two-tile portal supplies eight movement fields in new plan");
+    }
+
     static void sharedAssets()throws Exception{
         byte[] js="window.BoardArt={};".getBytes(StandardCharsets.UTF_8),css=".field-label{color:green}".getBytes(StandardCharsets.UTF_8);
-        try(LocalServer server=new LocalServer(engine(new MemoryStore()),new byte[0],0,name->null,"0.9.2",Map.of("/board-art.js",js,"/board-art.css",css))){
+        try(LocalServer server=new LocalServer(engine(new MemoryStore()),new byte[0],0,name->null,"0.10.0",Map.of("/board-art.js",js,"/board-art.css",css))){
             js[0]='X';check(call(server,"/board-art.js",null,null,false).body.equals("window.BoardArt={};"),"shared vector script is immutable and available offline");
             check(call(server,"/board-art.css",null,null,false).body.equals(new String(css,StandardCharsets.UTF_8)),"shared field styling served");
             check(call(server,"/board-art.js","",null,true).status==404,"shared assets read-only");
@@ -465,7 +493,7 @@ public final class CoreTest {
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             Response info=call(server,"/api/info",null,null,false);
-            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":4,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":5,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");

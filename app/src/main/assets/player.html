@@ -58,9 +58,10 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 #mapRotationFrame>#gameBoard,#mapRotationFrame>#grid{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
 #mapRotationFrame>#grid .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}
 #mapPanel{display:flex;flex-direction:column;gap:6px}#mapPanel .board-viewport{height:auto;min-height:0;flex:1;touch-action:pan-x pan-y}.map-tools{display:flex;align-items:center;gap:6px;color:#ead6ad;flex-shrink:0}.map-tools button{min-height:36px;padding:5px 12px;font-size:13px}.map-tools span{text-align:center;min-width:46px;font-size:12px}#mapFocus{margin-left:auto}
+#playerTabs{grid-template-columns:repeat(5,minmax(0,1fr))}#playerTabs button{font-size:10px}#bagPanel{flex:1;min-height:0;overflow:auto}.bag-card{margin:0}.bag-item{text-align:center}.bag-item svg{width:100%;max-height:140px}.key-art{text-align:center;animation:keyGleam 3s ease-in-out infinite}.key-art svg{max-height:150px;width:100%;filter:drop-shadow(0 0 12px #e2bd56aa)}@keyframes keyGleam{50%{transform:translateY(-8px) rotate(4deg);filter:brightness(1.2)}}@media(prefers-reduced-motion:reduce){.key-art{animation:none}}
 </style>
 <link rel="stylesheet" href="/board-art.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.9.2</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -89,6 +90,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <button id="tabPlay" type="button" role="tab" aria-controls="playPanel" aria-selected="true" data-tab="play">Spiel</button>
 <button id="tabProfile" type="button" role="tab" aria-controls="profilePanel" aria-selected="false" tabindex="-1" data-tab="profile">Steckbrief</button>
 <button id="tabMap" type="button" role="tab" aria-controls="mapPanel" aria-selected="false" tabindex="-1" data-tab="map">Karte</button>
+<button id="tabBag" type="button" role="tab" aria-controls="bagPanel" aria-selected="false" tabindex="-1" data-tab="bag">Tasche</button>
 <button id="tabHistory" type="button" role="tab" aria-controls="historyPanel" aria-selected="false" tabindex="-1" data-tab="history">Story</button>
 </div><div class="compass-tools"><button type="button" id="compassLeft">↶ Kompass</button><span id="compassFacing"></span><button type="button" id="compassRight">Kompass ↷</button></div></div>
 <section id="playPanel" role="tabpanel" aria-labelledby="tabPlay" tabindex="0">
@@ -105,8 +107,10 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
 <section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div class="map-tools"><button type="button" id="mapZoomOut" aria-label="Karte verkleinern">−</button><span id="mapZoomLevel" role="status">100 %</span><button type="button" id="mapZoomIn" aria-label="Karte vergrößern">+</button><button type="button" id="mapFocus" aria-label="Deine Figur auf der Karte anzeigen">Dein Feld</button></div><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
+<section id="bagPanel" role="tabpanel" aria-labelledby="tabBag" tabindex="0" hidden><div class="card bag-card"><h2>Deine Tasche</h2><div id="bagItems"></div></div></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card"><summary>Story</summary><div class="story-pager"><button id="storyPrev" type="button">← Neuere</button><span id="storyPage"></span><button id="storyNext" type="button">Ältere →</button></div><ol id="log"></ol></details></section>
 </section>
+<div id="keyDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="keyTitle" tabindex="-1" hidden><div class="modal-surface"><div class="key-art" aria-hidden="true"></div><h2 id="keyTitle">Portalschlüssel gefunden!</h2><p id="keyText"></p><button id="ackKey" type="button" class="primary">In die Tasche · weiter</button><p id="keyStatus" role="status"></p></div></div>
 <div id="northDialog" class="modal-shade" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="northTitle" hidden><div class="modal-surface"><h2 id="northTitle">Das Portal steht im Norden!</h2><p>Lege das Portal an die Nordseite des Tisches. Im Plan ist Norden immer oben.</p><button id="northConfirm" type="button" class="primary">Verstanden · Aufbau öffnen</button></div></div>
 <div id="forcedDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="forcedTitle" tabindex="-1" hidden><div class="modal-surface"><small>DAS PORTAL HAT ENTSCHIEDEN</small><h2 id="forcedTitle">Du bist Raummeister!</h2><p>Alle haben abgelehnt. Das Portal hat dich zufällig ausgewählt, um das Raumgefüge wiederherzustellen.</p><button id="openBoard" class="primary" type="button">Aufbau öffnen</button><p id="forcedStatus" role="status"></p></div></div>
 <div id="roomDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="roomTitle" tabindex="-1" hidden><div class="modal-surface"><small>DEINE REISE BEGINNT</small><h2 id="roomTitle">Wirst du Raummeister?</h2><p>Möchtest du das Raumgefüge wiederherstellen und euren gedruckten Aufbau im Plan erfassen?</p><button id="roomYes" type="button" class="primary">Ja, ich stelle es wieder her</button><button id="roomNo" type="button" class="wide">Nein, jemand anderes</button><p id="roomStatus" role="status" aria-live="polite"></p></div></div>
@@ -117,7 +121,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.9.2',PROTOCOL_VERSION=4;
+const CLIENT_VERSION='0.10.0',PROTOCOL_VERSION=5;
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 let directionPicking=false,shownModal='',previousFocus=null,modalError='';
@@ -134,7 +138,7 @@ async function api(path,data){
  }finally{clearTimeout(timeout)}
 }
 function controls(){
- const active=state&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&state.turn.accepted===true&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
+ const active=state&&!state.keyPickup?.pending&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&state.turn.accepted===true&&!busy&&!pending&&!rolling&&!compatibilityBlocked&&!state.attack.pending;
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
  $('rollButton').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
@@ -152,10 +156,11 @@ function syncModals(){
  const roomOffer=setupActive()&&state.setup.stage==='offering'&&state.setup.candidate===state.you&&!compatibilityBlocked;
  const forced=setupActive()&&state.setup.stage==='building'&&state.setup.forced&&state.setup.roomMaster===state.you&&saved.roomDecision!==state.setup.id&&!compatibilityBlocked;
  const north=setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&saved.northSetup!==state.sessionId+':'+state.setup.id;
- const modal=roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
+ const keyPickup=state?.keyPickup?.pending&&!compatibilityBlocked;
+ const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
  if(modal!==shownModal){
   const old=shownModal;if(modal)modalError='';if(!old&&modal)previousFocus=document.activeElement;
-  shownModal=modal;$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';
+  shownModal=modal;$('keyDialog').hidden=modal!=='keyDialog';$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';
   document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>e.inert=!!modal);
   if(modal){$(modal).focus()}
   else if(old){
@@ -163,6 +168,7 @@ function syncModals(){
    if(target)target.focus();previousFocus=null;
   }
  }
+ $('ackKey').disabled=!keyPickup||busy||!!pending&&pending.action!=='ackKey';$('keyText').textContent=keyPickup?'Du hast auf Feld '+state.keyPickup.field+' den Portalschlüssel entdeckt. Er gehört jetzt zu deiner Tasche.':'';$('keyStatus').textContent=busy?'Wird gespeichert …':pending?.action==='ackKey'?'Bestätigung fehlt. Tippe erneut, um denselben Fund zu bestätigen.':modalError;
  $('goButton').disabled=!waitForGo||busy||!!pending&&pending.action!=='beginTurn';
  $('goStatus').textContent=busy&&pending?.action==='beginTurn'?'Go wird gespeichert …':pending?.action==='beginTurn'?'Bestätigung fehlt. Tippe Go erneut; dein Zug startet nur einmal.':modalError;
  document.querySelectorAll('[data-action-dir]').forEach(b=>b.disabled=busy||!!pending||!directionPicking);
@@ -171,7 +177,7 @@ function syncModals(){
  $('roomYes').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomYes';$('roomNo').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomNo';
  $('roomStatus').textContent=busy?'Deine Antwort wird gespeichert …':pending?'Bestätigung fehlt. Sende dieselbe Antwort erneut.':modalError;
  if(setupActive())renderSetup(state);
- if(newlyOpened){const target=modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
+ if(newlyOpened){const target=modal==='keyDialog'?$('ackKey'):modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
 }
 function openActionPicker(){
  if(!ownTurn()||!state.turn.accepted||state.turn.stage!=='choice'||rolling||busy||pending)return;
@@ -197,6 +203,10 @@ function dossier(c){
  const stats=el('div',undefined,'stats');for(const [name,value] of [['Ausdauer',c.endurance],['Kraft',c.strength]]){const box=el('div',undefined,'stat');box.append(el('small',name),el('strong',value));stats.append(box)}details.append(stats,el('h3','Sonderfähigkeiten'));
  const list=el('ul');c.abilities.forEach(a=>list.append(el('li',a)));details.append(list);card.append(photo,details);return card;
 }
+const keyPicture='<svg viewBox="0 0 220 120" role="img" aria-label="Goldener Portalschlüssel"><g transform="rotate(-18 110 60)" fill="none" stroke="#b38324" stroke-width="12" stroke-linecap="round"><circle cx="50" cy="52" r="27"/><path d="M80 52h112m-32 0v25m27-25v20"/></g></svg>';
+document.querySelectorAll('.key-art').forEach(e=>e.innerHTML=keyPicture);
+function renderBag(s){const items=$('bagItems');items.replaceChildren();if(!s.bag?.length){items.append(el('p','Deine Tasche ist noch leer.','muted'));return}for(const item of s.bag){const row=el('article',undefined,'bag-item'),image=el('div');image.innerHTML=keyPicture;row.append(image,el('h3',item.name),el('p','Bewahre ihn gut auf. Wofür du ihn einsetzen kannst, erfährst du später.'));items.append(row)}}
+$('ackKey').onclick=()=>pending?.action==='ackKey'?send():command('ackKey');
 function profileInto(id,c){const container=$(id),signature=JSON.stringify(c);if(container.dataset.signature===signature)return;container.dataset.signature=signature;container.replaceChildren();if(c)container.append(dossier(c))}
 function carouselInfo(){
  const cards=$('characters').children;
@@ -227,7 +237,7 @@ function paintDice(value){
 }
 function selectTab(name,focus=false){
  selectedTab=name;
- for(const [key,tab,panel] of [['play','tabPlay','playPanel'],['profile','tabProfile','profilePanel'],['map','tabMap','mapPanel'],['history','tabHistory','historyPanel']]){
+ for(const [key,tab,panel] of [['play','tabPlay','playPanel'],['profile','tabProfile','profilePanel'],['map','tabMap','mapPanel'],['bag','tabBag','bagPanel'],['history','tabHistory','historyPanel']]){
   const chosen=key===name;$(tab).setAttribute('aria-selected',String(chosen));$(tab).tabIndex=chosen?0:-1;$(panel).hidden=!chosen;if(chosen&&focus)$(tab).focus();
  }
  if(name==='history')$('historyDetails').open=true;
@@ -300,7 +310,7 @@ function render(s){
  $('rollButton').hidden=s.turn.stage!=='roll';$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||s.turn.stage!=='move';
  $('turnPrompt').textContent=rolling?'Gleich zeigt sich dein Ergebnis.':s.turn.stage==='roll'?'Dein Zug beginnt: zuerst würfeln.':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
  $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
- renderStory(s);controls();
+ renderBag(s);renderStory(s);controls();
 }
 function returnToJoin(message){
  const name=saved.join?.name||state?.players.find(p=>p.id===state.you)?.name||'';
@@ -317,7 +327,7 @@ function returnToJoin(message){
 }
 function resetJoinPresentation(){
  document.body.classList.remove('in-game','building','editing-board');
- for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog'])$(id).hidden=true;
+ for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog'])$(id).hidden=true;
  shownModal='';previousFocus=null;directionPicking=false;toolTap=null;
  if(drag)finishDrag({pointerId:drag.pointer},true);
  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>{e.inert=false;e.removeAttribute('inert')});
@@ -407,7 +417,7 @@ function choose(characterId){
  try{persist();send()}catch(e){pending=null;$('message').textContent='Browser-Speicherung erlauben, um die Figur zu wählen.';controls()}
 }
 const tileKinds={floor:'Steinplatten',corner:'Eckwände',single:'Eine Wand',parallel:'Gegenwände',dungeon:'Kerker',cemetery:'Friedhof',compass:'Kompass',lava:'Lava',
- 'lava-stone':'Lava / Stein',well:'Brunnen'};
+ 'lava-stone':'Lava / Stein',well:'Brunnen',portal:'Portal · 2 Kacheln'};
 let palettePage=0,dungeonMode=false;
 let paletteKind='',spawnTarget='',spawnMode=false,boardFit=false,selectedTile=null,drag=null,suppressBoardClick=false,lastTouchHandledAt=-1000;
 function isPlaying(s){return s.started&&s.ready&&(!s.setup||s.setup.stage==='play')}
@@ -489,8 +499,8 @@ function moveDrag(event){
  let edgeX=0,edgeY=0;if(!trash&&inside(r,event.clientX,event.clientY)){edgeX=event.clientX<r.left+28?-1:event.clientX>r.right-28?1:0;edgeY=event.clientY<r.top+28?-1:event.clientY>r.bottom-28?1:0;}
  if(edgeX!==d.edgeX||edgeY!==d.edgeY){clearTimeout(d.edgeTimer);d.edgeX=edgeX;d.edgeY=edgeY;if(edgeX||edgeY)d.edgeTimer=setTimeout(function scrollEdge(){if(drag!==d)return;viewport.scrollLeft+=d.edgeX*12;viewport.scrollTop+=d.edgeY*12;moveDrag(d.lastEvent);d.edgeTimer=setTimeout(scrollEdge,40)},350)}
 }
-function renderPalette(){Array.from($('tilePalette').children).forEach((b,i)=>b.hidden=Math.floor(i/5)!==palettePage);$('palettePrev').disabled=palettePage===0;$('paletteNext').disabled=palettePage===1}
-$('palettePrev').onclick=()=>{palettePage=0;renderPalette()};$('paletteNext').onclick=()=>{palettePage=1;renderPalette()};
+function renderPalette(){Array.from($('tilePalette').children).forEach((b,i)=>b.hidden=Math.floor(i/5)!==palettePage);$('palettePrev').disabled=palettePage===0;$('paletteNext').disabled=palettePage>=Math.ceil(Object.keys(tileKinds).length/5)-1}
+$('palettePrev').onclick=()=>{palettePage=Math.max(0,palettePage-1);renderPalette()};$('paletteNext').onclick=()=>{palettePage=Math.min(Math.ceil(Object.keys(tileKinds).length/5)-1,palettePage+1);renderPalette()};
 for(const [kind,label] of Object.entries(tileKinds)){
  const b=el('button',undefined,'palette-tile');b.type='button';b.dataset.kind=kind;b.setAttribute('aria-label',label+' · ins Raster ziehen oder auswählen');b.append(tileGraphic(kind),el('span',label));
  b.addEventListener('pointerdown',event=>beginDrag(event,kind,null));b.onclick=event=>{if(event.detail>0&&performance.now()-lastTouchHandledAt<700||suppressBoardClick||!canBuild())return;paletteKind=paletteKind===kind?'':kind;spawnMode=false;renderSetup(state)};$('tilePalette').append(b);

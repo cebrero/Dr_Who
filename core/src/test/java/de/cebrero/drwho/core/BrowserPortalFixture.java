@@ -2,7 +2,7 @@ package de.cebrero.drwho.core;
 import java.nio.file.*;import java.io.*;import java.time.*;import java.util.*;
 public final class BrowserPortalFixture {
  private static LocalServer open(GameEngine e,byte[] page,int port,LocalServer.Portraits portraits,Path root)throws Exception{
-  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.9.2",Map.of("/board-art.js",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.js")),"/board-art.css",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.css"))));}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
+  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.10.0",Map.of("/board-art.js",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.js")),"/board-art.css",Files.readAllBytes(root.resolve("app/src/main/assets/board-art.css"))));}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
  }
  public static void main(String[] args)throws Exception{
   Path root=Path.of(args[0]);CoreTest.MemoryStore store=new CoreTest.MemoryStore();CoreTest.Dice dice=new CoreTest.Dice();dice.face=6;
@@ -18,7 +18,7 @@ public final class BrowserPortalFixture {
    if(command.equals("START"))e.startDemo();if(command.equals("REBUILD"))e.rebuildBoard();if(command.equals("TICK")){clock.time+=3000;e.tick();}
    if(command.equals("RESTORE")){server.close();e=new GameEngine(store,dice,CharacterProfile.known(),clock,sound);server=open(e,page,port,portraits,root);}
    if(command.equals("EXIT"))break;
-   GameEngine.PortalState s=e.portalState();StringBuilder b=new StringBuilder("{\"stage\":"+GameEngine.quote(s.setupStage)+",\"preparing\":"+s.preparing+",\"tiles\":"+s.tiles.size()+",\"awaitingGo\":"+s.awaitingGo+",\"headline\":"+GameEngine.quote(s.headline)+",\"setupTitle\":"+GameEngine.quote(s.setupTitle)+",\"notices\":[");
+   GameEngine.PortalState s=e.portalState();StringBuilder b=new StringBuilder("{\"stage\":"+GameEngine.quote(s.setupStage)+",\"preparing\":"+s.preparing+",\"tiles\":"+s.tiles.size()+",\"awaitingGo\":"+s.awaitingGo+",\"headline\":"+GameEngine.quote(s.headline)+",\"setupTitle\":"+GameEngine.quote(s.setupTitle)+",\"keyEvent\":"+GameEngine.quote(s.keyEvent)+",\"notices\":[");
    for(int i=0;i<s.notices.size();i++){if(i>0)b.append(',');b.append(GameEngine.quote(s.notices.get(i).text));}b.append("],\"events\":[");for(int i=0;i<s.events.size();i++){if(i>0)b.append(',');b.append(GameEngine.quote(s.events.get(i)));}b.append("]}");System.out.println(b);System.out.flush();
   }}finally{server.close();}
  }

@@ -8,9 +8,13 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.9.2
+## Stand 0.10.0
 
-Neu in 0.9.2: identische lokale Kachelgrafiken auf Portal und Clients, Kompassdrehung am Portal,
+Neu in 0.10.0: bereitgestellter Themensong beim Abenteuerstart, TARDIS-Sound bei neuem Beitritt
+am Portal. Geheimer Portalschlüssel auf zufälligem erreichbarem Feld, Fund-Popup, goldene
+Portalanimation und gespeicherte Tasche. Portal über zwei Kacheln wieder in der elfteiligen Palette.
+
+Seit 0.9.2: identische lokale Kachelgrafiken auf Portal und Clients, Kompassdrehung am Portal,
 Koordinaten auf jedem Teilfeld (A1/B1/A2/B2, global bis AN40), Kartenzoom per +/− und Zwei-Finger-Geste sowie
 Sprung zur eigenen Figur. Aufbau-Schalter heißt Kleine Kacheln / Große Kacheln.
 
@@ -75,7 +79,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 490 Kern-/HTTP-Prüfungen und 199 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
+Validiert: 532 Kern-/HTTP-Prüfungen und 209 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -84,6 +88,8 @@ Ein realer Vier-Spieler-Hotspottest steht noch aus.
 - JDK 17, Gradle 8.13, Android SDK Platform 36 und Build Tools 35.0.0.
 - Android Gradle Plugin ist auf 8.13.2 festgelegt.
 - Projekt in Android Studio öffnen. SDK bei Bedarf über den SDK Manager installieren.
+- Vor dem Build die beiden privaten Audiodateien nach `app/src/privateAssets/audio/` wiederherstellen;
+  exakte Namen/Hashes siehe ONBOARDING Abschnitt 8g. Sie sind nicht Teil des Quellrepositorys.
 - Im Projektordner (Linux/macOS):
 
 ```sh
@@ -113,7 +119,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.9.2
+## Installationshinweis 0.10.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
@@ -180,4 +186,5 @@ nicht über einen zusätzlichen HTTP-Administrationsendpunkt.
 - `ONBOARDING.md`: zentrales Projektgedächtnis und Spielentwurf.
 - `AGENTS.md`: Hinweise für zukünftige Weiterentwicklung.
 
-Quellprojekt für ein privates Fan-Spiel; keine offiziellen Serienbilder, Videos oder Audios enthalten.
+Quellprojekt für ein privates Fan-Spiel. Die vom Nutzer bereitgestellten Originalaudios bleiben
+private Build-Beigaben und werden nur in die private APK eingebunden; Details in ONBOARDING.md.

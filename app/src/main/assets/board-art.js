@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 function tileGraphic(kind,rotation=0,closed=true,subdivisions=2){
- const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');if(kind==='portal')svg.setAttribute('preserveAspectRatio','none');
  const drawings={
   corner:'<path d="M5 94V6H94" fill="none" stroke="#28494c" stroke-width="11"/><path d="M5 94V6H94" fill="none" stroke="#d1c39a" stroke-width="3"/>',
   floor:'<path d="M12 14l12-2m48 58l12 2" stroke="#84795555" stroke-width="2"/>',

@@ -128,3 +128,15 @@
     Namen bleiben bei Kachel-/Sitzdrehung am selben Weltfeld.
     Spielerkarte: Zoom 50–300 %, Tasten und Zwei-Finger-Geste, lokale Speicherung, eigene Figur
     auffindbar. Keine Weltposition durch Ansicht ändern. Editor-Schalter Kleine/Große Kacheln.
+
+41. Ab 0.10.0 Nutzer-Audios nur privat unter app/src/privateAssets/audio/ (Git-ignoriert), aus
+    persönlichen Dateien per exaktem Namen wiederherstellen. verifyAudioAssets + Quellhash nicht
+    umgehen; OGG unkomprimiert im APK und bytegleich prüfen. Theme einmal bei Abenteuerstart,
+    TARDIS bei neuer Spieler-ID nur Lobby, kein Replay bei Polling/Laden/Resume. Audiofokus freigeben.
+42. Format 9 / Protokoll 5: geheimer Portalschlüssel beim ersten Planspeichern auf freiem erreichbarem
+    Feld. Niemals vor Fund in Snapshot/Portal/Story verraten. Bewegung sammelt atomar auf, eigener
+    bag + ackKey, persistentes Ereignis/Pending-Popup und Portalanimation. Kein Benutzen erfinden.
+    Alte gestartete Partien behalten Legacy-Zustand ohne neuen Schlüssel; neue Partie erforderlich.
+43. Portal wieder in neuer Palette (11 Typen, 5/5/1), zwei Kacheln, zusammenhängend drehen/verschieben.
+    Inventar-/Schlüssel-Recovery bei Spielerentfernung und Umbau erhalten; echte Telefon-Audio- und
+    native Animationstests offen halten, solange nur Build/Browser/Core geprüft wurden.

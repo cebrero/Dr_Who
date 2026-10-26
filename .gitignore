@@ -9,3 +9,6 @@ local.properties
 *.aab
 .DS_Store
 node_modules/
+
+# User-provided original audio is private; see ONBOARDING.md for restoration.
+app/src/privateAssets/

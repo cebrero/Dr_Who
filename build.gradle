@@ -4,7 +4,7 @@ plugins { id 'com.android.application' version '8.13.2' apply false }
 def sourceHash = {
     def digest = java.security.MessageDigest.getInstance('SHA-256')
     def sources = fileTree(projectDir) {
-        include 'app/src/main/**', 'core/src/main/**'
+        include 'app/src/main/**', 'app/src/privateAssets/**', 'core/src/main/**'
         include 'build.gradle', 'app/build.gradle', 'core/build.gradle', 'settings.gradle', 'gradle.properties'
     }.files.sort { a, b -> projectDir.toPath().relativize(a.toPath()).toString().replace('\\', '/') <=> projectDir.toPath().relativize(b.toPath()).toString().replace('\\', '/') }
     sources.each { source ->
@@ -15,7 +15,24 @@ def sourceHash = {
     }
     digest.digest().encodeHex().toString()
 }
+// These user-provided originals stay out of Git; builds must restore the exact private files.
+tasks.register('verifyAudioAssets') {
+    group = 'verification'
+    doLast {
+        def portalAudioFiles = [
+            'theme_music_12.ogg': '2d4ee018831f2e71618d22485f17149c5d1535616d85408c13bb058f042fa63f',
+            'tardis_sound.ogg': '2bfa67606f5b441fc3ce8b206a09c731ba8f1fef95d7ee055b0dbdb42c0904be'
+        ]
+        portalAudioFiles.each { name, expected ->
+            def audio = file("app/src/privateAssets/audio/${name}")
+            if (!audio.isFile()) throw new GradleException("Private Audiodatei ${name} fehlt. Wiederherstellung siehe ONBOARDING.md Abschnitt 8g.")
+            def actual = java.security.MessageDigest.getInstance('SHA-256').digest(audio.bytes).encodeHex().toString()
+            if (actual != expected) throw new GradleException("Audiodatei ${name} passt nicht zur geprüften Nutzerdatei. ONBOARDING.md Abschnitt 8g prüfen.")
+        }
+    }
+}
 tasks.register('updateOnboardingStamp') {
+    dependsOn tasks.named('verifyAudioAssets')
     group = 'documentation'
     description = 'After reviewing/updating ONBOARDING.md, record the current source hash.'
     doLast {
@@ -26,6 +43,7 @@ tasks.register('updateOnboardingStamp') {
     }
 }
 tasks.register('verifyOnboarding') {
+    dependsOn tasks.named('verifyAudioAssets')
     group = 'verification'
     description = 'Reject stale onboarding versions or unreviewed production-source changes.'
     doLast {
