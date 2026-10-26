@@ -33,6 +33,10 @@ public class MainActivity extends Activity {
     private ScrollView lobby,director,play;
     private TextView playRound,playActor,playDetail,playEvents,playPositions,playDiceLabel;
     private DiceView playDice;
+    private LinearLayout goCard;
+    private ImageView goPortrait;
+    private TextView goCharacter,goDescription,goStats,goAbilities;
+    private String goCharacterId="";
     private ImageView lobbyBackground;
     private LinearLayout playerRows;
     private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,code,gameStatus,stageStatus;
@@ -114,9 +118,12 @@ public class MainActivity extends Activity {
         LinearLayout content=padded();play=screen(content);play.setVisibility(View.GONE);
         LinearLayout top=row();top.addView(text("Dr WHO",27,WHITE),new LinearLayout.LayoutParams(0,-2,1));playRound=text("RUNDE 1",17,CYAN);top.addView(playRound);content.addView(top);
         LinearLayout turn=card(content);turn.addView(text("JETZT AM ZUG",11,MUTED));playActor=text("",25,WHITE);turn.addView(playActor);playDetail=text("",17,CYAN);turn.addView(playDetail);
+        goCard=column();turn.addView(goCard);goPortrait=new ImageView(this);goPortrait.setScaleType(ImageView.ScaleType.FIT_CENTER);goPortrait.setAdjustViewBounds(true);goCard.addView(goPortrait,new LinearLayout.LayoutParams(-1,dp(240)));
+        goCharacter=text("",23,CYAN);goDescription=text("",15,WHITE);goStats=text("",15,CYAN);goAbilities=text("",14,MUTED);
+        goCard.addView(goCharacter);goCard.addView(goDescription);goCard.addView(goStats);goCard.addView(goAbilities);goCard.setVisibility(View.GONE);
         playDiceLabel=text("Noch kein Wurf",14,MUTED);playDiceLabel.setGravity(Gravity.CENTER);turn.addView(playDiceLabel);
         playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(200)));
-        LinearLayout events=card(content);events.addView(text("DAS GESCHIEHT GERADE",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(5),1);events.addView(playEvents);
+        LinearLayout events=card(content);events.addView(text("STORY",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(5),1);events.addView(playEvents);
         LinearLayout positions=card(content);positions.addView(text("DEIN TEAM AUF DEM SPIELFELD",12,CYAN));playPositions=text("",15,WHITE);positions.addView(playPositions);
         LinearLayout actions=row();actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Spielleitung",this::showDirector),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
     }
@@ -156,11 +163,18 @@ public class MainActivity extends Activity {
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
         GameEngine.PortalState info=engine.portalState();
         playRound.setText("RUNDE "+info.round);playActor.setText(info.headline);
-        if(play.getVisibility()==View.VISIBLE){
+        goCard.setVisibility(info.awaitingGo?View.VISIBLE:View.GONE);playDice.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);playDiceLabel.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);
+        if(info.awaitingGo&&info.activeCharacter!=null){
+            CharacterProfile c=info.activeCharacter;goCharacter.setText(c.name);goDescription.setText(c.description);goStats.setText("Ausdauer: "+c.endurance+"  ·  Kraft: "+c.strength);goAbilities.setText(android.text.TextUtils.join("\n",c.abilities));
+            if(!goCharacterId.equals(c.id)){goCharacterId=c.id;goPortrait.setContentDescription(c.name+" · Charakterbild");
+                try(InputStream in=getAssets().open("portraits/"+c.id+".jpg")){goPortrait.setImageBitmap(BitmapFactory.decodeStream(in));}catch(IOException missing){goPortrait.setImageDrawable(null);}
+            }
+        }
+        if(play.getVisibility()==View.VISIBLE&&!info.awaitingGo){
             String seenKey="seen-roll-"+info.sessionId;
             playDice.showRoll(info.rollId.isEmpty()?"legacy-"+info.die:info.rollId,info.die,!info.rollId.isEmpty()&&!prefs.getString(seenKey,"").equals(info.rollId),()->{prefs.edit().putString(seenKey,info.rollId).apply();updatePortal();});
         }
-        boolean revealing=playDice.isAnimating();playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
+        boolean revealing=!info.awaitingGo&&playDice.isAnimating();playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
         playDiceLabel.setText(info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
         StringBuilder events=new StringBuilder();
         if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");

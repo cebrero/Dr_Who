@@ -3,13 +3,18 @@ package de.cebrero.drwho.core;
 import java.io.*;
 import java.security.SecureRandom;
 import java.util.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.nio.charset.StandardCharsets;
 
 /** Authoritative, deliberately small technical demo; no final character rules yet. */
 public final class GameEngine {
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 5, MAGIC = 0x4457484f;
+    private static final int FORMAT = 6, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
+    private final Clock clock;
+    private final Random flavourRandom;
     private State state;
     private final List<CharacterProfile> catalogue;
 
@@ -17,6 +22,11 @@ public final class GameEngine {
         String id, token, name, joinRequest;
         String characterId = "";
         int x, y;
+    }
+    private static final class StoryEntry {
+        String id, dateTime, speaker, playerName, text, direction;
+        long timestampMillis;
+        String display(){return (dateTime.isEmpty()?"Zeit nicht erfasst":dateTime)+" - "+speaker+": "+text;}
     }
     private static final class State {
         String id, code;
@@ -26,6 +36,8 @@ public final class GameEngine {
         List<Player> players = new ArrayList<>();
         List<String> enemies = new ArrayList<>();
         List<String> log = new ArrayList<>();
+        List<StoryEntry> story = new ArrayList<>();
+        boolean turnAccepted;
         LinkedHashSet<String> receipts = new LinkedHashSet<>();
         String phase = "players", helperId = "", attackId = "", attackEnemy = "", attackTarget = "", attackText = "";
         int enemyIndex;
@@ -38,8 +50,10 @@ public final class GameEngine {
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
     GameEngine(Store store, SecureRandom random) throws IOException { this(store, random, CharacterProfile.known()); }
     GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue) throws IOException {
-        this.store = store;
-        this.random = random;
+        this(store,random,catalogue,Clock.systemDefaultZone(),new Random());
+    }
+    GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue, Clock clock, Random flavourRandom) throws IOException {
+        this.store = store;this.random = random;this.clock = clock;this.flavourRandom = flavourRandom;
         this.catalogue = Collections.unmodifiableList(new ArrayList<>(catalogue));
         Set<String> ids = new HashSet<>();
         for (CharacterProfile profile : this.catalogue) if (!ids.add(profile.id)) throw new IllegalArgumentException("Doppelte Charakter-ID.");
@@ -48,7 +62,7 @@ public final class GameEngine {
             State initial = new State();
             initial.id = UUID.randomUUID().toString();
             initial.code = String.format(Locale.ROOT, "%06d", random.nextInt(1_000_000));
-            initial.log.add("Technikdemo bereit. Noch keine endgültigen Spielregeln.");
+            addLog(initial,"Technikdemo bereit. Noch keine endgültigen Spielregeln.");
             store.save(encode(initial));
             state = initial;
         } else state = decode(saved); // Never silently replace an unreadable save.
@@ -62,17 +76,22 @@ public final class GameEngine {
     public static final class PortalState {
         public String sessionId, rollId, rollPlayer, headline, detail;
         public int round, die;
+        public boolean awaitingGo;
+        public String activePlayerName="";
+        public CharacterProfile activeCharacter;
         public List<String> events = new ArrayList<>(), positions = new ArrayList<>();
     }
     public synchronized PortalState portalState() {
         PortalState view = new PortalState();
         view.sessionId=state.id;view.rollId=state.rollEventId;view.rollPlayer=playerName(state.rollPlayerId);
-        view.round=state.round;view.die=state.lastRoll;view.events.addAll(state.log);
+        view.round=state.round;view.die=state.lastRoll;for(StoryEntry entry:state.story)view.events.add(entry.display());
         for(Player p:state.players)view.positions.add(p.name+" · "+characterName(p.characterId)+" · Feld "+cell(p));
         if(!playing()){view.headline="Dein Team sammelt sich";view.detail="Charaktere wählen und Abenteuer starten.";}
         else if(state.phase.equals("players")){
-            Player p=state.players.get(state.current);view.headline=p.name+" · "+characterName(p.characterId);
-            view.detail="Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?"Bewegung oder Charakteraktion wählen.":"Noch "+state.remaining+" Felder ziehen.");
+            Player p=state.players.get(state.current);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
+            for(CharacterProfile c:catalogue)if(c.id.equals(p.characterId))view.activeCharacter=c;
+            view.headline=view.awaitingGo?p.name+" ist dran…":p.name+" · "+characterName(p.characterId);
+            view.detail=view.awaitingGo?"Wartet auf Go am Spielerhandy.":"Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?"Bewegung oder Charakteraktion wählen.":"Noch "+state.remaining+" Felder ziehen.");
         }else{
             view.headline=characterName(state.enemies.get(state.enemyIndex))+" · Gegnerzug";
             view.detail=state.attackPending?"Angriff auf "+playerName(state.attackTarget)+": "+state.attackText:!state.helperId.isEmpty()?playerName(state.helperId)+" bewegt die Gegnerfigur.":"Gegneraktion an der Spielleitung festlegen.";
@@ -95,7 +114,7 @@ public final class GameEngine {
         if (playing()) {
             if (state.phase.equals("players")) {
                 b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
-                b.append(state.turnStage.equals("roll") ? "Zuerst am eigenen Handy würfeln." : state.turnStage.equals("choice") ?
+                b.append(!state.turnAccepted ? "Wartet auf Go am Spielerhandy." : state.turnStage.equals("roll") ? "Zuerst am eigenen Handy würfeln." : state.turnStage.equals("choice") ?
                     "Wurf " + state.turnRoll + ": Bewegung oder Aktion wählen." : "Noch " + state.remaining + " Felder ziehen.").append('\n');
             }
             else {
@@ -138,7 +157,7 @@ public final class GameEngine {
         if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
         if (state.started) return;
         State next = copy(); next.started = true;
-        addLog(next, "Spiel gestartet: zuerst würfeln; 1–4 ziehen, bei 5/6 Bewegung oder Aktion wählen.");
+        addLog(next, "Spiel gestartet: zuerst Go bestätigen und würfeln; 1–4 ziehen, bei 5/6 Bewegung oder Aktion wählen.");
         commit(next);
     }
     public synchronized String snapshot(String token) {
@@ -149,7 +168,7 @@ public final class GameEngine {
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
             .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append("}")
             .append(",\"turn\":{\"stage\":").append(quote(state.turnStage)).append(",\"roll\":").append(state.turnRoll)
-            .append(",\"remaining\":").append(state.remaining).append("}")
+            .append(",\"remaining\":").append(state.remaining).append(",\"accepted\":").append(state.turnAccepted).append("}")
             .append(",\"you\":").append(quote(self.id)).append(",\"phase\":").append(quote(state.phase))
             .append(",\"helperId\":").append(quote(state.helperId)).append(",\"movementDone\":").append(state.movementDone)
             .append(",\"activeEnemy\":").append(quote(state.phase.equals("enemies") ? state.enemies.get(state.enemyIndex) : ""))
@@ -170,7 +189,7 @@ public final class GameEngine {
             b.append("{\"id\":").append(quote(c.id)).append(",\"name\":").append(quote(c.name))
                 .append(",\"description\":").append(quote(c.description)).append(",\"endurance\":").append(quote(c.endurance))
                 .append(",\"strength\":").append(quote(c.strength)).append(",\"portrait\":").append(quote(c.portrait))
-                .append(",\"owner\":").append(quote(owner)).append(",\"enemy\":").append(state.enemies.contains(c.id)).append(",\"abilities\":[");
+                .append(",\"actionNeedsDirection\":").append(c.actionNeedsDirection).append(",\"owner\":").append(quote(owner)).append(",\"enemy\":").append(state.enemies.contains(c.id)).append(",\"abilities\":[");
             for (int j = 0; j < c.abilities.size(); j++) { if (j > 0) b.append(','); b.append(quote(c.abilities.get(j))); }
             b.append("]}");
         }
@@ -180,6 +199,14 @@ public final class GameEngine {
         }
         b.append("],\"log\":[");
         for (int i = 0; i < state.log.size(); i++) { if (i > 0) b.append(','); b.append(quote(state.log.get(i))); }
+        b.append("],\"story\":[");
+        for(int i=0;i<state.story.size();i++){
+            StoryEntry e=state.story.get(i);if(i>0)b.append(',');
+            b.append("{\"id\":").append(quote(e.id)).append(",\"timestampMillis\":").append(e.timestampMillis)
+                .append(",\"dateTime\":").append(quote(e.dateTime)).append(",\"speaker\":").append(quote(e.speaker))
+                .append(",\"playerName\":").append(quote(e.playerName)).append(",\"text\":").append(quote(e.text))
+                .append(",\"direction\":").append(quote(e.direction)).append('}');
+        }
         return b.append("]}").toString();
     }
     public synchronized String command(String token, String requestId, long revision, String action, String direction) throws IOException {
@@ -191,7 +218,7 @@ public final class GameEngine {
         if ("confirmMovement".equals(action)) {
             if (!playing() || !state.phase.equals("enemies") || !actor.id.equals(state.helperId)) throw new IllegalArgumentException("Du wurdest nicht für diese Bewegung ausgewählt.");
             State next = copy(); next.helperId = ""; next.movementDone = true;
-            addLog(next, actor.name + " hat die Gegnerbewegung auf dem Tisch bestätigt."); remember(next, receipt); commit(next); return snapshot(token);
+            addSpeech(next,actor.name+" hat die Gegnerbewegung auf dem Tisch bestätigt.",actor.characterId,actor.name,"Ich habe die Gegnerfigur auf dem Tisch bewegt.",""); remember(next, receipt); commit(next); return snapshot(token);
         }
         if ("ackAttack".equals(action)) {
             if (!state.attackPending || !actor.id.equals(state.attackTarget)) throw new IllegalArgumentException("Kein Angriff zur Bestätigung.");
@@ -199,6 +226,14 @@ public final class GameEngine {
         }
         if (!playing() || !state.phase.equals("players") || !actor.id.equals(state.players.get(state.current).id))
             throw new IllegalArgumentException("Du bist gerade nicht am Zug.");
+        if("beginTurn".equals(action)){
+            if(!state.turnStage.equals("roll"))throw new IllegalArgumentException("Dieser Zug hat bereits begonnen.");
+            if(state.turnAccepted)return snapshot(token);
+            State next=copy();next.turnAccepted=true;Player p=next.players.get(next.current);
+            addSpeech(next,p.name+" bestätigt Go.",p.characterId,p.name,"Ich bin bereit. Meine Reise geht weiter.","");
+            remember(next,receipt);commit(next);return snapshot(token);
+        }
+        if(!state.turnAccepted)throw new IllegalArgumentException("Zuerst mit Go deinen Zug beginnen.");
         State next = copy(); Player p = next.players.get(next.current);
         boolean finished = false;
         switch (action == null ? "" : action) {
@@ -218,7 +253,8 @@ public final class GameEngine {
                     throw new IllegalArgumentException("Dieses Feld ist belegt.");
                 String from = cell(p); p.x = x; p.y = y;
                 next.remaining--;
-                addLog(next, p.name + " zieht von " + from + " nach " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.");
+                addSpeech(next, p.name + " zieht von " + from + " nach " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.",
+                    p.characterId,p.name,(p.characterId.equals("dalek")?"Ich rolle":"Ich gehe")+" von Feld "+from+" zu Feld "+cell(p)+". Noch "+next.remaining+" Felder liegen vor mir.",direction);
                 finished = next.remaining == 0;
                 break;
             case "roll":
@@ -227,16 +263,23 @@ public final class GameEngine {
                 next.rollEventId = UUID.randomUUID().toString(); next.rollPlayerId = p.id;
                 next.turnRoll = next.lastRoll; next.remaining = next.turnRoll;
                 next.turnStage = next.turnRoll >= 5 ? "choice" : "move";
-                addLog(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."));
+                addSpeech(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."),
+                    p.characterId,p.name,"Ich würfle eine "+next.turnRoll+". "+(next.turnRoll>=5?"Ich kann Bewegung oder Aktion wählen.":"Ich ziehe genau so viele Felder."),"");
                 break;
             case "chooseMove":
                 if (!next.turnStage.equals("choice")) throw new IllegalArgumentException("Keine Bewegungswahl offen.");
                 next.turnStage = "move";
-                addLog(next, p.name + " wählt Bewegung um genau " + next.turnRoll + " Felder.");
+                addSpeech(next,p.name+" wählt Bewegung um genau "+next.turnRoll+" Felder.",p.characterId,p.name,"Ich entscheide mich für "+next.turnRoll+" Felder Bewegung.","");
                 break;
             case "action":
                 if (!next.turnStage.equals("choice") || next.turnRoll < 5) throw new IllegalArgumentException("Eine Aktion steht nur statt Bewegung bei einer 5 oder 6 zur Wahl.");
-                addLog(next, p.name + " wählt eine Charakteraktion (Techniktest: Auswahl gespeichert, Wirkung noch nicht berechnet).");
+                CharacterProfile acting=profile(p.characterId);
+                String selectedDirection=direction==null?"":direction;
+                if(acting.actionNeedsDirection||!selectedDirection.isEmpty())directionName(selectedDirection);
+                String actionText=p.characterId.equals("doctor")?"Ich richte meinen Schallschraubenzieher":p.characterId.equals("dalek")?"Ich richte meinen Strahl":p.characterId.equals("weeping-angel")?"Ich richte meine Fähigkeit":"Ich wähle eine Charakteraktion";
+                if(!selectedDirection.isEmpty())actionText+=" nach "+directionName(selectedDirection);
+                addSpeech(next,p.name+" wählt eine Charakteraktion"+(selectedDirection.isEmpty()?"":" nach "+directionName(selectedDirection))+" (Techniktest: Auswahl gespeichert, Wirkung noch nicht berechnet).",
+                    p.characterId,p.name,actionText+". Auswahl gespeichert; die Wirkung ist noch nicht festgelegt.",selectedDirection);
                 finished = true;
                 break;
             default: throw new IllegalArgumentException("Unbekannte Aktion.");
@@ -247,7 +290,7 @@ public final class GameEngine {
         return snapshot(token);
     }
     private static void endPlayerTurn(State next) {
-        next.turnStage = "roll"; next.turnRoll = 0; next.remaining = 0;
+        next.turnStage = "roll"; next.turnRoll = 0; next.remaining = 0; next.turnAccepted = false;
         next.current = (next.current + 1) % next.players.size();
         if (next.current == 0) {
             if (next.enemies.isEmpty()) next.round++;
@@ -288,7 +331,7 @@ public final class GameEngine {
         if (text.isEmpty() || text.length() > 400 || text.codePoints().anyMatch(c -> Character.isISOControl(c) && c != '\n')) throw new IllegalArgumentException("Angriffsfolge: 1–400 Zeichen.");
         State next = copy(); next.attackId = UUID.randomUUID().toString(); next.attackEnemy = next.enemies.get(next.enemyIndex);
         next.attackTarget = targetId; next.attackText = text; next.attackPending = true;
-        addLog(next, characterName(next.attackEnemy) + " → " + playerName(targetId) + ": " + text); commit(next);
+        addSpeech(next,characterName(next.attackEnemy)+" → "+playerName(targetId)+": "+text,next.attackEnemy,"","Ich greife "+playerName(targetId)+" an. "+text,""); commit(next);
     }
     public synchronized void finishEnemyTurn() throws IOException {
         requireEnemyTurn();
@@ -317,7 +360,7 @@ public final class GameEngine {
         State next = copy();
         for (Player p : next.players) if (p.id.equals(actor.id)) p.characterId = characterId;
         remember(next, receipt);
-        addLog(next, actor.name + " wählt " + characterName(characterId) + " · Partner.");
+        addSpeech(next,actor.name+" wählt "+characterName(characterId)+" · Partner.",characterId,actor.name,"Ich begleite "+actor.name+" auf dieser Reise.","");
         commit(next); return snapshot(token);
     }
     public synchronized List<CharacterProfile> availableEnemies() {
@@ -350,8 +393,17 @@ public final class GameEngine {
         if (token != null) for (Player p : s.players) if (p.token.equals(token)) return p;
         throw new SecurityException("Bitte mit Portalcode anmelden.");
     }
-    private static void addLog(State s, String text) {
-        s.log.add(text); while (s.log.size() > 60) s.log.remove(0);
+    private static String directionName(String value){
+        switch(value){case "N":return "Norden";case "E":return "Osten";case "S":return "Süden";case "W":return "Westen";default:throw new IllegalArgumentException("Bitte eine Richtung wählen: Nord, Ost, Süd oder West.");}
+    }
+    private void addLog(State s,String text){addSpeech(s,text,"","",text,"");}
+    private void addSpeech(State s,String legacy,String characterId,String playerName,String text,String direction){
+        s.log.add(legacy);while(s.log.size()>60)s.log.remove(0);
+        StoryEntry e=new StoryEntry();e.id=UUID.randomUUID().toString();e.timestampMillis=clock.millis();
+        e.dateTime=DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm 'Uhr'",Locale.GERMAN).format(Instant.ofEpochMilli(e.timestampMillis).atZone(clock.getZone()));
+        e.speaker=characterId.isEmpty()?"Portal":characterId.equals("doctor")?"Dr WHO":characterName(characterId);e.playerName=playerName;e.direction=direction;
+        if(characterId.equals("dalek")&&flavourRandom.nextInt(4)==0){String[] sounds={"Knarz … grrr.","Grrr … knarz.","Krrr … grrr."};text+=" "+sounds[flavourRandom.nextInt(sounds.length)];}
+        e.text=text;s.story.add(e);while(s.story.size()>60)s.story.remove(0);
     }
     private State copy() throws IOException { return decode(encode(state)); }
     private void commit(State next) throws IOException {
@@ -375,6 +427,8 @@ public final class GameEngine {
         out.writeUTF(s.attackId); out.writeUTF(s.attackEnemy); out.writeUTF(s.attackTarget); out.writeUTF(s.attackText); out.writeBoolean(s.attackPending);
         out.writeUTF(s.turnStage); out.writeInt(s.turnRoll); out.writeInt(s.remaining);
         out.writeUTF(s.rollEventId); out.writeUTF(s.rollPlayerId);
+        out.writeBoolean(s.turnAccepted);out.writeInt(s.story.size());
+        for(StoryEntry e:s.story){out.writeUTF(e.id);out.writeLong(e.timestampMillis);out.writeUTF(e.dateTime);out.writeUTF(e.speaker);out.writeUTF(e.playerName);out.writeUTF(e.text);out.writeUTF(e.direction);}
         out.flush(); return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -406,6 +460,20 @@ public final class GameEngine {
         }
         if (format >= 4) { s.turnStage = in.readUTF(); s.turnRoll = in.readInt(); s.remaining = in.readInt(); }
         if (format >= 5) { s.rollEventId = in.readUTF(); s.rollPlayerId = in.readUTF(); }
+        if(format>=6){
+            s.turnAccepted=in.readBoolean();int entries=count(in,60);
+            for(int i=0;i<entries;i++){
+                StoryEntry e=new StoryEntry();e.id=in.readUTF();e.timestampMillis=in.readLong();e.dateTime=in.readUTF();e.speaker=in.readUTF();e.playerName=in.readUTF();e.text=in.readUTF();e.direction=in.readUTF();
+                if(!e.id.matches("[a-f0-9-]{36}")||e.timestampMillis<0||e.dateTime.length()>80||e.speaker.length()>128||e.playerName.length()>24||e.text.length()>4000||!e.direction.matches("[NESW]?"))throw new IOException("Ungültiger Story-Eintrag.");
+                s.story.add(e);
+            }
+        }else{
+            s.turnAccepted=!s.turnStage.equals("roll");
+            for(int i=0;i<s.log.size();i++){
+                StoryEntry e=new StoryEntry();e.id=UUID.nameUUIDFromBytes((s.id+":"+i+":"+s.log.get(i)).getBytes(StandardCharsets.UTF_8)).toString();e.timestampMillis=0;e.dateTime="";e.speaker="Archiv";e.playerName="";e.text=s.log.get(i);e.direction="";s.story.add(e);
+            }
+        }
+        if((!s.turnAccepted&&!s.turnStage.equals("roll"))||(s.phase.equals("enemies")&&s.turnAccepted))throw new IOException("Ungültige Zugbestätigung.");
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
             s.turnStage.equals("choice") && s.turnRoll >= 5 && s.turnRoll <= 6 && s.remaining == s.turnRoll ||
             s.turnStage.equals("move") && s.turnRoll >= 1 && s.turnRoll <= 6 && s.remaining >= 1 && s.remaining <= s.turnRoll;

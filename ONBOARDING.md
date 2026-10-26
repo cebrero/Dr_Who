@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **25.10.2026 · Version 0.6.0 · Spieler-Tabs, vollständiger Steckbrief und korrekte Würfellandung**
-<!-- app-version: 0.6.0 -->
-<!-- reviewed-source-sha256: c7711e9ea1a080e2415bcb48206fa3b46b9f70593a42439691fee123edf9b0c9 -->
+Stand: **26.10.2026 · Version 0.7.0 · Your move / Go, gerichtete Aktionen und gespeicherte Story**
+<!-- app-version: 0.7.0 -->
+<!-- reviewed-source-sha256: 8db956cdce726349afe9053a391c78f0f494d772986ab10f329823d3c4e903bf -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.3.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.7.0
 
 ### Vor der Partie
 
@@ -121,8 +121,9 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.3.0 |
+| Schritt | Regel | Umsetzung 0.7.0 |
 | --- | --- | --- |
+| 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
 | 2a | Bei 1, 2, 3 oder 4: genau diese Zahl Felder ziehen | Direkt zur Bewegung; dies ist die aus der Nutzerregel abgeleitete Interpretation |
 | 2b | Bei 5 oder 6: Bewegung ODER Charakteraktion wählen | Zwei Auswahlmöglichkeiten; kein Bewegen plus Aktion |
@@ -135,7 +136,9 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 Im Prototyp ist die 5/6-Entscheidung verbindlich, sobald „Bewegen“ gewählt wurde. Während
 angefangener Bewegung kann nicht nachträglich zur Aktion gewechselt werden. Das ist eine
 technische Festlegung für klare Zustände; ein späterer Zurück-/Planungsmodus ist noch offen.
-Die aktuelle Taste „Aktion wählen · Techniktest“ beendet den Zug nach protokollierter Wahl,
+Die aktuelle Taste „Aktion wählen · Techniktest“ öffnet bei den drei bekannten gerichteten
+Fähigkeiten zuerst die Richtungsauswahl Nord/Ost/Süd/West. Erst die gesendete Richtungswahl
+beendet den Zug; Abbrechen verbraucht nichts. Gespeichert wird weiterhin nur die Auswahl,
 ohne eine Tür zu öffnen, Schaden zu verursachen oder einen Status anzuwenden. Das ist eine
 klar gekennzeichnete Übergangslösung, keine fertig implementierte Sonderfähigkeit.
 
@@ -302,12 +305,14 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 5, ältere Formate
-1, 2, 3 und 4 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Demo-Spielstand (Format 6, ältere Formate
+1, 2, 3, 4 und 5 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Demo-Koordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
-Würfelereignis-ID und zugehöriger Spieler-ID, Zustandsrevision, 60 Protokollzeilen und den letzten 128 Anfragequittungen. Android `AtomicFile`
+Würfelereignis-ID und zugehöriger Spieler-ID, Go-Bestätigung, Zustandsrevision, 60 Protokollzeilen
+und 60 strukturierte Story-Einträge (Zeitstempel, gespeicherte Datumsanzeige, Sprecher, Spieler,
+Aussage, Richtung) und den letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
@@ -528,7 +533,78 @@ Installation hat eine neue Partie-ID. Gleiche App-Version bedeutet nicht dieselb
   Portal-Würfelanimation wurde nicht geändert. Frame-Rate auf tatsächlichen Android-Spielerhandys
   ist weiter zu prüfen; mobiles Chromium ersetzt keinen Hardwaretest.
 
-## 9. Technische Grundlage 0.6.0
+### Your move / Go, gerichtete Aktionen und Story ab 0.7.0 (26.10.2026)
+
+**Neue verbindliche Nutzerwünsche:**
+
+1. Zu Beginn jedes menschlichen Spielerzugs Popup **Your move...** mit **Go**. Auf dem Portal
+   wartet die Charakterkarte (Bild, Beschreibung, Ausdauer/Kraft, Fähigkeiten) mit **Spielername
+   ist dran…**. Erst nach bestätigtem Go verschwindet die Karte und beginnt die normale Zugbedienung.
+2. **Was passiert ist** heißt überall **Story**, auch im Portal-Verlauf. Neue Einträge beginnen
+   mit Datum/Uhrzeit und Sprecher, z. B. `20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1 zu Feld A2.`
+   Charaktere sprechen in erster Person; Daleks erhalten gelegentlich zufällige Geräusche im Text.
+3. Richtungsabhängige Aktionen öffnen ein weiteres Popup mit Nord/Ost/Süd/West. Vor dem Senden
+   kann der Spieler abbrechen. Noch nicht vereinbarte Reichweiten, Sichtwinkel und Wirkungen werden
+   dadurch nicht automatisch zu fertigen Regeln.
+
+**Tatsächliche Umsetzung:**
+
+- `beginTurn` ist eine authentisierte, ausschließlich für den aktuellen Spieler erlaubte Aktion.
+  `turn.accepted` wird am Host vor der Antwort atomisch gespeichert. Ohne Go lehnt der Host
+  Würfeln, Bewegung und Aktionswahl ab; Gegnerhilfe und Angriffsbestätigung bleiben eigene Abläufe.
+  Go selbst kostet keine Bewegung/Aktion und schaltet nicht zum nächsten Spieler weiter.
+- Jeder nächste menschliche Zug setzt Go zurück. Wiederholte/parallel gesendete Anfrage-IDs
+  bestätigen nur einmal; kein doppelter Story-Eintrag. Bereits bestätigtes Go bleibt nach Neustart
+  bestätigt. Vorhandene Spielstände mitten in Bewegung oder 5/6-Wahl werden ohne zusätzliches
+  Go fortgesetzt; alte wartende Würfelzüge benötigen beim Fortsetzen erstmals die Bestätigung.
+- Das Go-Popup wird nicht automatisch geschlossen, sondern folgt dem gespeicherten Hostzustand.
+  Hintergrund ist gesperrt, Fokus bleibt im Popup. Bei verlorener Bestätigung kann **Go** denselben
+  gespeicherten Auftrag erneut senden. Keine neue Anfrage für denselben unbestätigten Versuch.
+- Doctor, Dalek und Weinender Engel haben im Katalog `actionNeedsDirection=true`. Die vier
+  Richtungstasten senden die gewählte Richtung mit der gespeicherten Aktionsanfrage. Host prüft
+  fehlende/ungültige Richtungen. Abbrechen/Escape vor Auswahl verändert nichts. Bei unbestätigter
+  gesendeter Richtung bleibt nur Retry derselben Aktion möglich, keine zweite andere Auswahl.
+  Türen, Treffer, Schaden, Reichweiten und Engelstatus sind weiterhin nicht berechnet.
+- Story wird am Host erzeugt und in Speicherformat **6** persistiert: Ereignis-ID, Epoch-Millis,
+  fertig formatierte Ortszeit des Portal-Handys (`dd.MM.yyyy HH:mm Uhr`), Sprecher, zugehöriger
+  Spielername, Aussage und Richtung. Clients formatieren weder Datum noch Zufall neu. **Dr WHO**
+  ist der Story-Sprecher des Doctors; weitere Sprecher heißen wie die bekannten Figuren oder Portal.
+- Bewegungen nutzen die tatsächlich bekannten Feldnamen A1–F6. Räume/Raumnamen folgen erst
+  mit Inventar/Brettmodell; keine Räume xx/yy erfinden. Aktionen benennen die gewählte Richtung
+  und kennzeichnen, dass ihre eigentliche Wirkung noch aussteht.
+- Dalek-Geräusche werden mit einem eigenen kosmetischen Zufallsgenerator bei einem Viertel
+  seiner Aussagen aus drei Varianten gewählt. Dieser Generator verändert weder W6 noch Helferwahl.
+  Bereits gewählte Aussage und Uhrzeit werden gespeichert und bleiben bei Retry/Neuladen identisch.
+- Alle bis zu 60 gespeicherten Story-Einträge sind im aufklappbaren Story-Tab abrufbar, neueste
+  zuerst. Der sichtbare Verlauf wird bei unverändertem Inhalt nicht ständig neu aufgebaut.
+  Während der Würfelinszenierung wird keine neue Ergebnis-Aussage vorzeitig aufgedeckt.
+- Frühere Protokolle hatten keine Uhrzeiten. Beim Lesen von Format 1–5 bleiben diese ehrlich als
+  **Zeit nicht erfasst - Archiv** erhalten; keine rückdatierten oder erfundenen Zeitstempel.
+  Spielstanddatei bleibt `session-v1.drw`, nun Inhaltformat 6. Format 1–5 bleibt lesbar.
+- API-Protokoll ist jetzt **2**, App-Version **0.7.0 / Code 9**. Alte Seiten bekommen den bereits
+  vorhandenen Neuladen-Hinweis. Browser-Anmeldung und Spielstand bleiben bei normalem APK-Update
+  erhalten. Die private Signierung von 0.5.0 wird wiederverwendet, nicht deinstallieren.
+
+### Beobachtung drwho.local am Portal-Handy (26.10.2026)
+
+Der Nutzer konnte den Client auf dem APK-Handy selbst per IP öffnen, jedoch nicht per
+`drwho.local`. Vollständige eingegebene Adresse, Port, Android-Version und aktive Netzroute sind
+nicht bekannt; **Ursache nicht abschließend diagnostiziert**. Kein angeblich behobenes DNS-Problem
+behaupten. IP-Erreichbarkeit bestätigt allein nicht die Namensauflösung.
+
+- App bindet Port 80 oder 8080 und kündigt den lokalen Namen per JmDNS auf der lokalen
+  Schnittstelle an. Vollständiges `http://` und tatsächlich angezeigten Port verwenden;
+  bei 8080 also `http://drwho.local:8080`, nicht den nackten Namen ohne Port.
+- Android löst `.local` per mDNS auf; Mobilfunk und VPN sind laut AOSP davon ausgeschlossen.
+  Auf dem Hotspot-Handy kann die Resolver-/Netzroute deshalb relevant sein. Das ist eine mögliche,
+  keine am Nutzergerät nachgewiesene Ursache. Multicast/Hotspot-/Browserverhalten bleibt Gerätetest.
+- Auf demselben Handy ist `http://127.0.0.1` mit dem tatsächlichen Port ein Test-Ausweichweg;
+  auf fremden Spielerhandys stattdessen die am Portal angezeigte IP oder den Seiten-QR verwenden.
+- Browseranmeldungen gehören zu ihrem Ursprung: Zwischen Name, IP und Loopback wechseln kann
+  einen weiteren Spielerplatz benötigen. Für eine laufende Partie dieselbe Adresse beibehalten.
+- Referenz geprüft 26.10.2026: https://source.android.com/docs/core/ota/modular-system/dns-resolver
+
+## 9. Technische Grundlage 0.7.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -543,7 +619,7 @@ Installation hat eine neue Partie-ID. Gleiche App-Version bedeutet nicht dieselb
   beigetretenen Spieler kann der Spielleiter starten. Charakterwechsel vor Start ist möglich;
   die vorherige Figur wird erst nach erfolgreichem Speichern der neuen Wahl freigegeben.
 - Freies 6×6-Technikfeld A1–F6: orthogonale Einzelschritte, kein Stapeln, keine Wände.
-- Jeder Zug beginnt mit einem gespeicherten W6. Bei 1–4 direkt bewegen, bei 5/6
+- Jeder menschliche Zug wartet zunächst auf gespeichertes Go, danach folgt der W6. Bei 1–4 direkt bewegen, bei 5/6
   Bewegung oder Aktionswahl. Bewegung endet erst nach genau der gewürfelten Schrittzahl.
 - Kein freies Passen und kein zweiter Wurf innerhalb desselben Zugs. Die Aktionswahl ersetzt
   die Bewegung; derzeit wird nur die Wahl protokolliert, keine Wirkung berechnet. Keine Missionswertung.
@@ -586,6 +662,29 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.7.0 am 26.10.2026:
+
+- `bash scripts/test-core.sh`: **309 Prüfungen bestanden**. Neue Fälle: Go vor Spielhandlungen,
+  falscher Spieler, Speicherfehler, Go-Retry/Neustart, nächste Person wartet, Formate 1–5 inklusive
+  fortgesetzter Bewegung, feste Host-Ortszeit, archivierte Altzeilen ohne erfundene Zeit, separater
+  kosmetischer Zufall, gespeicherter Dalek-Text, Story-Begrenzung sowie alle 4 Richtungen für die
+  3 bekannten Charaktere einschließlich ungültiger Eingaben und idempotenter Wiederholung.
+- `npm test`: **125 DOM-Prüfungen bestanden**. Neu: exakter Go-Popuptext, Fokus/Hintergrundsperre,
+  kein automatischer Zugstart, Retry im Popup, Story-Präfix und sichere Textausgabe, archivierte
+  Aussagen, Richtungsauswahl/Abbrechen/Escape, kein Verbrauch vor Richtung, unbestätigte Aktion
+  ohne Richtungswechsel und gezielter Go-Hinweis nur beim aktuellen Spieler.
+- Zwei echte mobile Chromium-Clients mit dem echten Java-HTTP-Server getestet: exklusive Figuren,
+  Portal-Kartenstatus vor/nach Go, Server blockiert Würfeln vor Go, Go über Server-Neustart und
+  Browser-Neuladen erhalten, animierter gespeicherter W6, gerichtete Doctor-Aktion samt Abbruch,
+  erster-Person-Story mit Zeitstempel, Dalek-Geräusche, sechs Bewegungen und nächster Go-Dialog.
+  Screenshots der beiden Popups und Story betrachtet, keine JavaScript-Fehler.
+- Android `:app:clean :core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**,
+  erneut **309 Kernprüfungen bestanden**, Lint **0 Fehler / 15 Warnungen**. App 0.7.0 / Code 9.
+- Bisherigen privaten Signierschlüssel aus der gesicherten Datei wiederhergestellt; APK-Zertifikat
+  entspricht **0.5.x/0.6.0**, direktes Update ohne Deinstallation möglich. Anleitung vor Übergabe
+  erneut als APK-Asset übernehmen. Native Portal-Karte und reales WLAN/mDNS noch nicht auf einem
+  echten Telefon getestet.
 
 Für 0.6.0 am 25.10.2026:
 
@@ -733,8 +832,8 @@ löscht dabei ihren Spielstand; eine komfortable Export-/Importfunktion ist noch
 | 25.10.2026 | 0.4.0 | Grafische Portal-Lobby mit drehender TARDIS/Charakterporträts; einfache WLAN-Einrichtung, echter mDNS-Hostname, Port-80-Versuch mit 8080-Fallback, WLAN-/Seiten-QR und Code-Vorbelegung |
 | 25.10.2026 | 0.5.0 | Statischer Doctor-Who-Hintergrund statt Lobby-Animation; aufgeräumte Starttexte, Portalcode, Dr. Who/Version auf Spielerhandys, öffentliche reine Belegungsanzeige, wischbares Steckbrief-Karussell, realistischere generierte Porträts, TARDIS-Launcher-Icon, automatische Portal-Spielübersicht und 2,6 Sekunden Würfelinszenierung mit persistenten Ereignissen (Format 5) |
 | 25.10.2026 | 0.5.1 | Automatischer Versions-/Protokoll-/Partieabgleich; ungültige Anmeldung führt zurück zum Beitritt, Metadaten ohne Token, kein Übertragen alter Aktionen und Schutz vor verspäteten alten Antworten; gleicher Signierschlüssel wie 0.5.0 |
-
 | 25.10.2026 | 0.6.0 | Drei Spieler-Tabs und aufklappbarer Verlauf; sichtbare Zughinweise, Steckbrief als Warteansicht mit vollständigem Bild; sechs feste Würfelseiten und Landedrehung passend zum gespeicherten Ergebnis ohne Zahlentausch |
+| 26.10.2026 | 0.7.0 | Gespeicherter Zugstart Your move... / Go mit Portal-Charakterkarte, gerichtete Aktionen per Popup, Story mit Host-Zeitstempeln und Sprecher in erster Person sowie einmalig gespeicherter Dalek-Klangtext; Format 6 / Protokoll 2 |
 
 ## 13. Fortsetzung in einem anderen Chat
 
@@ -805,5 +904,8 @@ ein statischer Hintergrund die Animation auf der Portal-Startseite; der neue Wun
 - AGP 8.13-Kompatibilität: https://developer.android.com/build/releases/agp-8-13-0-release-notes
 - Gradle 8.13: https://docs.gradle.org/8.13/release-notes.html
 
+- Android-mDNS-Resolver: https://source.android.com/docs/core/ota/modular-system/dns-resolver
+
 Diese Quellen betreffen Technik; die vorgeschlagenen Spielregeln sind eigene Entwürfe und keine
 offiziellen Doctor-Who-Spielregeln.
+

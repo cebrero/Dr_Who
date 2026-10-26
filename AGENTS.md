@@ -23,7 +23,7 @@
     Nicht behaupten, eine lokale Browserseite könne gesperrte Telefone fernentsperren.
 11. Charakterfotos und endgültige Ausdauer-/Kraftwerte fehlen noch. Platzhalter klar
     kennzeichnen; keine zusätzlichen Serienfiguren oder Spielwerte ohne Abstimmung erfinden.
-12. Jeder Spielerzug beginnt mit W6 am eigenen Gerät. 1–4: exakt Augenzahl ziehen;
+12. Seit 0.7.0 startet jeder Spielerzug nach Popup Your move... / Go, danach W6 am eigenen Gerät. 1–4: exakt Augenzahl ziehen;
     5/6: genau diese Bewegung ODER Charakteraktion. Orthogonal, Richtungswechsel erlaubt.
     Kein freies Passen. Blockierte Wege und Feldwiederholungen sind noch offene Regeln.
 13. VOR JEDEM BUILD ONBOARDING.md inhaltlich auf aktuellen Ablauf/Regeln/Stand/Version
@@ -60,8 +60,20 @@
     CLIENT_VERSION im Browser muss zur App-Version passen; Host nutzt BuildConfig.
 22. Für jeden Build ab 0.5.0 den gesicherten privaten Signierschlüssel wiederverwenden und
     Zertifikat vor APK-Ausgabe vergleichen. Normales Update ohne Deinstallation ermöglichen.
-23. Seit 0.6.0 Spieler-Tabs Spiel/Steckbrief/Was passiert ist. Verlauf auf-/zuklappbar;
+23. Seit 0.6.0 Spieler-Tabs Spiel/Steckbrief/Story (bis 0.6.0 Was passiert ist). Verlauf auf-/zuklappbar;
     Tab-/Aufklappauswahl bei Polling erhalten. Oben deutlicher Zughinweis; eigener Zug/neuer
     Auftrag öffnet Spiel, Warten standardmäßig eigenen Steckbrief. Vollständiges Bild ohne Crop.
     Würfel muss auf gespeicherter Augenzahl landen: sechs feste Seiten, passende Orientierung,
     keine anderen Augen nach Animation einblenden. Keine Deckkraftanimation auf dem 3D-Würfel.
+24. Seit 0.7.0 vor jedem menschlichen Zug Go am eigenen Client verlangen und hostseitig
+    speichern. Portal zeigt bis Go die Charakterkarte mit Spielername ist dran…. Nach Neustart
+    keine bereits bestätigte Freigabe verlieren; nächste Person muss neu bestätigen.
+25. Story mit gespeicherter Host-Ortszeit, Sprecher/Spieler, Ich-Aussage und Richtung. Dalek-
+    Geräusche einmalig aus separatem kosmetischem Zufall; niemals beim Anzeigen neu auswürfeln.
+    Alte Protokolle ohne Zeit ausdrücklich Archiv nennen. Keine fiktiven Räume erfinden.
+26. Gerichtete Aktion: erst Nord/Ost/Süd/West-Popup, vor Auswahl abbrechbar. Nach unbestätigtem
+    Senden nur identischer Retry. Vorhandene Aktionswirkungen bleiben Techniktest. Format 6,
+    alte Formate 1–5 lesen; API-Protokoll 2 erfordert Neuladen alter Spieleroberflächen.
+27. drwho.local auf dem Portal-Handy ist beim Nutzer nicht auflösbar gewesen, IP funktioniert.
+    Vollständige URL/Port und mDNS-/Netzroute prüfen. Ohne Gerätetest keine konkrete Ursache
+    oder universelle Namensauflösung behaupten; IP-/QR-Ausweichweg erhalten.

@@ -88,7 +88,7 @@ public final class LocalServer implements Closeable {
                     json(out, 200, engine.lobbyStatus()); return;
                 }
                 if (method.equals("GET") && path.equals("/api/info")) {
-                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":1,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
+                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":2,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
                 }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";

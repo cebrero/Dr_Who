@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.regex.*;
+import java.time.*;
 
 /** No test dependencies: runs on JDK 17 and in Gradle via :core:smokeTest. */
 public final class CoreTest {
@@ -47,8 +48,9 @@ public final class CoreTest {
     static String ready(GameEngine e, String name, String character) throws Exception {
         String token = join(e,name); e.chooseCharacter(token,id(),character); return token;
     }
+    static void begin(GameEngine e,String token)throws Exception{e.command(token,id(),revision(e.snapshot(token)),"beginTurn","");}
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -69,7 +71,7 @@ public final class CoreTest {
         rejects(IllegalArgumentException.class, () -> e.command(b,id(),revision(e.snapshot(b)),"roll",""));
         rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"move","N"));
         rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"move","E"));
-        long before = revision(e.snapshot(a));
+        begin(e,a);long before = revision(e.snapshot(a));
         String command = id(); String result = e.command(a,command,before,"roll","");
         check(result.contains("\"lastRoll\":4"), "host rolls die");
         check(result.equals(e.command(a,command,before,"roll","")), "duplicate does not mutate");
@@ -78,14 +80,14 @@ public final class CoreTest {
         rejects(IllegalArgumentException.class, () -> e.command(a,id(),revision(e.snapshot(a)),"action",""));
         rejects(IllegalArgumentException.class, () -> e.command(b,id(),before,"pass",""));
         for (int step = 0; step < 4; step++) e.command(a,id(),revision(e.snapshot(a)),"move","S");
-        e.command(b,id(),revision(e.snapshot(b)),"roll","");
+        begin(e,b);e.command(b,id(),revision(e.snapshot(b)),"roll","");
         e.command(b,id(),revision(e.snapshot(b)),"move","S");
         check(e.snapshot(b).contains("\"x\":1,\"y\":1"), "movement recorded");
     }
     static void diceRules() throws Exception {
         for (int face = 1; face <= 6; face++) {
             MemoryStore store = new MemoryStore(); Dice dice = new Dice(); dice.face = face;
-            GameEngine e = new GameEngine(store,dice); String a = ready(e,"A","doctor"),b=ready(e,"B","dalek");e.startDemo();
+            GameEngine e = new GameEngine(store,dice); String a = ready(e,"A","doctor"),b=ready(e,"B","dalek");e.startDemo();begin(e,a);
             rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"action",""));
             e.command(a,id(),revision(e.snapshot(a)),"roll","");
             String rolled=e.snapshot(a);check(rolled.contains("\"roll\":"+face),"die value saved for each face");
@@ -109,15 +111,15 @@ public final class CoreTest {
             check(e.snapshot(a).contains("\"stage\":\"roll\""),"next player starts with a new die roll");
         }
         MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;GameEngine e=new GameEngine(store,dice);
-        String a=ready(e,"A","doctor");e.startDemo();e.command(a,id(),revision(e.snapshot(a)),"roll","");
+        String a=ready(e,"A","doctor");e.startDemo();begin(e,a);e.command(a,id(),revision(e.snapshot(a)),"roll","");
         GameEngine restored=new GameEngine(store,dice);check(restored.snapshot(a).contains("\"stage\":\"choice\""),"5/6 choice survives reload without reroll");
-        restored.command(a,id(),revision(restored.snapshot(a)),"action","");
+        restored.command(a,id(),revision(restored.snapshot(a)),"action","N");
         check(restored.snapshot(a).contains("\"round\":2"),"action replaces movement and ends turn");
         check(restored.snapshot(a).contains("Wirkung noch nicht berechnet"),"unfinished character effects explicitly marked");
     }
     static void persistence() throws Exception {
         MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store, dice);
-        String a = ready(e, "A", "doctor"); e.startDemo(); String request = id(); long rev = revision(e.snapshot(a));
+        String a = ready(e, "A", "doctor"); e.startDemo();begin(e,a); String request = id(); long rev = revision(e.snapshot(a));
         e.command(a,request,rev,"roll","");
         String snapshot = e.snapshot(a), code = e.code();
         GameEngine restored = new GameEngine(store, dice);
@@ -133,7 +135,7 @@ public final class CoreTest {
     }
     static void concurrentRetry() throws Exception {
         MemoryStore store = new MemoryStore(); Dice dice = new Dice(); GameEngine e = new GameEngine(store,dice);
-        String a = ready(e,"A","doctor"); e.startDemo(); String req = id(); long rev = revision(e.snapshot(a));
+        String a = ready(e,"A","doctor"); e.startDemo();begin(e,a); String req = id(); long rev = revision(e.snapshot(a));
         ExecutorService pool = Executors.newFixedThreadPool(4);
         try {
             List<Callable<String>> jobs = new ArrayList<>();
@@ -176,7 +178,7 @@ public final class CoreTest {
         dice.face=5;
         String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();
         rejects(IllegalArgumentException.class,e::requestEnemyMovement);
-        for(String token:Arrays.asList(a,b)){e.command(token,id(),revision(e.snapshot(token)),"roll","");e.command(token,id(),revision(e.snapshot(token)),"action","");}
+        for(String token:Arrays.asList(a,b)){begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");e.command(token,id(),revision(e.snapshot(token)),"action","N");}
         check(e.snapshot(a).contains("\"phase\":\"enemies\""),"enemy phase follows all partners");
         check(e.snapshot(a).contains("\"round\":1"),"round ends after enemies");
         String helper=e.requestEnemyMovement();check(helper.equals("Bob"),"uniform bounded draw selects helper");
@@ -196,25 +198,29 @@ public final class CoreTest {
         check(restored.snapshot(a).contains("\"round\":2")&&restored.snapshot(a).contains("\"phase\":\"players\""),"next round begins after acknowledged enemy turn");
     }
     static void migration() throws Exception {
-        for(int format:new int[]{1,2,3,4}){
+        for(int format:new int[]{1,2,3,4,5}){
             MemoryStore store=new MemoryStore();ByteArrayOutputStream bytes=new ByteArrayOutputStream();DataOutputStream out=new DataOutputStream(bytes);
             out.writeInt(0x4457484f);out.writeInt(format);out.writeUTF("old-game");out.writeUTF("123456");out.writeBoolean(true);
             out.writeInt(7);out.writeInt(0);out.writeInt(4);out.writeLong(10);out.writeInt(1);
             out.writeUTF("old-player");out.writeUTF("old-token");out.writeUTF("Alice");out.writeUTF(id());out.writeInt(2);out.writeInt(3);
             if(format>=2){out.writeUTF("doctor");out.writeInt(1);out.writeUTF("dalek");}
-            out.writeInt(0);out.writeInt(0);
+            out.writeInt(1);out.writeUTF("Ein alter Eintrag ohne Zeitstempel.");out.writeInt(0);
             if(format>=3){out.writeUTF("players");out.writeInt(0);out.writeUTF("");out.writeBoolean(false);out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeUTF("");out.writeBoolean(false);}
-            if(format>=4){out.writeUTF("roll");out.writeInt(0);out.writeInt(0);}
+            if(format>=4){out.writeUTF(format==5?"move":"roll");out.writeInt(format==5?4:0);out.writeInt(format==5?2:0);}
+            if(format>=5){out.writeUTF(id());out.writeUTF("old-player");}
             store.data=bytes.toByteArray();GameEngine e=new GameEngine(store);
             if(format==1){check(!e.readyForPlay(),"v1 requires character before resuming");e.chooseCharacter("old-token",id(),"doctor");}
             check(e.playing(),"old game resumes after setup");check(e.snapshot("old-token").contains("\"round\":7"),"migration keeps round");
             check(e.snapshot("old-token").contains("\"x\":2,\"y\":3"),"migration keeps position");
+            check(e.snapshot("old-token").contains("\"speaker\":\"Archiv\"")&&e.snapshot("old-token").contains("\"timestampMillis\":0"),"old logs remain honest undated archive");
+            if(format==5)check(e.snapshot("old-token").contains("\"accepted\":true")&&e.snapshot("old-token").contains("\"remaining\":2"),"mid-move v5 save resumes without another Go or reroll");
         }
     }
     static void presentation() throws Exception {
         MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;GameEngine e=new GameEngine(store,dice);
         String token=ready(e,"Alice","doctor");e.startDemo();
-        check(e.portalState().headline.contains("Alice")&&e.portalState().detail.contains("A1"),"portal shows current actor and position");
+        check(e.portalState().headline.contains("Alice")&&e.portalState().detail.contains("Go")&&e.portalState().awaitingGo,"portal waits for active player Go");
+        begin(e,token);
         String request=id();long before=revision(e.snapshot(token));e.command(token,request,before,"roll","");
         check(!e.sessionId().equals(new GameEngine(new MemoryStore()).sessionId()),"fresh installation has different party identity even with same app version");
         GameEngine.PortalState rolled=e.portalState();
@@ -224,11 +230,60 @@ public final class CoreTest {
         e=new GameEngine(store,dice);check(e.sessionId().equals(rolled.sessionId),"party identity survives normal restart and update");check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
         e.command(token,id(),revision(e.snapshot(token)),"chooseMove","");
         e.command(token,id(),revision(e.snapshot(token)),"move","S");
-        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Alice zieht von A1 nach A2"),"movement event records origin and destination");
+        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Dr WHO: Ich gehe von Feld A1 zu Feld A2"),"movement event records origin and destination");
         check(e.portalState().rollId.equals(rolled.rollId),"movement does not replay dice event");
         for(int i=0;i<4;i++)e.command(token,id(),revision(e.snapshot(token)),"move","S");
-        e.command(token,id(),revision(e.snapshot(token)),"roll","");
+        begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");
         check(e.portalState().die==5&&!e.portalState().rollId.equals(rolled.rollId),"equal consecutive dice values still have different events");
+    }
+    static void turnStartAndStory() throws Exception {
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;
+        Clock clock=Clock.fixed(Instant.parse("2026-03-20T16:34:00Z"),ZoneId.of("Europe/Berlin"));
+        GameEngine e=new GameEngine(store,dice,CharacterProfile.known(),clock,new Random(2));
+        String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.startDemo();
+        check(e.portalState().awaitingGo&&e.portalState().activeCharacter.id.equals("doctor")&&e.portalState().headline.equals("Alice ist dran…"),"portal presents active character until Go");
+        String before=e.snapshot(a);
+        rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"roll",""));
+        rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"action","N"));
+        rejects(IllegalArgumentException.class,()->e.command(b,id(),revision(e.snapshot(b)),"beginTurn",""));
+        check(before.equals(e.snapshot(a))&&dice.rolls==0,"no game action or random draw before correct player Go");
+        store.fail=true;rejects(IOException.class,()->e.command(a,id(),revision(e.snapshot(a)),"beginTurn",""));
+        check(before.equals(e.snapshot(a))&&e.portalState().awaitingGo,"failed Go save keeps portal waiting and story unchanged");store.fail=false;
+        String go=id();long revision=revision(e.snapshot(a));String accepted=e.command(a,go,revision,"beginTurn","");
+        check(accepted.contains("\"accepted\":true")&&!e.portalState().awaitingGo,"Go is authoritative and removes portal waiting card");
+        check(accepted.equals(e.command(a,go,revision,"beginTurn","")),"Go retry does not add duplicate Story or advance turn");
+        GameEngine restored=new GameEngine(store,dice,CharacterProfile.known(),clock,new Random(3));
+        check(restored.snapshot(a).equals(accepted)&&!restored.portalState().awaitingGo,"Go survives app restart");
+        e.command(a,id(),revision(e.snapshot(a)),"roll","");e.command(a,id(),revision(e.snapshot(a)),"chooseMove","");e.command(a,id(),revision(e.snapshot(a)),"move","S");
+        String line=e.portalState().events.get(e.portalState().events.size()-1);
+        check(line.startsWith("20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1 zu Feld A2."),"Story uses host date, time, character speaker and first person");
+        check(e.snapshot(a).contains("\"playerName\":\"Alice\"")&&e.snapshot(a).contains("\"direction\":\"S\""),"Story preserves player association and chosen direction");
+        for(int i=0;i<4;i++)e.command(a,id(),revision(e.snapshot(a)),"move","S");
+        check(e.portalState().awaitingGo&&e.portalState().activePlayerName.equals("Bob")&&e.snapshot(b).contains("\"accepted\":false"),"next partner must confirm own Go");
+        rejects(IllegalArgumentException.class,()->e.command(a,id(),revision(e.snapshot(a)),"beginTurn",""));
+        // Cosmetic randomness is a separate generator and its chosen text is stored once.
+        MemoryStore dalekStore=new MemoryStore();Random noise=new Random(){int draws;@Override public int nextInt(int bound){draws++;return 0;}};
+        Dice rules=new Dice();rules.face=5;GameEngine dalek=new GameEngine(dalekStore,rules,CharacterProfile.known(),clock,noise);
+        String d=ready(dalek,"Metal","dalek");dalek.startDemo();begin(dalek,d);dalek.command(d,id(),revision(dalek.snapshot(d)),"roll","");
+        String action=id();long rev=revision(dalek.snapshot(d));String done=dalek.command(d,action,rev,"action","E");
+        check(done.contains("Knarz … grrr.")&&rules.rolls==1&&rules.helperDraws==0,"Dalek flavour does not consume game dice or helper randomness");
+        GameEngine again=new GameEngine(dalekStore,rules,CharacterProfile.known(),clock,new Random(90));
+        check(again.snapshot(d).equals(done)&&again.command(d,action,rev,"action","E").equals(done),"Dalek sentence and timestamp survive restart/retry without resampling");
+        for(int i=0;i<45;i++){begin(again,d);again.command(d,id(),revision(again.snapshot(d)),"roll","");again.command(d,id(),revision(again.snapshot(d)),"action","W");}
+        check(again.portalState().events.size()==60,"Story stays bounded with log retention");
+    }
+    static void directedActions() throws Exception {
+        for(String character:Arrays.asList("doctor","dalek","weeping-angel"))for(String direction:Arrays.asList("N","E","S","W")){
+            MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine e=new GameEngine(store,dice);
+            String token=ready(e,"Actor",character);e.startDemo();begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");
+            String before=e.snapshot(token);
+            rejects(IllegalArgumentException.class,()->e.command(token,id(),revision(e.snapshot(token)),"action",""));
+            rejects(IllegalArgumentException.class,()->e.command(token,id(),revision(e.snapshot(token)),"action","NE"));
+            check(before.equals(e.snapshot(token)),"missing/invalid action direction never consumes turn");
+            String request=id();long rev=revision(e.snapshot(token));String result=e.command(token,request,rev,"action",direction);
+            check(result.contains("\"direction\":"+GameEngine.quote(direction))&&result.contains("\"round\":2")&&result.contains("\"accepted\":false"),"direction stored and action ends exactly one turn");
+            check(e.command(token,request,rev,"action",direction).equals(result),"directional action retry never applies twice");
+        }
     }
     static final class Response {
         int status; String body;
@@ -254,7 +309,7 @@ public final class CoreTest {
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             Response info=call(server,"/api/info",null,null,false);
-            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":1,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":2,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");
@@ -270,6 +325,8 @@ public final class CoreTest {
             check(call(server,"/api/enemy","characterId=dalek",token,true).status==404,"enemy administration unavailable to player API");
             check(call(server,"/portraits/doctor.jpg",null,null,false).status==404,"missing portrait returns placeholder status");
             e.startDemo();
+            check(call(server,"/api/command","action=roll&revision="+revision(e.snapshot(token))+"&requestId="+id(),token,true).status==400,"HTTP roll requires Go first");
+            check(call(server,"/api/command","action=beginTurn&revision="+revision(e.snapshot(token))+"&requestId="+id(),token,true).status==200,"HTTP active player starts turn with Go");
             String cmd="action=roll&revision="+revision(e.snapshot(token))+"&requestId="+id();
             Response roll=call(server,"/api/command",cmd,token,true);check(roll.status==200,"HTTP command");
             check(call(server,"/api/command",cmd,token,true).body.equals(roll.body),"HTTP retry idempotent");

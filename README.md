@@ -8,7 +8,7 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.6.0
+## Stand 0.7.0
 
 Bestätigte Gestaltung: **Spielerhandys im Design B „Zeitreise-Archiv“** mit Pergament, Petrol
 und Messing; **Portal-Handy im Design A „TARDIS-Konsole“** mit Dunkelblau/Cyan. Die Farb-
@@ -18,7 +18,7 @@ folgen noch; Doctor, Dalek und Engel besitzen realistische KI-generierte Offline
 Starttexte wurden vereinfacht („Dr WHO“ am Portal, „Dr. Who“ bei Spielern, „Portalcode“).
 Spieler sehen schon vor dem Beitritt die aktuelle Belegung. Das App-Icon ist eine blaue TARDIS.
 Die Steckbriefe lassen sich als Karten seitlich durchwischen; die Sichtkanten blenden weich aus.
-Im Spiel stehen oben **Spiel / Steckbrief / Was passiert ist** zur Wahl; der Verlauf ist
+Im Spiel stehen oben **Spiel / Steckbrief / Story** zur Wahl; der Verlauf ist
 aufklappbar. Ein fester Hinweis meldet den eigenen Zug. Das vollständige Steckbriefbild bleibt
 unbeschnitten. Der Client-Würfel besitzt sechs feste Seiten und landet auf dem gespeicherten
 Ergebnis; nach der Animation werden keine Augen ausgetauscht.
@@ -35,17 +35,21 @@ die fliegende TARDIS bleibt optional im Spieltab. Die Portal-Lobby zeigt
 Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespeichert.
 
 Ein freies 6×6-Demofeld dient weiterhin zum Testen von Zugfolge, Bewegung und W6-Zufall.
-Jeder Spieler würfelt zuerst am eigenen Handy. Bei 1–4 zieht er genau diese Anzahl Felder;
+Jeder Spieler bestätigt zuerst **Your move... / Go** am eigenen Handy und würfelt danach. Bei 1–4 zieht er genau diese Anzahl Felder;
 bei 5/6 wählt er Bewegung um genau die Augenzahl oder eine Charakteraktion. Bewegungen
 verlaufen orthogonal mit Richtungswechseln. Reststrecke und Würfelzustand werden gespeichert.
-Die Aktionswahl ist noch ein gekennzeichneter Techniktest ohne berechnete Charakterwirkung.
+Bei der gerichteten Aktionswahl erscheint ein Nord/Ost/Süd/West-Popup; Abbrechen verbraucht
+nichts. Die eigentliche Wirkung ist weiterhin ein gekennzeichneter Techniktest. Bis Go zeigt das
+Portal die Charakterkarte mit „Spielername ist dran…“. Die Story speichert Host-Datum/Uhrzeit,
+Sprecher und Ich-Aussagen; gelegentliche Dalek-Geräusche bleiben beim Neuladen identisch.
+Alte Aussagen ohne gespeicherten Zeitpunkt erscheinen als Archiv.
 Gegnerbewegung und konkrete Angriffsfolge werden in dieser Technikdemo vom Host vorgegeben;
 automatische Gegner-KI, Charakterregeln, Inventar, Brettgenerator und Kampagne sind noch geplant.
 Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und Weinender Engel.
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 221 Kern-/HTTP-Prüfungen und 103 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 309 Kern-/HTTP-Prüfungen und 125 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -83,9 +87,9 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zum aktuellen Portalcode. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.6.0
+## Installationshinweis 0.7.0
 
-**Über 0.5.0/0.5.1 als normales Update installieren – die App vorher nicht deinstallieren.**
+**Über 0.5.x/0.6.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
 
 ### Ältere Version 0.4.0
@@ -108,7 +112,7 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
 4. Namen und sechsstelligen Portalcode eingeben. Das WLAN-Passwort ist davon getrennt.
 5. Jeder Spieler wählt eine freie Figur. Erst nach Auswahl aller beigetretenen Spieler kann
    der Host übrige Figuren als Gegner hinzufügen und die Technikdemo starten.
-6. Der aktive Spieler würfelt zuerst am eigenen Gerät. Bei 1–4 zieht er genau diese Anzahl
+6. Der aktive Spieler bestätigt das Popup **Your move...** mit **Go**, danach würfelt er am eigenen Gerät. Bei 1–4 zieht er genau diese Anzahl
    Felder, bei 5/6 wählt er Bewegung oder Aktion. Jeden Bewegungsschritt am eigenen Handy
    eingeben und auf dem Tisch nachvollziehen. Nach der vollen Strecke folgt der nächste Spieler.
 7. Danach folgen vorhandene Gegner. Der Host kann einen Bewegungshelfer bestimmen lassen,

@@ -9,7 +9,7 @@ const characters=[
  {id:'dalek',name:'Dalek',description:'Gepanzert',endurance:'Noch festzulegen',strength:'Noch festzulegen',portrait:'/portraits/dalek.jpg',abilities:['Schuss bis 3 Felder'],owner:'B',enemy:false},
  {id:'weeping-angel',name:'Weinender Engel',description:'Zeitversetzung',endurance:'Noch festzulegen',strength:'Noch festzulegen',portrait:'/portraits/weeping-angel.jpg',abilities:['1–3 Runden aussetzen'],owner:'',enemy:false}
 ];
-const base={sessionId:'session',revision:1,started:false,ready:true,selectedCount:2,round:1,lastRoll:0,turn:{stage:'roll',roll:0,remaining:0},you:'A',current:null,phase:'players',helperId:'',movementDone:false,activeEnemy:'',attack:{id:'',enemyId:'',targetId:'',text:'',pending:false},players:[{id:'A',name:'Alice',characterId:'doctor',team:'partners',x:0,y:0},{id:'B',name:'Bob',characterId:'dalek',team:'partners',x:1,y:0}],characters,enemies:[],log:[]};
+const base={sessionId:'session',revision:1,started:false,ready:true,selectedCount:2,round:1,lastRoll:0,turn:{accepted:true,stage:'roll',roll:0,remaining:0},you:'A',current:null,phase:'players',helperId:'',movementDone:false,activeEnemy:'',attack:{id:'',enemyId:'',targetId:'',text:'',pending:false},players:[{id:'A',name:'Alice',characterId:'doctor',team:'partners',x:0,y:0},{id:'B',name:'Bob',characterId:'dalek',team:'partners',x:1,y:0}],characters,enemies:[],log:[]};
 const copy=o=>JSON.parse(JSON.stringify(o));
 const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
@@ -19,7 +19,7 @@ async function main(){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
    if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
    if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
@@ -101,10 +101,10 @@ async function main(){
   const other=copy(attack);other.revision=10;other.attack.targetId='B';w.render(other);
   check($('battle').hidden&&!$('idle').hidden,'attack on someone else leaves player idle');
   w.render(active);check($('game').hidden,'late stale snapshot cannot reactivate wrong view');
-  const choice=copy(active);choice.revision=11;choice.turn={stage:'choice',roll:5,remaining:5};w.render(choice);
+  const choice=copy(active);choice.revision=11;choice.turn={accepted:true,stage:'choice',roll:5,remaining:5};w.render(choice);
   check(!$('turnChoices').hidden&&$('rollButton').hidden&&$('controls').hidden,'five exposes exactly movement/action choice');
   check($('moveChoiceButton').textContent==='5 Felder ziehen','movement option uses actual die count');
-  const moving=copy(choice);moving.revision=12;moving.turn={stage:'move',roll:5,remaining:3};w.render(moving);
+  const moving=copy(choice);moving.revision=12;moving.turn={accepted:true,stage:'move',roll:5,remaining:3};w.render(moving);
   check(!$('controls').hidden&&$('turnChoices').hidden,'choosing movement closes action choice');
   check($('turnPrompt').textContent.includes('3 von 5'),'remaining distance shown');
   const cube=$('roll').querySelector('.dice-cube'),fixedFaces=cube.innerHTML;
@@ -121,7 +121,42 @@ async function main(){
   w.render(revealing);check(revealStarts===1,'same event does not animate again after reveal');
   const second=copy(revealing);second.revision=14;second.rollEvent.id='roll-2';w.render(second);
   check(revealStarts===2&&$('roll').classList.contains('rolling'),'a new event with same die value animates again');revealTimer();
-  networkState=true;await w.poll();check($('join').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).token==='test-token','temporary network failure retains valid login');networkState=false;w.render(second);
+  const goWaiting=copy(active);goWaiting.revision=15;goWaiting.round=2;goWaiting.turn={accepted:false,stage:'roll',roll:0,remaining:0};
+  const goCount=requests.length;w.render(goWaiting);
+  check(!$('turnDialog').hidden&&$('yourMoveTitle').textContent==='Your move...'&&$('goButton').textContent==='Go','new own turn opens exact Your move... / Go popup');
+  check($('rollButton').disabled&&$('playerArea').inert&&w.document.activeElement===$('goButton'),'Go popup blocks and focuses before any roll');
+  w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));check(!$('turnDialog').hidden,'Go cannot be dismissed without beginning turn');
+  w.render(copy(goWaiting));check(requests.length===goCount,'polling Go prompt never begins turn automatically');
+  fail=true;$('goButton').click();await tick();const goRequest=requests.at(-1).body.get('requestId');
+  check(requests.at(-1).body.get('action')==='beginTurn'&&!$('turnDialog').hidden,'Go is an authenticated saved command');
+  check(!$('goButton').disabled&&$('goStatus').textContent.includes('Bestätigung fehlt'),'unconfirmed Go can be retried from inside popup');
+  next=copy(goWaiting);next.revision=16;next.turn.accepted=true;fail=false;$('goButton').click();await tick();
+  check(requests.at(-1).body.get('requestId')===goRequest,'Go retry reuses request identity');
+  check($('turnDialog').hidden&&!$('playerArea').inert&&!$('rollButton').disabled,'confirmed Go releases own turn controls');
+  w.render(copy(next));check($('turnDialog').hidden,'accepted turn never reopens Go on polling');
+  const story=copy(next);story.revision=17;story.story=[{id:'story-1',timestampMillis:1774024440000,dateTime:'20.03.2026 17:34 Uhr',speaker:'Dr WHO',playerName:'Alice',text:'Ich gehe von Feld A1 zu Feld A2. <img src=x onerror=alert(1)>',direction:'S'}];w.render(story);
+  $('tabHistory').click();const text=$('log').textContent;
+  check($('tabHistory').textContent==='Story'&&$('historyDetails').querySelector('summary').textContent==='Story','history renamed to Story in tab and foldout');
+  check(text.startsWith('20.03.2026 17:34 Uhr - Dr WHO:')&&text.includes('Ich gehe von Feld A1'),'Story starts with host date/time and speaker');
+  check(!$('log').querySelector('img')&&text.includes('<img src=x'),'Story speech uses safe text rendering');
+  w.render(copy(story));check($('log').textContent===text,'Story time and speech never change on repeated rendering');
+  const aiming=copy(story);aiming.revision=18;aiming.turn={accepted:true,stage:'choice',roll:6,remaining:6};aiming.characters[0].actionNeedsDirection=true;w.render(aiming);$('tabPlay').click();
+  const beforeAim=requests.length;$('actionChoiceButton').click();
+  check(!$('directionDialog').hidden&&w.document.querySelectorAll('[data-action-dir]').length===4,'directional action opens four compass buttons');
+  check(requests.length===beforeAim&&$('playerArea').inert,'opening direction picker sends no action and blocks background');
+  $('cancelDirection').click();check($('directionDialog').hidden&&requests.length===beforeAim&&!$('turnChoices').hidden,'cancel consumes no action or movement');
+  $('actionChoiceButton').click();w.document.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+  check($('directionDialog').hidden&&requests.length===beforeAim,'Escape safely cancels unsubmitted direction');
+  $('actionChoiceButton').click();fail=true;w.document.querySelector('[data-action-dir="E"]').click();await tick();const actionRequest=requests.at(-1).body.get('requestId');
+  check(requests.at(-1).body.get('action')==='action'&&requests.at(-1).body.get('direction')==='E','selected action direction goes to host');
+  check(!$('directionDialog').hidden&&!$('actionRetry').hidden&&$('cancelDirection').disabled&&[...w.document.querySelectorAll('[data-action-dir]')].every(b=>b.disabled),'unconfirmed directed action stays retryable without changing its direction');
+  next=copy(aiming);next.revision=19;next.current='B';next.turn={accepted:false,stage:'roll',roll:0,remaining:0};fail=false;$('actionRetry').click();await tick();
+  check(requests.at(-1).body.get('requestId')===actionRequest&&requests.at(-1).body.get('direction')==='E','directed action retry preserves request and original direction');
+  check($('directionDialog').hidden&&$('turnDialog').hidden&&!$('profilePanel').hidden,'next partner Go does not appear on uninvolved client');
+  const archived=copy(next);archived.revision=20;archived.story=[{id:'old',timestampMillis:0,dateTime:'',speaker:'Archiv',text:'Alte Aussage ohne gespeicherte Zeit.'}];w.render(archived);
+  check($('log').textContent.startsWith('Zeit nicht erfasst - Archiv:'),'undated old saves do not get invented timestamps');
+  const lastChoice=copy(second);lastChoice.revision=21;lastChoice.round=3;w.render(lastChoice);
+  networkState=true;await w.poll();check($('join').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).token==='test-token','temporary network failure retains valid login');networkState=false;w.render(lastChoice);
   unauthorized=true;$('actionChoiceButton').click();await tick();
   check(!$('join').hidden&&$('game').hidden&&$('selection').hidden,'command authorization failure returns to join form');
   check($('retry').hidden&&JSON.parse(w.localStorage.getItem('drwho.v1')).pending===null,'expired command is discarded rather than replayed into next game');
@@ -132,7 +167,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -158,7 +193,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
    w.setInterval=callback=>{recoveryPoll=callback;return 0};
    w.fetch=async(path,options)=>{
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.6.0',protocolVersion:1,sessionId:'old-session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.7.0',protocolVersion:2,sessionId:'old-session'})};
     if(path==='/api/state'){
      if(!valid)return await new Promise(resolve=>held.push(resolve));
      return {ok:true,status:200,json:async()=>copy(base)};
@@ -193,7 +228,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
    w.fetch=async(path,options)=>{
     if(options.method==='POST')postRequests++;
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.6.1':'0.6.0',protocolVersion:mismatch==='protocol'?2:1,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.7.1':'0.7.0',protocolVersion:mismatch==='protocol'?3:2,sessionId:mismatch==='party'?'new-party':'session'})};
     if(path==='/api/state')stateRequests++;
     return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
    };
