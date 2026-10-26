@@ -82,7 +82,7 @@ public final class CoreTest {
         java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice)((Dice)rng).helperDraws=0;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); sharedAssets(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -263,7 +263,7 @@ public final class CoreTest {
         e=engine(store,dice);check(e.sessionId().equals(rolled.sessionId),"party identity survives normal restart and update");check(e.portalState().rollId.equals(rolled.rollId),"die presentation identity survives restart");
         e.command(token,id(),revision(e.snapshot(token)),"chooseMove","");
         e.command(token,id(),revision(e.snapshot(token)),"move","S");
-        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Dr WHO: Ich gehe von Feld A1·1 zu Feld A1·3"),"movement event records origin and destination");
+        check(e.portalState().events.get(e.portalState().events.size()-1).contains("Dr WHO: Ich gehe von Feld A1 zu Feld A2"),"movement event records origin and destination");
         check(e.portalState().rollId.equals(rolled.rollId),"movement does not replay dice event");
         for(int i=0;i<4;i++)e.command(token,id(),revision(e.snapshot(token)),"move","S");
         begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");
@@ -289,7 +289,7 @@ public final class CoreTest {
         check(restored.snapshot(a).equals(accepted)&&!restored.portalState().awaitingGo,"Go survives app restart");
         e.command(a,id(),revision(e.snapshot(a)),"roll","");e.command(a,id(),revision(e.snapshot(a)),"chooseMove","");e.command(a,id(),revision(e.snapshot(a)),"move","S");
         String line=e.portalState().events.get(e.portalState().events.size()-1);
-        check(line.startsWith("20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1·1 zu Feld A1·3."),"Story uses host date, time, character speaker and first person");
+        check(line.startsWith("20.03.2026 17:34 Uhr - Dr WHO: Ich gehe von Feld A1 zu Feld A2."),"Story uses host date, time, character speaker and first person");
         check(e.snapshot(a).contains("\"playerName\":\"Alice\"")&&e.snapshot(a).contains("\"direction\":\"S\""),"Story preserves player association and chosen direction");
         for(int i=0;i<4;i++)e.command(a,id(),revision(e.snapshot(a)),"move","S");
         check(e.portalState().awaitingGo&&e.portalState().activePlayerName.equals("Bob")&&e.snapshot(b).contains("\"accepted\":false"),"next partner must confirm own Go");
@@ -399,7 +399,7 @@ public final class CoreTest {
         BoardPlan q=new BoardPlan();q.place(0,0,"floor",0);check(q.cells()==4,"one new tile has four steps");
         for(int y=0;y<2;y++)for(int x=0;x<2;x++)check(q.exists(x,y),"all four subfields exist");check(!q.exists(2,0),"empty tile has no subfields");
         check(q.canStep(0,0,1,0)&&q.canStep(1,0,1,1)&&!q.canStep(0,0,1,1),"subfield movement is orthogonal and one step");
-        check(q.fieldName(1,1).equals("A1·4"),"subfield has stable tile and quadrant name");q.place(1,0,"single",3);check(!q.canStep(1,0,2,0)&&!q.canStep(2,0,1,0),"outer red wall blocks both ways");check(q.canStep(2,0,3,0),"outer wall does not divide a tile internally");
+        check(q.fieldName(1,1).equals("B2"),"every movement field has a simple global coordinate");check(q.fieldName(0,0).equals("A1")&&q.fieldName(1,0).equals("B1")&&q.fieldName(0,1).equals("A2"),"top left tile uses A1 B1 A2 B2");check(q.fieldName(25,39).equals("Z40")&&q.fieldName(26,39).equals("AA40")&&q.fieldName(39,39).equals("AN40"),"global columns continue beyond Z");check(q.tileName(0,0).equals("A1–B2"),"tile is described by movement-coordinate range");q.place(1,0,"single",3);check(!q.canStep(1,0,2,0)&&!q.canStep(2,0,1,0),"outer red wall blocks both ways");check(q.canStep(2,0,3,0),"outer wall does not divide a tile internally");
         BoardPlan dungeon=new BoardPlan();dungeon.place(0,0,"dungeon",0);dungeon.place(1,0,"floor",0);check(!dungeon.canStep(1,0,2,0),"closed dungeon blocks boundary");dungeon.toggleDungeon(0,0);check(dungeon.canStep(1,0,2,0),"open dungeon allows boundary");dungeon.rotate(0,0);check(!dungeon.at(0,0).closed,"rotation preserves dungeon condition");
         for(String kind:Arrays.asList("floor","corner","single","parallel","dungeon","cemetery","compass","lava","lava-stone","well")){BoardPlan b=new BoardPlan();b.place(19,19,kind,3);check(b.cells()==4&&b.exists(39,39),"new tile available at outermost subfield: "+kind);}
         MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();advance(e);Map<String,String> ts=tokens(e);String master=ts.get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");
@@ -447,6 +447,18 @@ public final class CoreTest {
         check(e.playing()&&e.snapshot(token).contains("\"subdivisions\":1")&&e.snapshot(token).contains("\"x\":4,\"y\":4"),"real 0.8.1 save keeps its original single-cell positions and rules");
         e.rebuildBoard();advance(e);cmd(e,token,"roomYes","");check(e.snapshot(token).contains("\"subdivisions\":2")&&e.snapshot(token).contains("\"x\":8,\"y\":8"),"explicit board rebuild upgrades old coordinates exactly once");
     }
+    static void sharedAssets()throws Exception{
+        byte[] js="window.BoardArt={};".getBytes(StandardCharsets.UTF_8),css=".field-label{color:green}".getBytes(StandardCharsets.UTF_8);
+        try(LocalServer server=new LocalServer(engine(new MemoryStore()),new byte[0],0,name->null,"0.9.2",Map.of("/board-art.js",js,"/board-art.css",css))){
+            js[0]='X';check(call(server,"/board-art.js",null,null,false).body.equals("window.BoardArt={};"),"shared vector script is immutable and available offline");
+            check(call(server,"/board-art.css",null,null,false).body.equals(new String(css,StandardCharsets.UTF_8)),"shared field styling served");
+            check(call(server,"/board-art.js","",null,true).status==404,"shared assets read-only");
+            check(call(server,"/board-art.js/../session-v1.drw",null,null,false).status==404,"asset paths cannot expose private files");
+            HttpURLConnection c=(HttpURLConnection)new URL("http://127.0.0.1:"+server.port()+"/board-art.js").openConnection();
+            check(c.getHeaderField("Content-Type").startsWith("application/javascript"),"shared script has correct MIME");String policy=c.getHeaderField("Content-Security-Policy");check(policy.contains("script-src 'self'")&&policy.contains("style-src 'self'")&&!policy.contains("https:"),"CSP permits bundled scripts and styles without external origins");c.disconnect();
+        }
+    }
+
     static void http() throws Exception {
         GameEngine e = engine(new MemoryStore());
         try(LocalServer server=new LocalServer(e,"<h1>Dr_Who</h1>".getBytes(StandardCharsets.UTF_8),0,name->null,"0.5.1")){

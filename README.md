@@ -8,9 +8,13 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.9.1
+## Stand 0.9.2
 
-Neu in 0.9.1: gemeinsame Portal-Startseite mit Team unter den Zugangsdaten, rotes × zum
+Neu in 0.9.2: identische lokale Kachelgrafiken auf Portal und Clients, Kompassdrehung am Portal,
+Koordinaten auf jedem Teilfeld (A1/B1/A2/B2, global bis AN40), Kartenzoom per +/− und Zwei-Finger-Geste sowie
+Sprung zur eigenen Figur. Aufbau-Schalter heißt Kleine Kacheln / Große Kacheln.
+
+Seit 0.9.1: gemeinsame Portal-Startseite mit Team unter den Zugangsdaten, rotes × zum
 Abmelden einzelner Spieler, direkter automatischer Spiel-WLAN-Start, Reset wahlweise ohne Sicherung.
 Unterer Portalreset beendet zusätzlich den App-Hotspot und leert die Ansicht. Große unbeschnittene
 Quartettbilder, gekürzter Nord-Hinweis und gleichzeitig drehbare Karte/Bewegungskompass je Client.
@@ -71,7 +75,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 481 Kern-/HTTP-Prüfungen und 180 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 490 Kern-/HTTP-Prüfungen und 199 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -109,7 +113,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.9.1
+## Installationshinweis 0.9.2
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:

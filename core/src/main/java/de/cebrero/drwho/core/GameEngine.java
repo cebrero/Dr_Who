@@ -226,8 +226,8 @@ public final class GameEngine {
         }
         addLog(next,removed.name+" wurde am Portal aus der Partie entfernt.");commit(next);
     }
-    public synchronized void toggleDungeon(int x,int y)throws IOException{State next=copy();next.board.toggleDungeon(x,y);addLog(next,"Kerker "+BoardPlan.cell(x,y)+(next.board.at(x,y).closed?" geschlossen.":" geöffnet."));commit(next);}
-    public synchronized List<String[]> dungeonStates(){List<String[]> list=new ArrayList<>();for(BoardPlan.Tile t:state.board.tiles())if(t.kind.equals("dungeon"))list.add(new String[]{""+t.x,""+t.y,BoardPlan.cell(t.x,t.y)+(t.closed?" · geschlossen":" · offen")});return list;}
+    public synchronized void toggleDungeon(int x,int y)throws IOException{State next=copy();next.board.toggleDungeon(x,y);addLog(next,"Kerker "+next.board.tileName(x,y)+(next.board.at(x,y).closed?" geschlossen.":" geöffnet."));commit(next);}
+    public synchronized List<String[]> dungeonStates(){List<String[]> list=new ArrayList<>();for(BoardPlan.Tile t:state.board.tiles())if(t.kind.equals("dungeon"))list.add(new String[]{""+t.x,""+t.y,state.board.tileName(t.x,t.y)+(t.closed?" · geschlossen":" · offen")});return list;}
     private static String credentials(State s, Player p) {
         return "{\"token\":" + quote(p.token) + ",\"sessionId\":" + quote(s.id) + "}";
     }

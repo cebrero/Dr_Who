@@ -34,8 +34,9 @@ public final class BoardPlan {
   if(!exists(x,y)||!exists(nx,ny)||Math.abs(nx-x)+Math.abs(ny-y)!=1)return false;
   Tile a=at(x/scale(),y/scale()),b=at(nx/scale(),ny/scale());if(a==b)return true;int d=ny<y?0:nx>x?1:ny>y?2:3;return !a.wall(d)&&!b.wall((d+2)%4);
  }
- public static String cell(int x,int y){return ""+(char)('A'+x)+(y+1);}
- public String fieldName(int x,int y){if(x<0)return "noch nicht aufgestellt";if(!subdivided)return cell(x,y);return cell(x/2,y/2)+"·"+(1+(y%2)*2+x%2);}
+ public static String cell(int x,int y){if(x<0||y<0)return "noch nicht aufgestellt";StringBuilder column=new StringBuilder();int at=x;do{column.insert(0,(char)('A'+at%26));at=at/26-1;}while(at>=0);return column.toString()+(y+1);}
+ public String fieldName(int x,int y){return cell(x,y);}
+ public String tileName(int x,int y){Tile tile=at(x,y);int endX=tile==null?x:tile.endX(),endY=tile==null?y:tile.endY();String first=cell(x*scale(),y*scale()),last=cell((endX+1)*scale()-1,(endY+1)*scale()-1);return first.equals(last)?first:first+"–"+last;}
  public String json(){StringBuilder b=new StringBuilder("{\"size\":20,\"subdivisions\":"+scale()+",\"tiles\":[");for(int i=0;i<tiles.size();i++){Tile t=tiles.get(i);if(i>0)b.append(',');b.append("{\"x\":").append(t.x).append(",\"y\":").append(t.y).append(",\"kind\":").append(GameEngine.quote(t.kind)).append(",\"rotation\":").append(t.rotation).append(",\"closed\":").append(t.closed).append('}');}return b.append("]}").toString();}
  void write(DataOutputStream out)throws IOException{out.writeBoolean(subdivided);out.writeInt(tiles.size());for(Tile t:tiles){out.writeInt(t.x);out.writeInt(t.y);out.writeUTF(t.kind);out.writeInt(t.rotation);out.writeBoolean(t.closed);}}
  static BoardPlan read(DataInputStream in)throws IOException{return read(in,true);}static BoardPlan read(DataInputStream in,boolean modern)throws IOException{

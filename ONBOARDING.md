@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.9.1 · Einfache Portal-Lobby, Spielerentfernung, Quartettkarten und synchrone Kartenrotation**
-<!-- app-version: 0.9.1 -->
-<!-- reviewed-source-sha256: 1f812bc0586f8f4d37eebb6ec47f179fdf260f9625ff150c4a2abbf5e91c47cc -->
+Stand: **26.10.2026 · Version 0.9.2 · Gemeinsame Kachelgrafik, Koordinaten je Teilfeld und Kartenzoom**
+<!-- app-version: 0.9.2 -->
+<!-- reviewed-source-sha256: 3480c28727ef5b601b4876228264f61185c654e0e4d3e23a3ffcf0015aa192b7 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.1
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.2
 
 ### Vor der Partie
 
@@ -126,7 +126,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.9.1 |
+| Schritt | Regel | Umsetzung 0.9.2 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -740,7 +740,7 @@ räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die 
 
 ## 8d. Vierer-Kacheln, vollständige Spielstände und einfacher Beitritt ab 0.9.0
 
-Historischer Ausbau; Änderungen an Reset, Lobby und Bedienung in Abschnitt 8e haben Vorrang.
+Historischer Ausbau; Änderungen in Abschnitten 8e/8f haben Vorrang, insbesondere das globale Koordinatenraster.
 
 Neue verbindliche Nutzerwünsche: Reset am Portalstart und in Einstellungen während der Partie;
 vollständiges Speichern/Laden einschließlich Planung, aller Figuren und Story; wesentlich
@@ -886,7 +886,51 @@ Neue verbindliche Wünsche vom 26.10.2026, umgesetzt:
 - **0.9.1 / Code 13, Format 8 / Protokoll 4.** Normal über Versionen ab 0.5.0 installieren und
   Spielerwebseiten neu laden. Spielstände kompatibel. Spielziel und Wirkungsregeln bleiben offen.
 
-## 9. Technische Grundlage 0.9.1
+## 8f. Gemeinsame Grafik, Feldkoordinaten und Zoom ab 0.9.2
+
+Verbindlicher Nutzerwunsch und Umsetzung vom 26.10.2026:
+
+- Aufbau-Schalter **Kleine Kacheln**, nach Klick **Große Kacheln**. Der frühere Text **10 Kacheln
+  breit** entfällt. Verhalten bleibt verschiebbarer 20×20-Plan mit kleiner/großer Darstellung.
+- **Portal und Clients nutzen dieselbe lokale Vektorgrafik** für alle Kacheltypen, gespeicherte
+  Drehungen, roten Wände, Lava, Brunnen, Kerkerzustände und Kompass. Die alte getrennte Canvas-
+  Nachzeichnung ist ersetzt. Damit dreht der Portal-Kompass mit der gespeicherten Kacheldrehung.
+- Gemeinsame Dateien `app/src/main/assets/board-art.js` und `board-art.css`. Am Portal zeigt
+  `BoardView` eine rein lokale, nicht bedienbare WebView mit `portal-board.html`: kein JavaScript-
+  Bridge, keine Netzwerklasten, kein Zugriff auf beliebige Dateien/Content-Provider. Java übergibt
+  nur den bestätigten Plan; unveränderte Daten werden nicht alle 500 ms neu gezeichnet.
+  Gesamter belegter Plan passt sich an Größe und Drehung der Portalansicht an.
+- Die gleichen JS-/CSS-Dateien werden über **GET /board-art.js /board-art.css** an Clients geliefert.
+  Nur diese beiden Pfade sind erlaubt, keine freie Dateiauslieferung. CSP erlaubt eigene Ressourcen;
+  Spiel bleibt offline, kein CDN. Die nativen und Browser-Assets müssen im APK-Abgleich enthalten sein.
+- **Jedes tatsächlich vorhandene Bewegungsfeld trägt seine eigene Koordinate**, in Editor,
+  Portalplan und Spielerkarte. Nach weiterer Nutzerpräzisierung **durchgehendes globales Raster**:
+  erste Kachel oben A1/B1, darunter A2/B2. Nächste Kachel rechts C1/D1 und C2/D2. Nach Z folgen
+  AA, AB usw., bis **AN40**. Kachelplätze werden als Bereich **A1–B2**, **C1–D2** usw. benannt.
+  Das frühere A1·1..4-Schema aus 0.9.0/0.9.1 ist damit für aktuelle Anzeigen abgelöst.
+- Intern gespeicherte x/y, Kacheln und alle Figurenpositionen bleiben unverändert, ebenso die
+  Bewegungsregeln. Neue Storyeinträge und Host-/Clientanzeigen verwenden die globalen Feldnamen.
+  Bereits gespeicherte Storytexte mit alten Namen bleiben als damalige Aussagen unverändert erhalten.
+  Koordinaten hängen am Weltfeld und ändern sich nicht durch Kachel- oder Sitzplatzdrehung.
+- Zweifeldrige alte Portale besitzen acht beschriftete Teilfelder; alle 1.600 möglichen Teilfelder
+  des 20×20-Kachelrasters haben eindeutige Namen von A1 bis AN40. Leere Stellen existieren weiterhin
+  nicht. Ein-Feld-Altpläne behalten ihre ursprünglichen x/y und Namen, bis bewusst umgestellt wird.
+- Geschlossene Kerker zeigen ihre blockierenden Außenkanten auch in der gemeinsamen Grafik rot;
+  offene Zustände verwenden das grüne offene Tor. Keine neue Geländewirkung.
+- Client-Karte im Tab **Karte**: **− / Zoomprozent / + / Dein Feld …**. Vergrößern von **50 bis
+  300 Prozent**, einzelne Tasten ändern um 25 Prozentpunkte. Zwei Finger erlauben stufenloses
+  Zoomen, ein Finger verschiebt die Karte. **Dein Feld** zeigt die eigene aktuelle Koordinate und
+  springt zur Figur, auch bei gedrehter Karte. Zoom vergrößert Grafik und Koordinaten, keine ganze
+  Webseite; Beschriftungen und Figurennummern bleiben aufrecht lesbar.
+- Zoom/Kompass sind lokale Ansichten pro Browser, über Neuladen erhalten. Beide verändern keine
+  Weltposition oder Kachelausrichtung; Netzwerk-Polling setzt den Zoom nicht zurück. Karte und
+  Bewegungskreuz bleiben synchron gedreht. Aktuelle eigene Koordinate folgt jedem bestätigten Schritt.
+- **0.9.2 / Code 14**, Format 8 / Protokoll 4 unverändert. Normales Update ab 0.5.0 und Clients
+  neu laden. Keine neue Spielregel, Inventarmenge oder Geländewirkung erfunden.
+- Build-Prüfung berücksichtigt die neuen JS-/CSS-Produktionsquellen und normalisiert wie bei
+  Java/HTML auch deren Zeilenenden. Die manuelle Inhaltsprüfung und der explizite Prüfstempel bleiben.
+
+## 9. Technische Grundlage 0.9.2
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -900,7 +944,7 @@ Neue verbindliche Wünsche vom 26.10.2026, umgesetzt:
 - Spieler melden sich mit Namen ohne zusätzlichen Code an und wählen eine Figur. Erst nach Auswahl aller
   beigetretenen Spieler kann der Spielleiter starten. Charakterwechsel vor Start ist möglich;
   die vorherige Figur wird erst nach erfolgreichem Speichern der neuen Wahl freigegeben.
-- Neue Partien: tatsächlich platzierter 20×20-Kachelplan A1–T20 mit 2×2 Bewegungsfeldern je Kachel. Nur vorhandene Felder, feste Wände
+- Neue Partien: 20×20-Kachelplätze mit je 2×2 Bewegungsfeldern, globale Feldnamen A1–AN40. Nur vorhandene Felder, feste Wände
   blockieren, kein Stapeln. Bereits laufende Altpartien behalten ihr freies 6×6-Feld, bis der Host
   über die Spielleitung ausdrücklich den Aufbau nachtragen lässt. Raummeister vor erstem Go.
 - Jeder menschliche Zug wartet zunächst auf gespeichertes Go, danach folgt der W6. Bei 1–4 direkt bewegen, bei 5/6
@@ -951,6 +995,30 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.9.2 am 26.10.2026:
+
+- **490 Kern-/HTTP-Prüfungen bestanden**, darunter neue unveränderliche gemeinsame Assets,
+  richtige Inhaltstypen/CSP, nur lesende Pfade, keine private Dateiauslieferung und globale
+  Bewegungsfeldnamen A1/B1/A2/B2, Z/AA/AN sowie Kachelbereiche.
+- **180 bisherige DOM- plus 19 neue Grafik-/Koordinatenprüfungen = 199 Prüfungen bestanden**.
+  Alle vier Teilfelder, 1.600 eindeutige Namen, Kartenrand, gedrehte Kacheln, alte ein-/zweifeldrige
+  Pläne, Spalten nach Z, vier gespeicherte Kompassdrehungen und sichtbare Kerker-Außenwände.
+- Zwei mobile Chromium-Kontexte am echten Java-HTTP-Server: Kleine/Große-Kacheln-Schalter,
+  Koordinaten in jedem Teilfeld, Zoom per Tasten und echten Zwei-Finger-Ereignissen, Textgröße bei
+  200 Prozent, Ein-Finger-Verschieben direkt auf Kacheln, Zoom/Kompass nach Reload, unveränderte
+  Weltpositionen und bisheriger kompletter Ablauf.
+- Portal-Dokument direkt aus lokalen Assets in Chromium geladen: Kompass-SVG und Koordinaten
+  identisch zum Client; automatisches Einpassen in 390×360. Editor, Portalplan und vergrößerte,
+  gedrehte Clientkarte per Screenshot betrachtet. Android-WebView/Telefonprüfung ist damit nicht ersetzt.
+- Negativprüfung: veralteter Prüfstempel wird von `verifyOnboarding` wie vorgesehen abgelehnt;
+  anschließend inhaltliche Anleitung geprüft und Prüfstempel ausdrücklich erneuert.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, erneut
+  **490 Kernprüfungen**, Lint **0 Fehler / 18 Warnungen**. App **0.9.2 / Code 14**; bestehender
+  Signierschlüssel seit 0.5.0. Finale Anleitung, Spielerdatei und alle drei gemeinsamen Portal-/
+  Grafikdateien vor Übergabe gegen APK-Assets abgleichen.
+- Neuer lokaler Portalrenderer muss am echten Telefon mit dessen installierter Android System
+  WebView geprüft werden; Chrome-Datei-/Browserprüfung ersetzt diesen Test nicht.
 
 Für 0.9.1 am 26.10.2026:
 
@@ -1209,6 +1277,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.8.1 | Eindeutige Portalcode-Prüfung mit Inlinefehler/Fokus, Korrektur ohne Sackgasse, vollständig aufgeräumte alte Popups und Editoransicht, erhaltene ursprüngliche Anmeldenachweise für sicheren Wiederbeitritt; Spielregeln/Format/Protokoll unverändert |
 | 26.10.2026 | 0.9.0 | Name ohne Raumcode, Reset mit Sicherung, komplette benannte Spielstände und Datei-Export/Import, Vierer-Kacheln/rote Wände/zehn Typen/Kerkerzustand, drehbarer Spielerkompass und Nord-Popup, volle Story, Format 8/Protokoll 4 und Migration alter Pläne |
 | 26.10.2026 | 0.9.1 | Drei Resetoptionen/ohne Archiv, vollständiger Portal-Hotspotreset, gemeinsame Lobby und rotes Spieler-×, direkter WLAN-Start, reduzierte Einstellungen, große Quartettbilder ohne Beschnitt, kurzer Nord-Hinweis, je Client synchrone Karten-/Kompassrotation |
+| 26.10.2026 | 0.9.2 | Kleine/Große Kacheln, identische lokale Vektorgrafiken auf Portal/Client samt Kompassdrehung, globale Koordinaten A1/B1/A2/B2 bis AN40 an jedem Teilfeld, Client-Kartenzoom per Tasten und Zwei-Finger-Geste sowie Sprung zur eigenen Figur, Format/Protokoll kompatibel |
 
 ## 13. Fortsetzung in einem anderen Chat
 

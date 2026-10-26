@@ -11,6 +11,7 @@ public final class LocalServer implements Closeable {
     public interface Portraits { byte[] load(String filename) throws IOException; }
     private final GameEngine engine;
     private final byte[] page;
+    private final Map<String,byte[]> boardAssets=new HashMap<>();
     private final Portraits portraits;
     private final String appVersion;
     private final ServerSocket listener;
@@ -33,6 +34,13 @@ public final class LocalServer implements Closeable {
         this(engine,page,port,portraits,"dev");
     }
     public LocalServer(GameEngine engine, byte[] page, int port, Portraits portraits, String appVersion) throws IOException {
+        this(engine,page,port,portraits,appVersion,Collections.emptyMap());
+    }
+    public LocalServer(GameEngine engine,byte[] page,int port,Portraits portraits,String appVersion,Map<String,byte[]> assets)throws IOException{
+        for(Map.Entry<String,byte[]> asset:assets.entrySet()){
+            if(!Arrays.asList("/board-art.js","/board-art.css").contains(asset.getKey()))throw new IllegalArgumentException("Unbekanntes Karten-Asset.");
+            boardAssets.put(asset.getKey(),asset.getValue().clone());
+        }
         this.appVersion = appVersion;
         this.engine = engine; this.page = page.clone();
         this.portraits = portraits;
@@ -78,6 +86,7 @@ public final class LocalServer implements Closeable {
                 if (origin != null && !origin.equals("http://" + host)) throw new SecurityException("Fremder Ursprung.");
                 String method = parts[0], path = parts[1];
                 if (method.equals("GET") && (path.equals("/") || path.matches("/\\?code=[0-9]{6}"))) { reply(out, 200, "text/html; charset=utf-8", page); return; }
+                if(method.equals("GET")&&boardAssets.containsKey(path)){reply(out,200,path.endsWith(".js")?"application/javascript; charset=utf-8":"text/css; charset=utf-8",boardAssets.get(path));return;}
                 if (method.equals("GET") && path.matches("/portraits/[a-z0-9-]{1,64}\\.(jpg|svg)")) {
                     byte[] photo = portraits.load(path.substring("/portraits/".length()));
                     if (photo == null) json(out, 404, "{\"error\":\"Foto noch nicht hinterlegt.\"}");
@@ -161,7 +170,7 @@ public final class LocalServer implements Closeable {
         String headers = "HTTP/1.1 " + code + " " + status + "\r\nContent-Type: " + type +
             "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close" +
             "\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer" +
-            "\r\nContent-Security-Policy: default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'\r\n\r\n";
+            "\r\nContent-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; form-action 'self'\r\n\r\n";
         out.write(headers.getBytes(StandardCharsets.US_ASCII)); out.write(bytes); out.flush();
     }
     @Override public void close() {

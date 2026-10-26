@@ -10,7 +10,7 @@ def sourceHash = {
     sources.each { source ->
         def relative = projectDir.toPath().relativize(source.toPath()).toString().replace('\\', '/')
         digest.update(relative.getBytes('UTF-8')); digest.update((byte) 0)
-        def bytes = relative ==~ /.*\.(java|gradle|properties|html|xml)$/ ? source.getText('UTF-8').replace('\r\n', '\n').getBytes('UTF-8') : source.bytes
+        def bytes = relative ==~ /.*\.(java|gradle|properties|html|xml|js|css)$/ ? source.getText('UTF-8').replace('\r\n', '\n').getBytes('UTF-8') : source.bytes
         digest.update(bytes); digest.update((byte) 0)
     }
     digest.digest().encodeHex().toString()

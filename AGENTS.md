@@ -119,3 +119,12 @@
 38. Auswahl als große Quartettkarte: ganzes Bild mit contain, Eigenschaften unten im Design B.
     Nord-Popup ohne Vier-Schritte-Zusatz. Clientkarte und Kompass gemeinsam drehen, Labels lesbar,
     je Browser gespeichert; Weltpositionen, Portal- und Aufbauausrichtung unverändert.
+
+39. Seit 0.9.2 Kachelgrafiken und Feldlabels zentral in board-art.js/.css, am Portal lokaler
+    read-only WebView-Renderer ohne Bridge/Netzwerk. Kompass immer mit gespeicherter Rotation.
+    Neue gemeinsame Assets im Server nur explizit freigeben und im APK-Abgleich prüfen.
+40. Jede Teilzelle im globalen Raster beschriften (oben A1/B1, darunter A2/B2, bis AN40).
+    Neuer Nutzerwunsch ersetzt A1·1..4. x/y und alte Storytexte behalten, neue Anzeigen umbenennen;
+    Namen bleiben bei Kachel-/Sitzdrehung am selben Weltfeld.
+    Spielerkarte: Zoom 50–300 %, Tasten und Zwei-Finger-Geste, lokale Speicherung, eigene Figur
+    auffindbar. Keine Weltposition durch Ansicht ändern. Editor-Schalter Kleine/Große Kacheln.

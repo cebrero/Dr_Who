@@ -56,9 +56,11 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 /* The personal map and compass share one orientation; world coordinates stay unchanged. */
 #mapRotationFrame{position:relative;--cell:64px;--map-counter-angle:0deg;margin:auto}
 #mapRotationFrame>#gameBoard,#mapRotationFrame>#grid{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
-#gameBoard .tile-label,#gameBoard .board-marker,#mapRotationFrame>#grid .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}
+#mapRotationFrame>#grid .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}
+#mapPanel{display:flex;flex-direction:column;gap:6px}#mapPanel .board-viewport{height:auto;min-height:0;flex:1;touch-action:pan-x pan-y}.map-tools{display:flex;align-items:center;gap:6px;color:#ead6ad;flex-shrink:0}.map-tools button{min-height:36px;padding:5px 12px;font-size:13px}.map-tools span{text-align:center;min-width:46px;font-size:12px}#mapFocus{margin-left:auto}
 </style>
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.9.1</small></header>
+<link rel="stylesheet" href="/board-art.css">
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.9.2</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -73,7 +75,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
  <section id="boardEditor" tabindex="-1" hidden>
   <div class="setup-heading"><div><small class="setup-kicker">DU BIST RAUMMEISTER</small><h2>Das Raumgefüge</h2></div><button id="saveBoard" class="primary" type="button">Speichern & starten</button></div>
   <p class="setup-copy">Baue euren Tisch nach. Ziehe Kacheln ins Raster, tippe zum Drehen. Nur belegte Stellen existieren.</p>
-  <div class="board-tools"><button type="button" id="boardZoom">10 Kacheln breit</button><button type="button" id="spawnMode">Startfiguren setzen</button><button type="button" id="clearPalette">Drehen / verschieben</button></div>
+  <div class="board-tools"><button type="button" id="boardZoom">Kleine Kacheln</button><button type="button" id="spawnMode">Startfiguren setzen</button><button type="button" id="clearPalette">Drehen / verschieben</button></div>
   <div id="spawnList" class="spawn-list" hidden></div><p id="boardStatus" class="board-status" role="status" aria-live="polite"></p>
   <div id="boardViewport" class="board-viewport"><div id="editorGrid" class="board-grid" role="group" aria-label="Aufbau 20 mal 20 Felder, A1 bis T20"></div></div>
   <div id="boardLegend" class="board-legend"></div>
@@ -102,7 +104,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <p id="mapInfo" class="muted"></p></section>
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
-<section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
+<section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div class="map-tools"><button type="button" id="mapZoomOut" aria-label="Karte verkleinern">−</button><span id="mapZoomLevel" role="status">100 %</span><button type="button" id="mapZoomIn" aria-label="Karte vergrößern">+</button><button type="button" id="mapFocus" aria-label="Deine Figur auf der Karte anzeigen">Dein Feld</button></div><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card"><summary>Story</summary><div class="story-pager"><button id="storyPrev" type="button">← Neuere</button><span id="storyPage"></span><button id="storyNext" type="button">Ältere →</button></div><ol id="log"></ol></details></section>
 </section>
 <div id="northDialog" class="modal-shade" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="northTitle" hidden><div class="modal-surface"><h2 id="northTitle">Das Portal steht im Norden!</h2><p>Lege das Portal an die Nordseite des Tisches. Im Plan ist Norden immer oben.</p><button id="northConfirm" type="button" class="primary">Verstanden · Aufbau öffnen</button></div></div>
@@ -110,11 +112,12 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <div id="roomDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="roomTitle" tabindex="-1" hidden><div class="modal-surface"><small>DEINE REISE BEGINNT</small><h2 id="roomTitle">Wirst du Raummeister?</h2><p>Möchtest du das Raumgefüge wiederherstellen und euren gedruckten Aufbau im Plan erfassen?</p><button id="roomYes" type="button" class="primary">Ja, ich stelle es wieder her</button><button id="roomNo" type="button" class="wide">Nein, jemand anderes</button><p id="roomStatus" role="status" aria-live="polite"></p></div></div>
 <div id="turnDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="yourMoveTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="yourMoveTitle">Your move...</h2><p>Das Portal wartet auf dich.</p><button id="goButton" class="primary" type="button">Go</button><p id="goStatus" role="status" aria-live="polite"></p></div></div>
 <div id="directionDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="directionTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="directionTitle">Welche Richtung?</h2><p id="directionHint">Wohin soll deine Aktion wirken?</p><div id="actionDirections" class="compass-wheel"><button type="button" data-action-dir="N">↑ Nord</button><button type="button" data-action-dir="W">← West</button><button type="button" data-action-dir="S">↓ Süd</button><button type="button" data-action-dir="E">Ost →</button></div><p id="actionStatus" role="status" aria-live="polite"></p><button id="actionRetry" class="primary" type="button" hidden>Gleiche Aktion erneut senden</button><button id="cancelDirection" class="wide" type="button">Abbrechen</button></div></div>
+<script src="/board-art.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.9.1',PROTOCOL_VERSION=4;
+const CLIENT_VERSION='0.9.2',PROTOCOL_VERSION=4;
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
 let directionPicking=false,shownModal='',previousFocus=null,modalError='';
@@ -410,43 +413,23 @@ let paletteKind='',spawnTarget='',spawnMode=false,boardFit=false,selectedTile=nu
 function isPlaying(s){return s.started&&s.ready&&(!s.setup||s.setup.stage==='play')}
 function setupActive(){return state&&state.started&&state.setup&&state.setup.stage!=='play'}
 function canBuild(){return setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&!compatibilityBlocked&&!busy&&!pending}
-function tileGraphic(kind,rotation=0,closed=true){
- const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 100 100');svg.setAttribute('aria-hidden','true');
- const drawings={
-  corner:'<path d="M5 94V6H94" fill="none" stroke="#28494c" stroke-width="11"/><path d="M5 94V6H94" fill="none" stroke="#d1c39a" stroke-width="3"/>',
-  floor:'<path d="M12 14l12-2m48 58l12 2" stroke="#84795555" stroke-width="2"/>',
-  single:'<path d="M0 6H100" stroke="#e12e2e" stroke-width="12"/>',
-  cemetery:'<path d="M28 80V35h20V18h12v17h18v14H60v31" fill="#61716b" stroke="#293d38" stroke-width="3"/>',
-  compass:'<path d="M50 8L66 66L50 55L34 66Z" fill="#d33427"/><text x="50" y="92" text-anchor="middle" font-size="23" fill="#123c40">N</text>',
-  lava:'<rect width="100" height="100" fill="#a62e12"/><path d="M5 30L30 15L45 55L70 35L95 75M25 95L40 70L15 55" fill="none" stroke="#ffb72b" stroke-width="9"/>',
-  'lava-stone':'<path d="M0 0H50V100H0Z" fill="#b43a15"/><path d="M8 12L35 30L12 55L40 85" fill="none" stroke="#ffbd31" stroke-width="8"/>',
-  parallel:'<path d="M0 6H100M0 94H100" stroke="#28494c" stroke-width="11"/><path d="M0 6H100M0 94H100" stroke="#d1c39a" stroke-width="3"/>',
-  door:'<path d="M0 6H27M73 6H100" stroke="#28494c" stroke-width="11"/><path d="M28 7H72V20H28Z" fill="#947149" stroke="#463e30" stroke-width="3"/><path d="M32 13h36" stroke="#f7d39a" stroke-width="2"/><path d="M28 25L68 46M28 25A43 43 0 0 1 72 25" fill="none" stroke="#806a41" stroke-width="2" stroke-dasharray="4 3"/>',
-  dungeon:'<path d="M23 80V32a27 27 0 0 1 54 0v48z" fill="#213d44" stroke="#b2955f" stroke-width="5"/><path d="M36 22v57M50 17v62M64 22v57M24 49h52" stroke="#95abad" stroke-width="4"/>',
-  well:'<ellipse cx="50" cy="69" rx="32" ry="18" fill="#8e825e" stroke="#4e695f" stroke-width="4"/><path d="M18 44v25m64-25v25" stroke="#577166" stroke-width="5"/><ellipse cx="50" cy="44" rx="32" ry="18" fill="#366976" stroke="#b8aa7a" stroke-width="9"/><ellipse cx="50" cy="44" rx="21" ry="9" fill="#255064"/><path d="M38 42q12-7 24 0" fill="none" stroke="#a2e2df" stroke-width="2"/>',
-  portal:'<ellipse cx="50" cy="49" rx="35" ry="44" fill="#16445a" stroke="#d9bc72" stroke-width="4"/><ellipse cx="50" cy="49" rx="27" ry="35" fill="#277382" stroke="#8de1df" stroke-width="3"/><path d="M48 14q39 27 1 65q-31-20 0-52q24 10 1 36" fill="none" stroke="#b6eeea" stroke-width="4"/><path d="M20 87h60" stroke="#d9bc72" stroke-width="4"/>'
- };
- if(kind==='dungeon'&&!closed)drawings.dungeon='<path d="M23 80V32a27 27 0 0 1 54 0v48" fill="none" stroke="#347366" stroke-width="9"/><path d="M25 30L6 50V92L25 80" fill="#52857a"/>';
- svg.innerHTML='<g transform="rotate('+rotation*90+' 50 50)">'+(drawings[kind]||drawings.floor).replace(/<path[^>]*stroke="#d1c39a"[^>]*\/>/g,'').replaceAll('#28494c','#e12e2e').replaceAll('stroke-width="11"','stroke-width="13"')+'</g><path d="M50 0V100M0 50H100" stroke="#34483ecc" stroke-width="2.5"/>';return svg;
-}
-function fieldName(s,x,y){const q=s.board?.subdivisions||1;return String.fromCharCode(65+Math.floor(x/q))+(Math.floor(y/q)+1)+(q===2?'·'+(1+(y%2)*2+x%2):'')}
+const {tileGraphic,fieldName,fieldRange,tileSize,decorateTile}=BoardArt;
 function tileAt(s,x,y){return (s.board?.tiles||[]).find(t=>t.x===x&&t.y===y||t.kind==='portal'&&t.x+(t.rotation%2===0?1:0)===x&&t.y+(t.rotation%2?1:0)===y)}
-function tileSize(t){return [t.kind==='portal'&&t.rotation%2===0?2:1,t.kind==='portal'&&t.rotation%2?2:1]}
 function positionTile(e,x,y,w=1,h=1){e.style.left='calc(var(--cell) * '+x+')';e.style.top='calc(var(--cell) * '+y+')';e.style.width='calc(var(--cell) * '+w+')';e.style.height='calc(var(--cell) * '+h+')'}
 function paintBoard(container,s,editable){
  const signature=JSON.stringify([s.board,s.players,s.enemies,s.you,editable,spawnMode,spawnTarget,paletteKind,selectedTile]);if(container.dataset.signature===signature)return;container.dataset.signature=signature;
  const focus=document.activeElement?.closest('[data-cell]')?.dataset.cell;container.replaceChildren();
  const ox=editable||!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.x)),oy=editable||!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.y));
- if(!editable){container.dataset.cols=Math.max(1,...s.board.tiles.map(t=>t.x+tileSize(t)[0]-ox));container.dataset.rows=Math.max(1,...s.board.tiles.map(t=>t.y+tileSize(t)[1]-oy));}
+ if(!editable){container.dataset.ox=ox;container.dataset.oy=oy;container.dataset.cols=Math.max(1,...s.board.tiles.map(t=>t.x+tileSize(t)[0]-ox));container.dataset.rows=Math.max(1,...s.board.tiles.map(t=>t.y+tileSize(t)[1]-oy));}
  if(editable)for(let y=0;y<20;y++)for(let x=0;x<20;x++){
-  if(tileAt(s,x,y))continue;const b=el('button',String.fromCharCode(65+x)+(y+1),'board-empty');b.type='button';b.dataset.cell=x+','+y;b.setAttribute('aria-label',b.textContent+' · kein Feld');positionTile(b,x,y);container.append(b);
+  if(tileAt(s,x,y))continue;const b=el('button',fieldRange(s,{x,y,kind:'floor',rotation:0}),'board-empty');b.type='button';b.dataset.cell=x+','+y;b.setAttribute('aria-label',b.textContent+' · kein Feld');positionTile(b,x,y);container.append(b);
  }
  for(const t of s.board.tiles){
   const [w,h]=tileSize(t),tile=el(editable?'button':'div',undefined,'board-tile');if(editable)tile.type='button';tile.dataset.cell=t.x+','+t.y;tile.dataset.tile='true';positionTile(tile,t.x-ox,t.y-oy,w,h);
-  tile.append(tileGraphic(t.kind,t.rotation,t.closed),el('span',String.fromCharCode(65+t.x)+(t.y+1),'tile-label'));tile.setAttribute('aria-label',(tileKinds[t.kind]||t.kind)+' '+String.fromCharCode(65+t.x)+(t.y+1)+' · '+t.rotation*90+' Grad'+(editable?' · antippen zum Drehen':''));
+  decorateTile(tile,t,s.board.subdivisions||1);tile.setAttribute('aria-label',(tileKinds[t.kind]||t.kind)+' '+fieldRange(s,t)+' · '+t.rotation*90+' Grad'+(editable?' · antippen zum Drehen':''));
   if(selectedTile===tile.dataset.cell&&editable)tile.classList.add('selected');container.append(tile);
  }
- [...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const scale=s.board.subdivisions||1;if(p.x<0||p.y<0||!tileAt(s,Math.floor(p.x/scale),Math.floor(p.y/scale)))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+((p.x+.5)/scale-ox)+' - 9px)';marker.style.top='calc(var(--cell) * '+((p.y+.5)/scale-oy)+' - 9px)';marker.style.right='auto';container.append(marker)});
+ [...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const scale=s.board.subdivisions||1;if(p.x<0||p.y<0||!tileAt(s,Math.floor(p.x/scale),Math.floor(p.y/scale)))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+((p.x+.5)/scale-ox)+')';marker.style.top='calc(var(--cell) * '+((p.y+.5)/scale-oy)+')';marker.style.right='auto';container.append(marker)});
  if(focus&&editable)container.querySelector('[data-cell="'+focus+'"]')?.focus({preventScroll:true});
 }
 function renderSetup(s){
@@ -520,7 +503,7 @@ $('editorGrid').addEventListener('keydown',event=>{if(!canBuild())return;const t
 $('boardTrash').onclick=()=>{if(canBuild()&&selectedTile){const [x,y]=selectedTile.split(',').map(Number);if(tileAt(state,x,y))command('tileRemove',selectedTile);selectedTile=null}};
 $('clearPalette').onclick=()=>{paletteKind='';spawnMode=false;renderSetup(state)};
 $('spawnMode').onclick=()=>{spawnMode=!spawnMode;paletteKind='';spawnTarget=spawnTarget||state.you;renderSetup(state)};
-$('boardZoom').onclick=()=>{boardFit=!boardFit;$('editorGrid').style.setProperty('--cell',boardFit?Math.max(12,Math.floor(($('boardViewport').clientWidth-2)/10))+'px':'64px');$('boardZoom').textContent=boardFit?'Große Kacheln':'10 Kacheln breit'};
+$('boardZoom').onclick=()=>{boardFit=!boardFit;$('editorGrid').style.setProperty('--cell',boardFit?Math.max(12,Math.floor(($('boardViewport').clientWidth-2)/10))+'px':'64px');$('boardZoom').textContent=boardFit?'Große Kacheln':'Kleine Kacheln'};
 // Pointer-driven tools stay responsive immediately after a captured tile drag.
 const boardToolSelector='#spawnMode,#clearPalette,#boardZoom,#boardTrash,#saveBoard,#spawnList button';let toolTap=null;
 document.addEventListener('pointerdown',event=>{const button=event.target.closest(boardToolSelector);if(event.pointerType==='touch'&&button&&!button.disabled)toolTap={button,id:event.pointerId,x:event.clientX,y:event.clientY}});
@@ -571,15 +554,41 @@ document.addEventListener('keydown',event=>{
 });
 document.querySelectorAll('[data-enemy-dir]').forEach(b=>b.onclick=()=>command('moveEnemy',b.dataset.enemyDir));
 let compassAngle=[0,90,180,270].includes(Number(saved.compassAngle))?Number(saved.compassAngle):0;
+let mapZoom=Number(saved.mapZoom);if(!Number.isFinite(mapZoom)||mapZoom<.5||mapZoom>3)mapZoom=1;
+
 function rotateClientMap(){
  const map=$('gameBoard').hidden?$('grid'):$('gameBoard'),frame=$('mapRotationFrame');
  const cols=map.id==='grid'?6:Number(map.dataset.cols)||1,rows=map.id==='grid'?6:Number(map.dataset.rows)||1;
- frame.style.setProperty('--cell',map.id==='grid'?'48px':'64px');frame.style.setProperty('--map-counter-angle',(-compassAngle)+'deg');
+ const cell=(map.id==='grid'?48:64)*mapZoom;frame.style.setProperty('--cell',cell+'px');map.style.setProperty('--cell',cell+'px');$('mapZoomLevel').textContent=Math.round(mapZoom*100)+' %';$('mapZoomOut').disabled=mapZoom<=.5;$('mapZoomIn').disabled=mapZoom>=3;
+ const me=state?.players.find(p=>p.id===state.you);$('mapFocus').disabled=!me||me.x<0;$('mapFocus').textContent=me&&me.x>=0?'Dein Feld '+fieldName(state,me.x,me.y):'Dein Feld';frame.style.setProperty('--map-counter-angle',(-compassAngle)+'deg');
  const sideways=compassAngle%180!==0;frame.style.width='calc(var(--cell) * '+(sideways?rows:cols)+')';frame.style.height='calc(var(--cell) * '+(sideways?cols:rows)+')';
  map.style.width='calc(var(--cell) * '+cols+')';map.style.height='calc(var(--cell) * '+rows+')';
  const tx=compassAngle===90?rows:compassAngle===180?cols:0,ty=compassAngle===180?rows:compassAngle===270?cols:0;
  map.style.transform='translate(calc(var(--cell) * '+tx+'), calc(var(--cell) * '+ty+')) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle);
 }
+function setMapZoom(value,anchor,save=true){
+ const viewport=$('gameMapViewport'),frame=$('mapRotationFrame'),ratio=Math.max(.5,Math.min(3,value))/mapZoom;
+ const at=anchor||{x:viewport.clientWidth/2,y:viewport.clientHeight/2};
+ const x=viewport.scrollLeft+at.x-frame.offsetLeft,y=viewport.scrollTop+at.y-frame.offsetTop;
+ mapZoom=Math.max(.5,Math.min(3,value));rotateClientMap();
+ viewport.scrollLeft=frame.offsetLeft+x*ratio-at.x;viewport.scrollTop=frame.offsetTop+y*ratio-at.y;
+ if(save){saved.mapZoom=mapZoom;persist()}
+}
+$('mapZoomOut').onclick=()=>setMapZoom(mapZoom-.25);$('mapZoomIn').onclick=()=>setMapZoom(mapZoom+.25);
+$('mapFocus').onclick=()=>{
+ const me=state?.players.find(p=>p.id===state.you);if(!me||me.x<0)return;
+ const map=$('gameBoard').hidden?$('grid'):$('gameBoard'),q=map.id==='grid'?1:state.board.subdivisions||1;
+ const cols=map.id==='grid'?6:Number(map.dataset.cols),rows=map.id==='grid'?6:Number(map.dataset.rows),u=(me.x+.5)/q-(Number(map.dataset.ox)||0),v=(me.y+.5)/q-(Number(map.dataset.oy)||0);
+ const x=compassAngle===90?rows-v:compassAngle===180?cols-u:compassAngle===270?v:u,y=compassAngle===90?u:compassAngle===180?rows-v:compassAngle===270?cols-u:v;
+ const viewport=$('gameMapViewport'),frame=$('mapRotationFrame'),cell=(map.id==='grid'?48:64)*mapZoom;
+ viewport.scrollLeft=frame.offsetLeft+x*cell-viewport.clientWidth/2;viewport.scrollTop=frame.offsetTop+y*cell-viewport.clientHeight/2;
+};
+let mapPinch=null;const mapViewport=$('gameMapViewport');
+const pinchDistance=t=>Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);
+mapViewport.addEventListener('touchstart',event=>{if(event.touches.length===2){mapPinch={distance:pinchDistance(event.touches),zoom:mapZoom};event.preventDefault()}},{passive:false});
+mapViewport.addEventListener('touchmove',event=>{if(!mapPinch||event.touches.length!==2)return;event.preventDefault();const rect=mapViewport.getBoundingClientRect(),anchor={x:(event.touches[0].clientX+event.touches[1].clientX)/2-rect.left,y:(event.touches[0].clientY+event.touches[1].clientY)/2-rect.top};if(mapPinch.distance>0)setMapZoom(mapPinch.zoom*pinchDistance(event.touches)/mapPinch.distance,anchor,false)},{passive:false});
+function finishMapPinch(event){if(mapPinch&&event.touches.length<2){mapPinch=null;saved.mapZoom=mapZoom;persist()}}
+mapViewport.addEventListener('touchend',finishMapPinch);mapViewport.addEventListener('touchcancel',finishMapPinch);
 function paintCompass(){$('compassFacing').textContent='Norden: '+['oben','rechts','unten','links'][compassAngle/90];document.querySelectorAll('.compass-wheel').forEach(e=>{e.style.transform='rotate('+compassAngle+'deg)';e.querySelectorAll('button').forEach(b=>b.style.transform='rotate('+(-compassAngle)+'deg)')});rotateClientMap()}function rotateCompass(delta){compassAngle=(compassAngle+delta+360)%360;saved.compassAngle=compassAngle;persist();paintCompass();$('gameMapViewport').scrollTo?.(0,0)}$('compassLeft').onclick=()=>rotateCompass(-90);$('compassRight').onclick=()=>rotateCompass(90);paintCompass();
 $('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
 if(token){$('join').hidden=true}controls();poll();setInterval(poll,1500);

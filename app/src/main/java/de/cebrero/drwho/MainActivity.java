@@ -63,8 +63,8 @@ public class MainActivity extends Activity {
         prefs.edit().remove("manualConfirmed").remove("setupPending").remove("ssid").remove("password").apply();
         try{
             engine=new GameEngine(new AndroidStore(new File(getFilesDir(),"session-v1.drw")));
-            byte[] page=asset("player.html");
-            try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME);}
+            byte[] page=asset("player.html");Map<String,byte[]> boardAssets=new HashMap<>();for(String name:new String[]{"board-art.js","board-art.css"})boardAssets.put("/"+name,asset(name));
+            try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}
             restartPortalNetwork();
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
         buildLobby();buildDirector();buildPlay();buildStage();buildSetup();if(engine.playing())showPlay();else showLobby();updatePortal();
