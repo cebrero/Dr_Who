@@ -908,4 +908,3 @@ ein statischer Hintergrund die Animation auf der Portal-Startseite; der neue Wun
 
 Diese Quellen betreffen Technik; die vorgeschlagenen Spielregeln sind eigene Entwürfe und keine
 offiziellen Doctor-Who-Spielregeln.
-
