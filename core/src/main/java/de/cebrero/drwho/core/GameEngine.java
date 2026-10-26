@@ -202,6 +202,30 @@ public final class GameEngine {
         State next=new State();next.id=UUID.randomUUID().toString();next.code=String.format(Locale.ROOT,"%06d",random.nextInt(1_000_000));next.revision=state.revision;
         addLog(next,"Neue Partie bereit. Portal steht im Norden.");commit(next);
     }
+    /** Native host only. Revoke this seat without disturbing other registrations. */
+    public synchronized void removePlayer(String playerId)throws IOException{
+        int index=-1;for(int i=0;i<state.players.size();i++)if(state.players.get(i).id.equals(playerId))index=i;
+        if(index<0)return;
+        State next=copy();Player removed=next.players.get(index);
+        if(next.started&&next.phase.equals("players")&&next.current==index&&next.players.size()>1)endPlayerTurn(next);
+        next.players.remove(index);
+        if(next.current>index)next.current--;if(next.current>=next.players.size())next.current=0;
+        next.asked.remove(playerId);next.receipts.removeIf(r->r.startsWith(playerId+":"));
+        if(next.helperId.equals(playerId)){next.helperId="";next.movementDone=false;}
+        if(next.attackTarget.equals(playerId)){next.attackId="";next.attackEnemy="";next.attackTarget="";next.attackText="";next.attackPending=false;}
+        if(next.rollPlayerId.equals(playerId)){next.rollPlayerId="";next.rollEventId="";next.lastRoll=0;}
+        boolean lostMaster=next.roomMaster.equals(playerId),lostCandidate=next.candidate.equals(playerId);
+        if(lostMaster)next.roomMaster="";if(lostCandidate)next.candidate="";
+        if(next.players.isEmpty()){
+            next.started=false;next.setupStage="lobby";next.setupId="";next.setupDeadline=0;
+            next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
+            next.phase="players";next.enemyIndex=0;next.helperId="";next.movementDone=false;
+            next.turnStage="roll";next.turnRoll=0;next.remaining=0;next.turnAccepted=false;
+        }else if((lostCandidate&&next.setupStage.equals("offering"))||(lostMaster&&Arrays.asList("building","launching").contains(next.setupStage))){
+            next.setupId=UUID.randomUUID().toString();next.forcedRoomMaster=false;next.boardSaved=false;offerNext(next);
+        }
+        addLog(next,removed.name+" wurde am Portal aus der Partie entfernt.");commit(next);
+    }
     public synchronized void toggleDungeon(int x,int y)throws IOException{State next=copy();next.board.toggleDungeon(x,y);addLog(next,"Kerker "+BoardPlan.cell(x,y)+(next.board.at(x,y).closed?" geschlossen.":" geöffnet."));commit(next);}
     public synchronized List<String[]> dungeonStates(){List<String[]> list=new ArrayList<>();for(BoardPlan.Tile t:state.board.tiles())if(t.kind.equals("dungeon"))list.add(new String[]{""+t.x,""+t.y,BoardPlan.cell(t.x,t.y)+(t.closed?" · geschlossen":" · offen")});return list;}
     private static String credentials(State s, Player p) {
@@ -576,7 +600,7 @@ public final class GameEngine {
     }
     private static Player authenticated(State s, String token) {
         if (token != null) for (Player p : s.players) if (p.token.equals(token)) return p;
-        throw new SecurityException("Bitte mit Portalcode anmelden.");
+        throw new SecurityException("Bitte erneut anmelden.");
     }
     private static String directionName(String value){
         switch(value){case "N":return "Norden";case "E":return "Osten";case "S":return "Süden";case "W":return "Westen";default:throw new IllegalArgumentException("Bitte eine Richtung wählen: Nord, Ost, Süd oder West.");}

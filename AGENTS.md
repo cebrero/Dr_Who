@@ -109,3 +109,13 @@
 35. Ganze Story ab 0.9.0 bis 8-MiB-Dateigrenze erhalten, nicht mehr 60 abschneiden. Alte verworfene
     Story nicht rekonstruieren behaupten. Captive Portal auf normalem Android-Hotspot ist nicht
     zuverlässig steuerbar; QR-Einstieg erhalten und keinen automatischen Browserstart versprechen.
+
+36. Seit 0.9.1 neuester Wunsch: drei Resetoptionen, explizit OHNE Sicherung zulassen; nur
+    Sichern und zurücksetzen archiviert. Unterer Lobbyreset beendet App-Hotspot samt altem
+    Startversuch und leert Ansicht/WLAN-Daten; Einstellungsreset erhält WLAN. Alte Callbacks sperren.
+37. Gemeinsame Portal-Lobby, Team unter Zugangsdaten, rotes Spieler-×, Tokenentzug und Client
+    zurück zum Start. Zug/Aufbau/Helper/Angriff reparieren, keine Admin-HTTP-Route. Direkter
+    automatischer WLAN-Start ohne App-Nachfrage; nur nötige Systemberechtigung. Keine Kerker-/WLAN-Menüs.
+38. Auswahl als große Quartettkarte: ganzes Bild mit contain, Eigenschaften unten im Design B.
+    Nord-Popup ohne Vier-Schritte-Zusatz. Clientkarte und Kompass gemeinsam drehen, Labels lesbar,
+    je Browser gespeichert; Weltpositionen, Portal- und Aufbauausrichtung unverändert.

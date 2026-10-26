@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.9.0 · Vollständige Spielstände, Vierer-Kacheln und Sitzplatz-Kompass**
-<!-- app-version: 0.9.0 -->
-<!-- reviewed-source-sha256: 85a3e02fe2ec0e783af7c8d9628d3360e5ae39e5d8200a8cbb232a0e744cdb45 -->
+Stand: **26.10.2026 · Version 0.9.1 · Einfache Portal-Lobby, Spielerentfernung, Quartettkarten und synchrone Kartenrotation**
+<!-- app-version: 0.9.1 -->
+<!-- reviewed-source-sha256: 1f812bc0586f8f4d37eebb6ec47f179fdf260f9625ff150c4a2abbf5e91c47cc -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -59,13 +59,13 @@ Aktionsökonomie müssen gemeinsam geklärt werden.
 Technische, später änderbare Entscheidungen; nicht mit zugesagten Endfunktionen verwechseln:
 
 - Android-App ist alleinige Instanz für gültige Züge, Zufall und Speichern.
-- Einfaches Spiel-WLAN als Ziel: Name `Dr_Who`, Passwort `drwho123`. Die App führt zur
-  einmaligen System-Hotspot-Einrichtung und übernimmt die manuell bestätigten Daten.
-  Alternativ automatischer Android-Lokalhotspot mit tatsächlich vom System vergebenen
-  Zugangsdaten. Auch API 36 erlaubt einer gewöhnlichen App keine freien SSID-/Passwort-Setter.
+- Seit 0.9.1 direkter automatischer Android-Lokalhotspot; SSID/Passwort werden vom System
+  vergeben und tatsächlich angezeigt. Der frühere Wunsch `Dr_Who` / `drwho123` bleibt mit
+  gewöhnlichen öffentlichen APIs für diesen Startweg nicht frei konfigurierbar. Die frühere
+  manuelle Einrichtungsnachfrage entfällt auf Nutzerwunsch.
 - Maximal vier registrierte Spielerplätze wird in der App erzwungen. Die Zahl technisch möglicher
   WLAN-Clients hängt zusätzlich vom Telefon ab und ist auf echter Hardware zu prüfen.
-- WLAN-Passwort und sechsstelliger Spiel-Beitrittscode sind getrennt. Jede Anmeldung erhält
+- Zusätzlicher Beitrittscode entfällt seit 0.9.0; das WLAN-Passwort bleibt. Jede Anmeldung erhält
   einen geheimen Wiederverbindungstoken. Keine MAC-Bindung oder persönlichen Onlinekonten.
 - Bewegungen werden von Spielern eingegeben und auf dem echten Tisch nachvollzogen.
   Die App erkennt physische Figuren derzeit nicht automatisch; Kameras/Sensoren sind nicht vereinbart.
@@ -104,28 +104,29 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.9.1
 
 ### Vor der Partie
 
-1. Portal-Handy zeigt eine klare Lobby mit statischem Doctor-Who-Hintergrund, WLAN-Zugang, Spielseite und
-   Portalcode. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg; Netzwerkdetails siehe Abschnitt 8a.
-2. Bis zu vier Spieler treten am eigenen Handy mit Namen und Code bei.
-3. Jeder wählt einen Steckbrief mit Foto/Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
+1. Portal-Handy zeigt eine gemeinsame Startseite mit statischem Doctor-Who-Hintergrund, WLAN-Zugang,
+   Spielseite und darunter dem Team. **Spiel-WLAN starten** startet direkt den Android-Lokalhotspot;
+   nur erforderliche Android-Berechtigungen bleiben. WLAN-/Seiten-QR-Codes vereinfachen den Einstieg.
+2. Bis zu vier Spieler treten am eigenen Handy mit Namen ohne zusätzlichen Portalcode bei.
+3. Jeder wählt eine Quartettkarte mit großem vollständigem Porträt oben und Eigenschaften darunter.
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
 4. Portal zeigt, wie viele bereits gewählt haben, plus Spielername und zugeordnete Figur.
 5. Nach der Spielerwahl kann der Host übrige bekannte Figuren als Gegner hinzufügen.
 6. Host drückt Start. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
    Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
-7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, sieben Typen, 90°-Drehung,
-   zweifeldriges Portal, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
-   dann drei Sekunden Startanimation und erster Spielerzug. Details/Interpretationen siehe Abschnitt 8b.
+7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, zehn Typen, 90°-Drehung,
+   vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
+   dann drei Sekunden Startanimation und erster Spielerzug. Aktuelle Details siehe Abschnitte 8d/8e.
 8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
    erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.9.0 |
+| Schritt | Regel | Umsetzung 0.9.1 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Host würfelt auf Tastendruck und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -739,6 +740,8 @@ räumte außerdem Aufbauansicht und feste Editorhöhe nicht auf. Das konnte die 
 
 ## 8d. Vierer-Kacheln, vollständige Spielstände und einfacher Beitritt ab 0.9.0
 
+Historischer Ausbau; Änderungen an Reset, Lobby und Bedienung in Abschnitt 8e haben Vorrang.
+
 Neue verbindliche Nutzerwünsche: Reset am Portalstart und in Einstellungen während der Partie;
 vollständiges Speichern/Laden einschließlich Planung, aller Figuren und Story; wesentlich
 weniger Anmeldung; kompakte Bildschirmseiten; größere Kacheln mit verschiebbarem Ausschnitt;
@@ -834,7 +837,56 @@ Vorerst zwei einfache QR-Schritte. Später mit separat steuerbarem Access Point 
 Referenzen: https://developer.android.com/about/versions/11/features/captive-portal und
 https://developer.android.com/develop/connectivity/wifi/localonlyhotspot (geprüft 26.10.2026).
 
-## 9. Technische Grundlage 0.9.0
+## 8e. Portal vereinfachen, Quartettkarten und synchrone Karte ab 0.9.1
+
+Neue verbindliche Wünsche vom 26.10.2026, umgesetzt:
+
+- **Reset bietet drei gut lesbare Optionen untereinander:** Zurück, **Zurücksetzen (ohne
+  Speicherung)**, Sichern und zurücksetzen. Nur die letzte legt `Vor_Reset` an. Bereits vorhandene
+  Sicherungen bleiben in beiden Resetvarianten erhalten. Laufender Zustand wird erst nach
+  erfolgreichem Speichern ersetzt; bei Speicherfehler bleibt die laufende Partie erhalten.
+- **Unterer Reset auf der Portal-Startseite** setzt zusätzlich den von der App erzeugten Hotspot,
+  dessen laufenden Startversuch, angezeigte SSID/Passwort/Adresse, mDNS-Instanz und gespeicherte
+  Anzeigepräferenzen zurück. Ansicht springt nach oben; leeres Team, neue Partie und wieder
+  **Spiel-WLAN starten**, wie beim ersten Start. Benannte Spielstandsdateien bleiben erhalten.
+  Spät eintreffende alte Hotspot-/DNS-Rückmeldungen dürfen den zurückgesetzten Zustand nicht
+  wiederherstellen. Ein fremder, in Android manuell gestarteter Hotspot ist nicht fernsteuerbar.
+- **Reset unter Einstellungen** betrifft die Partie; der App-Hotspot bleibt für die nächste
+  Anmeldung bestehen. Kein automatisches Archiv bei ausdrücklich gewähltem Reset ohne Speicherung.
+- Portal-Lobby wieder **eine Seite**: WLAN und Zugang oben, Team direkt darunter. Keine Buttons
+  **WLAN & Zugang / Spieler**, kein Text **Nur Name eingeben · keinen Portalcode nötig**.
+  Es werden belegte Plätze mit Porträt/Name/Figur, Anzahl und bei leerer Lobby ein kurzer Hinweis gezeigt.
+- Hinten an jedem belegten Spieler ein **rotes ×** mit zugänglicher Beschriftung. Entfernen wird
+  zuerst dauerhaft gespeichert; nur dessen Token/Platz wird ungültig und die Figur freigegeben,
+  sie wird nicht automatisch Gegner. Der Client kehrt bei der nächsten Abfrage auf seine Startseite
+  zurück; keine automatische Wiederanmeldung. Andere Spieler bleiben angemeldet.
+- Entfernen während Zug/Aufbau bleibt konsistent: aktiver Zug wird abgeschlossen und nächster
+  regulärer Zug erhält Go; ein anderer laufender Zug bleibt samt Würfel/Reststrecke bestehen.
+  Entfernte Kandidaten/Raummeister werden ersetzt, vorhandener Entwurf bleibt. Entfernte Gegnerhelfer
+  und Angriffsziele blockieren keine Bestätigung mehr. Nach letztem Spieler Lobby ohne Teilnehmer;
+  bestehender Entwurf/Story bleiben bis explizitem Reset erhalten. Nur nativer Host, keine neue Admin-API.
+- **Spiel-WLAN starten** ruft sofort den automatischen Lokalhotspot auf, ohne App-Auswahl oder
+  Einrichtungsdialog. Falls noch nötig, zeigt Android seine Systemberechtigung. Tatsächliche, von
+  Android vergebene SSID/Passwort anzeigen. Manueller Einrichtungsweg und dessen alte Dialoge entfallen.
+  Netzwerkadresse/QR werden erst nach aktivem App-Hotspot angeboten. Kein automatischer Browserstart.
+- Einstellungen enthält **weder Kerker öffnen / schließen noch WLAN / Verbindung**. Kerkerwirkung
+  kommt später in den Spielablauf. Bestehender Zustand und Zustandswahl beim Aufbau bleiben gespeichert.
+- **Charakterwahl als Quartettkarte:** großes Bild oben nutzt den freien Kartenbereich, darunter
+  Name, Beschreibung, Ausdauer/Kraft und Sonderfähigkeiten im bestätigten Design B. `object-fit:contain`
+  zeigt das komplette Bild, auch wenn dafür seitlich Hintergrund sichtbar bleibt. Eigenschaften und
+  Wahlknopf passen auf die geprüften Handygrößen. Wischen/Randverblassen und exklusive Wahl bleiben.
+- Nord-Popup enthält nur Portal-Nord-Hinweis und Bestätigung. Der Zusatz **Jede Kachel enthält vier
+  Schritte: oben links 1, oben rechts 2, unten links 3, unten rechts 4** ist auf Wunsch entfernt.
+- **Karte und Bewegungskompass drehen je Client synchron** in allen vier 90°-Lagen. Orientierung
+  bleibt pro Browser nach Neuladen erhalten und beeinflusst andere Clients nicht. Rechteckige
+  belegte Kartenfläche wird ohne leere Außenränder in den verschiebbaren Rahmen eingepasst;
+  Labels und Figurennummern bleiben lesbar. Wände/Gelände drehen optisch mit, Weltkoordinaten und
+  gespeicherte Ausrichtung verändern sich nicht. Alter 6×6-Plan unterstützt dieselbe Drehung.
+  Portalansicht und Aufbau-Editor behalten Norden oben. Kartensignatur berücksichtigt Gegnerbewegungen.
+- **0.9.1 / Code 13, Format 8 / Protokoll 4.** Normal über Versionen ab 0.5.0 installieren und
+  Spielerwebseiten neu laden. Spielstände kompatibel. Spielziel und Wirkungsregeln bleiben offen.
+
+## 9. Technische Grundlage 0.9.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -899,6 +951,23 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.9.1 am 26.10.2026:
+
+- **481 Kern-/HTTP-Prüfungen bestanden**, darunter neu atomisches Entfernen, Tokenentzug,
+  freier Charakter, erneuter expliziter Lobbybeitritt, unveränderter fremder Zug, nächster aktiver
+  Zug, Gegnerhelfer/Angriff, Raummeisterwechsel, letzter Teilnehmer und Neustartpersistenz.
+- **180 DOM-Prüfungen bestanden.**
+- Zwei echte mobile Chromium-Kontexte (390×844 und 320×740) am Java-HTTP-Server: große vollständig
+  sichtbare Charakterbilder, vorhandene Auswahl, gekürzter Nord-Hinweis, vier synchrone Karten-/
+  Kompassdrehungen mit korrekten rechteckigen Grenzen, unabhängige Clients, Reload, unveränderte
+  Weltrichtung/Positionen, kompletter Reset/Laden und entfernter Client zurück zur Anmeldung.
+  Screenshots der Karten und gedrehten Karte visuell geprüft, keine Dokument-Scrollleiste.
+- Android `:core:smokeTest :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, erneut
+  **481 Kernprüfungen**, Lint **0 Fehler / 17 Warnungen**. App **0.9.1 / Code 13**; gleicher
+  Signierschlüssel seit 0.5.0. Finale Anleitung und Spielerdatei vor Übergabe mit APK-Assets abgleichen.
+- Native Portal-Lobby, drei Resetoptionen und Hotspot-Start/Abbruch/Neustart benötigen weiterhin
+  echte Telefonprüfung; kein realer WLAN-/Herstellertest behauptet.
 
 Für 0.9.0 am 26.10.2026:
 
@@ -1139,6 +1208,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.8.0 | Raummeister-Auswahl mit Ja/Nein und verbindlicher Portalwahl, gespeicherter 20×20-Kacheleditor mit zweifeldrigem Portal/Startfiguren, Live-Aufbau am Portal, Startfilm, sparse Karte und Wandprüfung, große 3-Sekunden-Ereignisse, Altpartien-Aufbau nachtragen; Format 7 / Protokoll 3 |
 | 26.10.2026 | 0.8.1 | Eindeutige Portalcode-Prüfung mit Inlinefehler/Fokus, Korrektur ohne Sackgasse, vollständig aufgeräumte alte Popups und Editoransicht, erhaltene ursprüngliche Anmeldenachweise für sicheren Wiederbeitritt; Spielregeln/Format/Protokoll unverändert |
 | 26.10.2026 | 0.9.0 | Name ohne Raumcode, Reset mit Sicherung, komplette benannte Spielstände und Datei-Export/Import, Vierer-Kacheln/rote Wände/zehn Typen/Kerkerzustand, drehbarer Spielerkompass und Nord-Popup, volle Story, Format 8/Protokoll 4 und Migration alter Pläne |
+| 26.10.2026 | 0.9.1 | Drei Resetoptionen/ohne Archiv, vollständiger Portal-Hotspotreset, gemeinsame Lobby und rotes Spieler-×, direkter WLAN-Start, reduzierte Einstellungen, große Quartettbilder ohne Beschnitt, kurzer Nord-Hinweis, je Client synchrone Karten-/Kompassrotation |
 
 ## 13. Fortsetzung in einem anderen Chat
 

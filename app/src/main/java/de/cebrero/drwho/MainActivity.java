@@ -9,7 +9,6 @@ import android.graphics.*;
 import android.graphics.drawable.GradientDrawable;
 import android.net.wifi.*;
 import android.os.*;
-import android.provider.Settings;
 import android.util.AtomicFile;
 import android.view.*;
 import android.widget.*;
@@ -28,7 +27,9 @@ public class MainActivity extends Activity {
     private LocalServer server;
     private PortalNetwork network;
     private WifiManager.LocalOnlyHotspotReservation reservation;
-    private boolean hotspotPending,destroyed,confirming;
+    private boolean hotspotPending,destroyed,hotspotPermissionRequested;
+    private int hotspotGeneration;
+    private volatile int networkGeneration;
     private FrameLayout root,stage,setupScreen,noticeScreen;
     private TardisView setupFlight;
     private BoardView setupBoard;
@@ -46,7 +47,7 @@ public class MainActivity extends Activity {
     private String goCharacterId="";
     private ImageView lobbyBackground;
     private LinearLayout playerRows;
-    private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,code,gameStatus,stageStatus;
+    private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,gameStatus,stageStatus;
     private Button wifiButton,startButton;
     private String ssid="",password="",rosterSignature="";
     private final Runnable refresh=new Runnable(){public void run(){updatePortal();handler.postDelayed(this,500);}};
@@ -59,12 +60,12 @@ public class MainActivity extends Activity {
         lobbyBackground.setScaleType(ImageView.ScaleType.CENTER_CROP);lobbyBackground.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         root.addView(lobbyBackground,new FrameLayout.LayoutParams(-1,-1));
         setContentView(root);prefs=getSharedPreferences("portal-wifi",MODE_PRIVATE);
-        if(prefs.getBoolean("manualConfirmed",false)){ssid=prefs.getString("ssid",ConnectionLinks.SSID);password=prefs.getString("password",ConnectionLinks.PASSWORD);}
+        prefs.edit().remove("manualConfirmed").remove("setupPending").remove("ssid").remove("password").apply();
         try{
             engine=new GameEngine(new AndroidStore(new File(getFilesDir(),"session-v1.drw")));
             byte[] page=asset("player.html");
             try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME);}
-            network=new PortalNetwork(this,name->{if(server!=null)server.setLocalHostname(name);});
+            restartPortalNetwork();
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
         buildLobby();buildDirector();buildPlay();buildStage();buildSetup();if(engine.playing())showPlay();else showLobby();updatePortal();
     }
@@ -92,21 +93,17 @@ public class MainActivity extends Activity {
         LinearLayout heading=row();LinearLayout titles=column();TextView title=text("Dr WHO",32,WHITE);title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));titles.addView(title);
         heading.addView(titles,new LinearLayout.LayoutParams(0,-2,1));countBadge=text("0 / 4",22,WHITE);heading.addView(countBadge);content.addView(heading);
         Space artwork=new Space(this);content.addView(artwork,new LinearLayout.LayoutParams(-1,dp(10)));
-        LinearLayout lobbyTabs=row();Button connectionTab=button("WLAN & Zugang",()->{}),teamTab=button("Spieler",()->{});lobbyTabs.addView(connectionTab,new LinearLayout.LayoutParams(0,-2,1));lobbyTabs.addView(teamTab,new LinearLayout.LayoutParams(0,-2,1));content.addView(lobbyTabs);
         LinearLayout connection=card(content);connection.addView(text("1  MIT DEM WLAN VERBINDEN",11,MUTED));
         wifiName=text("WLAN starten",22,WHITE);connection.addView(wifiName);wifiName.setTextIsSelectable(true);
         wifiPassword=text("",18,CYAN);wifiPassword.setTextIsSelectable(true);connection.addView(wifiPassword);
         wifiStatus=text("",12,MUTED);connection.addView(wifiStatus);
-        wifiButton=button("Spiel-WLAN einrichten",this::wifiOptions);connection.addView(wifiButton);
+        wifiButton=button("Spiel-WLAN starten",this::startAutomaticHotspot);connection.addView(wifiButton);
         connection.addView(text("2  SPIELSEITE ÖFFNEN",11,MUTED));website=text("Warte auf WLAN …",22,CYAN);website.setTextIsSelectable(true);connection.addView(website);
         fallback=text("",12,MUTED);fallback.setTextIsSelectable(true);connection.addView(fallback);
         LinearLayout qrButtons=row();qrButtons.addView(button("WLAN-QR",()->showQr(true)),new LinearLayout.LayoutParams(0,-2,1));qrButtons.addView(button("Seiten-QR",()->showQr(false)),new LinearLayout.LayoutParams(0,-2,1));connection.addView(qrButtons);
-        code=text("Nur Name eingeben · keinen Portalcode nötig",13,CYAN);connection.addView(code);
         LinearLayout players=card(content);playerCount=text("DEIN TEAM · 0 / 4",16,CYAN);players.addView(playerCount);playerRows=column();players.addView(playerRows);
-        connectionTab.setOnClickListener(v->{connection.setVisibility(View.VISIBLE);players.setVisibility(View.GONE);});teamTab.setOnClickListener(v->{connection.setVisibility(View.GONE);players.setVisibility(View.VISIBLE);});
-        if(ssid.isEmpty())players.setVisibility(View.GONE);else connection.setVisibility(View.GONE);
         startButton=button("Abenteuer starten",()->{if(engine.playing())showPlay();else startGame();});content.addView(startButton);
-        LinearLayout footer=row();footer.addView(button("Einstellungen",this::settingsDialog),new LinearLayout.LayoutParams(0,-2,1));footer.addView(button("Zurücksetzen",this::resetDialog),new LinearLayout.LayoutParams(0,-2,1));content.addView(footer);
+        LinearLayout footer=row();footer.addView(button("Einstellungen",this::settingsDialog),new LinearLayout.LayoutParams(0,-2,1));footer.addView(button("Zurücksetzen",()->resetDialog(true)),new LinearLayout.LayoutParams(0,-2,1));content.addView(footer);
     }
     private void buildDirector(){
         LinearLayout content=padded();director=screen(content);director.setVisibility(View.GONE);
@@ -162,7 +159,7 @@ public class MainActivity extends Activity {
             setupTeam.setText(team.toString());setupTeam.setVisibility(building?View.VISIBLE:View.GONE);
             setupHint.setText(building?"↑ NORDEN · PORTAL\nDer gespeicherte Aufbau vom Raummeister-Handy erscheint hier live. Nummern zeigen die Startfelder.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
         }
-        boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}
+        boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){if(engine.playing()){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}else showLobby();}
         if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")){
             String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
             for(int i=0;i<info.notices.size();i++)if(info.notices.get(i).id.equals(seen))next=i+1;
@@ -176,11 +173,13 @@ public class MainActivity extends Activity {
     private void updatePortal(){
         if(engine==null||network==null||playerRows==null)return;
         try{engine.tick();}catch(IOException error){gameStatus.setText("Speichern fehlgeschlagen. Der letzte bestätigte Zustand bleibt erhalten.");return;}
-        network.update(server.port());
-        String ip=network.address,host=network.hostname;
-        wifiName.setText(ssid.isEmpty()?"Spiel-WLAN noch nicht eingerichtet":ssid);
+        boolean wifiReady=reservation!=null&&!ssid.isEmpty();
+        if(wifiReady)network.update(server.port());
+        String ip=wifiReady?network.address:"",host=wifiReady?network.hostname:"";
+        wifiName.setText(ssid.isEmpty()?"Spiel-WLAN noch nicht gestartet":ssid);
         wifiPassword.setText(password.isEmpty()?"":("Passwort  "+password));
-        wifiStatus.setText(hotspotPending?"WLAN startet …":reservation!=null?"Hotspot läuft · ohne Internet verbunden bleiben":prefs.getBoolean("manualConfirmed",false)?"WLAN-Daten aus deiner Einrichtung": "Einrichten oder automatisch starten");
+        wifiStatus.setText(hotspotPending?"WLAN startet …":wifiReady?"Hotspot läuft · ohne Internet verbunden bleiben":"Zum Verbinden Spiel-WLAN starten");
+        wifiButton.setEnabled(!hotspotPending&&reservation==null);wifiButton.setText(hotspotPending?"WLAN startet …":wifiReady?"Spiel-WLAN läuft":"Spiel-WLAN starten");
         website.setText(ip.isEmpty()?"WLAN zuerst starten":ConnectionLinks.site(host.isEmpty()?ip:host,server.port()));
         fallback.setText(ip.isEmpty()?"Danach erscheint hier deine Spielseite.":host.isEmpty()?network.status:"Alternativ: "+ConnectionLinks.site(ip,server.port()));
         java.util.List<String[]> players=engine.playersForHost();countBadge.setText(players.size()+" / 4");
@@ -188,12 +187,14 @@ public class MainActivity extends Activity {
         String signature=Arrays.deepToString(players.toArray());
         if(!signature.equals(rosterSignature)){
             rosterSignature=signature;playerRows.removeAllViews();
-            for(int slot=0;slot<4;slot++){
-                LinearLayout r=row();r.setPadding(0,dp(9),0,dp(9));CharacterAvatarView avatar=new CharacterAvatarView(this);
-                String[] p=slot<players.size()?players.get(slot):null;String id=p==null?"":p[3];avatar.setCharacter(id,p==null?"Freier Platz":p[2]);
-                r.addView(avatar,new LinearLayout.LayoutParams(dp(52),dp(52)));LinearLayout labels=column();labels.setPadding(dp(12),0,0,0);
-                labels.addView(text(p==null?"Platz "+(slot+1)+" frei":p[1],18,p==null?MUTED:WHITE));labels.addView(text(p==null?"Bereit für einen Mitreisenden":id.isEmpty()?"Wählt noch eine Figur …":p[2],13,MUTED));
-                r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));r.addView(text(id.isEmpty()?"○":"✓",21,id.isEmpty()?MUTED:CYAN));playerRows.addView(r);
+            if(players.isEmpty())playerRows.addView(text("Noch keine Spieler beigetreten.",14,MUTED));
+            for(String[] p:players){
+                LinearLayout r=row();r.setPadding(0,dp(4),0,dp(4));CharacterAvatarView avatar=new CharacterAvatarView(this);
+                String id=p[3];avatar.setCharacter(id,p[2]);
+                r.addView(avatar,new LinearLayout.LayoutParams(dp(44),dp(44)));LinearLayout labels=column();labels.setPadding(dp(12),0,0,0);
+                labels.addView(text(p[1],17,WHITE));labels.addView(text(id.isEmpty()?"Wählt noch eine Figur …":p[2],12,MUTED));
+                r.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
+                Button remove=button("×",()->{try{engine.removePlayer(p[0]);rosterSignature="";updatePortal();}catch(IOException e){toast("Entfernen fehlgeschlagen. Spieler bleibt angemeldet.");}});remove.setTextColor(0xffff6666);remove.setTextSize(26);remove.setMinWidth(0);remove.setMinimumWidth(0);remove.setPadding(0,0,0,0);remove.setContentDescription(p[1]+" aus der Partie entfernen");r.addView(remove,new LinearLayout.LayoutParams(dp(48),dp(48)));playerRows.addView(r);
             }
         }
         startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":engine.preparing()?"Aufbau läuft…":"Abenteuer starten");
@@ -227,8 +228,8 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this).setTitle("Euer Raumgefüge · aktuelle Positionen").setView(content).setPositiveButton("Zurück",null).show();
     }
     private void settingsDialog(){
-        String[] options={"Spiel speichern","Spiel laden","Spielstand als Datei exportieren","Spielstanddatei importieren","Spiel zurücksetzen","Kerker öffnen / schließen","Raumgefüge anzeigen","Raumgefüge bearbeiten","Gegner verwalten","WLAN / Verbindung"};
-        new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(options,(d,i)->{switch(i){case 0:saveDialog();break;case 1:loadDialog();break;case 2:exportDialog();break;case 3:startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),92);break;case 4:resetDialog();break;case 5:dungeonDialog();break;case 6:showBoard();break;case 7:new AlertDialog.Builder(this).setMessage("Partie zum Bearbeiten des Raumgefüges pausieren?").setPositiveButton("Bearbeiten",(a,b)->{try{engine.rebuildBoard();updatePortal();}catch(Exception e){toast(e.getMessage());}}).setNegativeButton("Zurück",null).show();break;case 8:showDirector();break;case 9:wifiOptions();break;}}).setNegativeButton("Zurück",null).show();
+        String[] options={"Spiel speichern","Spiel laden","Spielstand als Datei exportieren","Spielstanddatei importieren","Spiel zurücksetzen","Raumgefüge anzeigen","Raumgefüge bearbeiten","Gegner verwalten"};
+        new AlertDialog.Builder(this).setTitle("Einstellungen").setItems(options,(d,i)->{switch(i){case 0:saveDialog();break;case 1:loadDialog();break;case 2:exportDialog();break;case 3:startActivityForResult(new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"),92);break;case 4:resetDialog(false);break;case 5:showBoard();break;case 6:new AlertDialog.Builder(this).setMessage("Partie zum Bearbeiten des Raumgefüges pausieren?").setPositiveButton("Bearbeiten",(a,b)->{try{engine.rebuildBoard();updatePortal();}catch(Exception e){toast(e.getMessage());}}).setNegativeButton("Zurück",null).show();break;case 7:showDirector();break;}}).setNegativeButton("Zurück",null).show();
     }
     private File archiveDir(){File dir=new File(getFilesDir(),"saved-games");dir.mkdirs();return dir;}
     private void saveNamed(String name)throws IOException{
@@ -238,14 +239,35 @@ public class MainActivity extends Activity {
     }
     private void saveDialog(){EditText name=new EditText(this);name.setHint("Name des Spielstands");name.setText("Abenteuer");new AlertDialog.Builder(this).setTitle("Gesamtes Spiel speichern").setMessage("Raumplanung, alle Figurenpositionen, Runde, Würfel und Story werden gespeichert.").setView(name).setPositiveButton("Speichern",(d,w)->{try{saveNamed(name.getText().toString());toast("Gesamtes Spiel gespeichert.");}catch(IOException e){toast("Speichern fehlgeschlagen: "+e.getMessage());}}).setNegativeButton("Zurück",null).show();}
     private void loadDialog(){File[] files=archiveDir().listFiles((dir,n)->n.endsWith(".drwho"));if(files==null||files.length==0){toast("Noch kein Spielstand gespeichert.");return;}Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));String[] names=new String[files.length];for(int i=0;i<files.length;i++)names[i]=files[i].getName().replace(".drwho","");new AlertDialog.Builder(this).setTitle("Gespeichertes Spiel laden").setItems(names,(d,i)->new AlertDialog.Builder(this).setTitle("Spiel laden?").setMessage("Der aktuelle Stand wird vorher automatisch gesichert. Spieler treten danach mit ihrem gespeicherten Namen erneut bei.").setPositiveButton("Laden",(a,b)->{try{byte[] bytes=new AndroidStore(files[i]).load();saveNamed("Vor_Laden");engine.loadGame(bytes);afterGameChange();toast("Geladen. Spieler mit ihrem bisherigen Namen beitreten lassen.");}catch(IOException e){toast("Laden fehlgeschlagen. Aktuelle Partie bleibt erhalten. "+e.getMessage());}}).setNegativeButton("Zurück",null).show()).setNegativeButton("Zurück",null).show();}
-    private void resetDialog(){new AlertDialog.Builder(this).setTitle("Laufendes Spiel zurücksetzen?").setMessage("Ein vollständiger Sicherungsstand wird vorher angelegt. Anschließend beginnt eine neue Partie ohne Spieler und Aufbau.").setPositiveButton("Sichern und zurücksetzen",(d,w)->{try{saveNamed("Vor_Reset");engine.resetGame();afterGameChange();}catch(IOException e){toast("Zurücksetzen abgebrochen: "+e.getMessage());}}).setNegativeButton("Zurück",null).show();}
+    private void resetDialog(boolean fullPortal){
+        String message="Zurücksetzen verwirft die laufende Partie ohne neue Sicherung. Alternativ kannst du vorher den gesamten Spielstand sichern.";
+        if(fullPortal)message+=" Der Spiel-Hotspot wird beendet und die Startseite vollständig geleert.";
+        LinearLayout choices=padded();choices.addView(text(message,15,WHITE));
+        AlertDialog dialog=new AlertDialog.Builder(this).setTitle(fullPortal?"Portal vollständig zurücksetzen?":"Laufendes Spiel zurücksetzen?").setView(choices).create();
+        choices.addView(button("Zurück",dialog::dismiss));
+        choices.addView(button("Zurücksetzen (ohne Speicherung)",()->{dialog.dismiss();resetCurrentGame(false,fullPortal);}));
+        choices.addView(button("Sichern und zurücksetzen",()->{dialog.dismiss();resetCurrentGame(true,fullPortal);}));dialog.show();
+    }
+    private void resetCurrentGame(boolean save,boolean fullPortal){try{
+        if(save)saveNamed("Vor_Reset");engine.resetGame();
+        if(fullPortal){stopGameHotspot();prefs.edit().clear().apply();lobby.scrollTo(0,0);}
+        afterGameChange();
+    }catch(IOException e){toast("Zurücksetzen abgebrochen: "+e.getMessage());}}
+    private void restartPortalNetwork(){
+        int generation=++networkGeneration;if(network!=null)network.close();
+        network=new PortalNetwork(this,name->{if(!destroyed&&generation==networkGeneration&&server!=null)server.setLocalHostname(name);});
+    }
+    private void stopGameHotspot(){
+        hotspotGeneration++;hotspotPermissionRequested=false;hotspotPending=false;
+        WifiManager.LocalOnlyHotspotReservation active=reservation;reservation=null;ssid="";password="";
+        if(active!=null)active.close();restartPortalNetwork();
+    }
     private void afterGameChange(){handler.removeCallbacks(finishNotice);activeNotice="";noticeScreen.setVisibility(View.GONE);wasPreparing=false;rosterSignature="";showLobby();if(engine.playing())showPlay();updatePortal();}
     private void exportDialog(){startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE,"Dr_Who_Spielstand.drwho"),91);}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{
         if(request==91){try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new IOException("Datei nicht erreichbar.");out.write(engine.exportGame());}toast("Spielstanddatei exportiert.");}
         if(request==92){byte[] bytes;try(InputStream in=getContentResolver().openInputStream(data.getData());ByteArrayOutputStream out=new ByteArrayOutputStream()){if(in==null)throw new IOException("Datei nicht erreichbar.");byte[] b=new byte[4096];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>8*1024*1024)throw new IOException("Spielstand zu groß.");}bytes=out.toByteArray();}new AlertDialog.Builder(this).setTitle("Datei als Spielstand laden?").setMessage("Der aktuelle Stand wird vorher gesichert. Danach treten Spieler mit ihrem gespeicherten Namen bei.").setPositiveButton("Laden",(d,w)->{try{saveNamed("Vor_Import");engine.loadGame(bytes);afterGameChange();}catch(IOException e){toast("Datei ungültig. Aktuelle Partie bleibt erhalten.");}}).setNegativeButton("Zurück",null).show();}
     }catch(IOException e){toast("Datei konnte nicht verarbeitet werden: "+e.getMessage());}}
-    private void dungeonDialog(){java.util.List<String[]> list=engine.dungeonStates();if(list.isEmpty()){toast("Kein Kerker im Aufbau.");return;}String[] labels=new String[list.size()];for(int i=0;i<labels.length;i++)labels[i]=list.get(i)[2];new AlertDialog.Builder(this).setTitle("Kerkerzustand ändern").setItems(labels,(d,i)->{try{engine.toggleDungeon(Integer.parseInt(list.get(i)[0]),Integer.parseInt(list.get(i)[1]));updatePortal();}catch(Exception e){toast(e.getMessage());}}).setNegativeButton("Zurück",null).show();}
     private void enemyDialog(){
         java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
         String[] names=new String[available.size()];for(int i=0;i<names.length;i++)names[i]=available.get(i).name;
@@ -259,70 +281,42 @@ public class MainActivity extends Activity {
         AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Angriffsfolge anzeigen").setView(content).setPositiveButton("Beim Ziel anzeigen",null).setNegativeButton("Abbrechen",null).create();
         dialog.setOnShowListener(v->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(button->{try{engine.reportAttack(players.get(target.getSelectedItemPosition())[0],outcome.getText().toString());dialog.dismiss();updatePortal();}catch(IOException|IllegalArgumentException e){toast(e.getMessage());}}));dialog.show();
     }
-    private void wifiOptions(){
-        if(hotspotPending){toast("Das WLAN wird gerade gestartet.");return;}
-        String message="Einfacher Zugang für deine Runde:\n\nWLAN: "+ConnectionLinks.SSID+"\nPasswort: "+ConnectionLinks.PASSWORD+"\n\nFür dieses Passwort einmal in Android einrichten. Automatisches Starten nutzt dagegen die Zugangsdaten von Android.";
-        new AlertDialog.Builder(this).setTitle("Spiel-WLAN").setMessage(message)
-            .setPositiveButton("So einrichten",(d,w)->openWifiSettings())
-            .setNeutralButton("Automatisch starten",(d,w)->startAutomaticHotspot())
-            .setNegativeButton("Abbrechen",null).show();
-    }
-    private void openWifiSettings(){
-        if(reservation!=null){reservation.close();reservation=null;ssid="";password="";}
-        prefs.edit().putBoolean("setupPending",true).apply();
-        String[] actions={"com.android.settings.WIFI_TETHER_SETTINGS","android.settings.TETHER_SETTINGS",Settings.ACTION_WIRELESS_SETTINGS,Settings.ACTION_SETTINGS};
-        for(String action:actions)try{startActivity(new Intent(action));return;}catch(ActivityNotFoundException|SecurityException unavailable){}
-        prefs.edit().putBoolean("setupPending",false).apply();toast("Bitte Android-Einstellungen und den mobilen Hotspot öffnen.");
-    }
-    private void confirmManualWifi(){
-        if(confirming)return;confirming=true;
-        LinearLayout content=padded();content.addView(text("In Android den mobilen Hotspot einschalten und diese Daten einstellen:",16,WHITE));
-        EditText name=new EditText(this);name.setSingleLine(true);name.setHint("WLAN-Name");name.setText(prefs.getString("ssid",ConnectionLinks.SSID));content.addView(name);
-        EditText pass=new EditText(this);pass.setSingleLine(true);pass.setHint("Passwort");pass.setText(prefs.getString("password",ConnectionLinks.PASSWORD));content.addView(pass);
-        content.addView(text("Wenn du andere Daten eingestellt hast, trage sie hier ein. Danach zurück zur Lobby.",13,MUTED));
-        AlertDialog dialog=new AlertDialog.Builder(this).setTitle("Hotspot bereit?").setView(content).setPositiveButton("Ist eingerichtet",null)
-            .setNeutralButton("Automatisch starten",(d,w)->{prefs.edit().putBoolean("setupPending",false).apply();startAutomaticHotspot();})
-            .setNegativeButton("Später",(d,w)->prefs.edit().putBoolean("setupPending",false).apply()).create();
-        dialog.setOnDismissListener(d->confirming=false);dialog.setOnShowListener(d->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
-            String n=name.getText().toString().trim(),p=pass.getText().toString();if(n.isEmpty()||p.length()<8||p.length()>63){toast("WLAN-Name und Passwort mit 8–63 Zeichen eingeben.");return;}
-            ssid=n;password=p;prefs.edit().putString("ssid",n).putString("password",p).putBoolean("manualConfirmed",true).putBoolean("setupPending",false).apply();dialog.dismiss();updatePortal();
-        }));dialog.show();
-    }
     private void startAutomaticHotspot(){
-        if(reservation!=null){toast("Der automatische Hotspot läuft bereits.");return;}if(hotspotPending)return;
+        if(reservation!=null||hotspotPending||hotspotPermissionRequested)return;
         String permission=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;
-        if(checkSelfPermission(permission)!=PackageManager.PERMISSION_GRANTED){requestPermissions(Build.VERSION.SDK_INT>=33?new String[]{permission}:new String[]{permission,Manifest.permission.ACCESS_COARSE_LOCATION},7);return;}
-        hotspotPending=true;
+        if(checkSelfPermission(permission)!=PackageManager.PERMISSION_GRANTED){hotspotPermissionRequested=true;requestPermissions(Build.VERSION.SDK_INT>=33?new String[]{permission}:new String[]{permission,Manifest.permission.ACCESS_COARSE_LOCATION},7);return;}
+        hotspotPending=true;int generation=++hotspotGeneration;updatePortal();
         WifiManager.LocalOnlyHotspotCallback callback=new WifiManager.LocalOnlyHotspotCallback(){
-            @Override public void onStarted(WifiManager.LocalOnlyHotspotReservation r){hotspotPending=false;if(destroyed){r.close();return;}reservation=r;prefs.edit().putBoolean("manualConfirmed",false).putBoolean("setupPending",false).apply();
+            @Override public void onStarted(WifiManager.LocalOnlyHotspotReservation r){
+                if(destroyed||generation!=hotspotGeneration){r.close();return;}
+                hotspotPending=false;reservation=r;
                 if(Build.VERSION.SDK_INT>=30){ssid=clean(r.getSoftApConfiguration().getSsid());password=clean(r.getSoftApConfiguration().getPassphrase());}
-                else{ssid=clean(r.getWifiConfiguration().SSID);password=clean(r.getWifiConfiguration().preSharedKey);}updatePortal();}
-            @Override public void onStopped(){hotspotPending=false;reservation=null;ssid="";password="";updatePortal();}
-            @Override public void onFailed(int reason){hotspotPending=false;toast("WLAN konnte nicht gestartet werden. Bitte Android-Hotspot einrichten.");updatePortal();}
+                else{ssid=clean(r.getWifiConfiguration().SSID);password=clean(r.getWifiConfiguration().preSharedKey);}updatePortal();
+            }
+            @Override public void onStopped(){if(destroyed||generation!=hotspotGeneration)return;stopGameHotspot();updatePortal();}
+            @Override public void onFailed(int reason){if(destroyed||generation!=hotspotGeneration)return;hotspotPending=false;toast("WLAN-Start fehlgeschlagen ("+reason+"). Prüfe die Android-WLAN-Einstellungen und versuche es erneut.");updatePortal();}
         };
-        try{
-            WifiManager wifi=(WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);
-            wifi.startLocalOnlyHotspot(callback,handler);
-        }catch(SecurityException|IllegalStateException|UnsupportedOperationException e){hotspotPending=false;toast("Bitte den Android-Hotspot über WLAN einrichten aktivieren.");updatePortal();}
+        try{WifiManager wifi=(WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);wifi.startLocalOnlyHotspot(callback,handler);}
+        catch(SecurityException|IllegalStateException|UnsupportedOperationException e){hotspotPending=false;toast("WLAN konnte nicht gestartet werden. Prüfe WLAN-Berechtigung und Android-Einstellungen.");updatePortal();}
     }
     private String clean(String value){if(value==null)return "";return value.length()>1&&value.startsWith("\"")&&value.endsWith("\"")?value.substring(1,value.length()-1):value;}
-    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7){String p=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;if(checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED)startAutomaticHotspot();else toast("Bitte den Android-Hotspot verwenden.");}}
+    @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==7&&hotspotPermissionRequested&&!destroyed){hotspotPermissionRequested=false;String p=Build.VERSION.SDK_INT>=33?Manifest.permission.NEARBY_WIFI_DEVICES:Manifest.permission.ACCESS_FINE_LOCATION;if(checkSelfPermission(p)==PackageManager.PERMISSION_GRANTED)startAutomaticHotspot();else toast("Zum Starten des Spiel-WLANs wird die Android-WLAN-Berechtigung benötigt.");}}
     private void showQr(boolean wifi){
+        if(reservation==null){toast("Zuerst Spiel-WLAN starten.");return;}
         String value;
         try{value=wifi?ConnectionLinks.wifiQr(ssid,password):ConnectionLinks.site(network.address,server.port());}
         catch(IllegalArgumentException error){toast("Zuerst das WLAN einrichten und auf die Adresse warten.");return;}
         try{
             Map<EncodeHintType,Object> hints=new EnumMap<>(EncodeHintType.class);hints.put(EncodeHintType.CHARACTER_SET,"UTF-8");
             BitMatrix bits=new QRCodeWriter().encode(value,BarcodeFormat.QR_CODE,720,720,hints);int[] pixels=new int[720*720];for(int y=0;y<720;y++)for(int x=0;x<720;x++)pixels[y*720+x]=bits.get(x,y)?Color.BLACK:Color.WHITE;
-            Bitmap bitmap=Bitmap.createBitmap(pixels,720,720,Bitmap.Config.ARGB_8888);ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setAdjustViewBounds(true);image.setPadding(dp(14),dp(14),dp(14),dp(14));image.setContentDescription(wifi?"QR-Code zum Spiel-WLAN":"QR-Code zur Spielseite mit ausgefülltem Portalcode");
-            new AlertDialog.Builder(this).setTitle(wifi?"1 · Mit dem WLAN verbinden":"2 · Spielseite öffnen").setView(image).setMessage(wifi?"Mit der Kamera des Spielerhandys scannen.":"Zuerst mit dem WLAN verbinden, dann scannen. Der Portalcode wird ausgefüllt.").setPositiveButton("Fertig",null).show();
+            Bitmap bitmap=Bitmap.createBitmap(pixels,720,720,Bitmap.Config.ARGB_8888);ImageView image=new ImageView(this);image.setImageBitmap(bitmap);image.setAdjustViewBounds(true);image.setPadding(dp(14),dp(14),dp(14),dp(14));image.setContentDescription(wifi?"QR-Code zum Spiel-WLAN":"QR-Code zur Spielseite");
+            new AlertDialog.Builder(this).setTitle(wifi?"1 · Mit dem WLAN verbinden":"2 · Spielseite öffnen").setView(image).setMessage(wifi?"Mit der Kamera des Spielerhandys scannen.":"Zuerst mit dem WLAN verbinden, dann scannen.").setPositiveButton("Fertig",null).show();
         }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override protected void onStart(){super.onStart();if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onResume(){super.onResume();if(prefs!=null&&prefs.getBoolean("setupPending",false)&&playerRows!=null)handler.post(this::confirmManualWifi);}
     @Override protected void onStop(){handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);super.onStop();}
-    @Override protected void onDestroy(){destroyed=true;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
+    @Override protected void onDestroy(){destroyed=true;hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}
         @Override public byte[] load()throws IOException{try{return file.readFully();}catch(FileNotFoundException missing){return null;}}

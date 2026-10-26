@@ -2,7 +2,7 @@ package de.cebrero.drwho.core;
 import java.nio.file.*;import java.io.*;import java.time.*;import java.util.*;
 public final class BrowserPortalFixture {
  private static LocalServer open(GameEngine e,byte[] page,int port,LocalServer.Portraits portraits)throws Exception{
-  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.9.0");}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
+  for(int attempt=0;;attempt++)try{return new LocalServer(e,page,port,portraits,"0.9.1");}catch(java.net.BindException busy){if(attempt>=20)throw busy;Thread.sleep(50);}
  }
  public static void main(String[] args)throws Exception{
   Path root=Path.of(args[0]);CoreTest.MemoryStore store=new CoreTest.MemoryStore();CoreTest.Dice dice=new CoreTest.Dice();dice.face=6;
@@ -13,6 +13,7 @@ public final class BrowserPortalFixture {
   System.out.println("{\"port\":"+port+",\"code\":"+GameEngine.quote(e.code())+"}");System.out.flush();
   byte[] archived=null;
   try(BufferedReader input=new BufferedReader(new InputStreamReader(System.in))){String command;while((command=input.readLine())!=null){
+   if(command.startsWith("REMOVE ")){String name=command.substring(7);for(String[] p:e.playersForHost())if(p[1].equals(name))e.removePlayer(p[0]);}
    if(command.equals("SAVE"))archived=e.exportGame();if(command.equals("RESET"))e.resetGame();if(command.equals("LOAD"))e.loadGame(archived);
    if(command.equals("START"))e.startDemo();if(command.equals("REBUILD"))e.rebuildBoard();if(command.equals("TICK")){clock.time+=3000;e.tick();}
    if(command.equals("RESTORE")){server.close();e=new GameEngine(store,dice,CharacterProfile.known(),clock,sound);server=open(e,page,port,portraits);}

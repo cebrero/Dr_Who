@@ -82,7 +82,7 @@ public final class CoreTest {
         java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice)((Dice)rng).helperDraws=0;
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -416,6 +416,29 @@ public final class CoreTest {
         e.toggleDungeon(4,5);check(e.snapshot(a2).contains("\"kind\":\"dungeon\",\"rotation\":1,\"closed\":false"),"host can change dungeon during game");
         GameEngine restored=engine(store,dice);check(restored.snapshot(b2).equals(e.snapshot(b2)),"full loaded game survives app restart");
         MemoryStore anonStore=new MemoryStore();GameEngine anon=engine(anonStore,new Dice());String credentials=anon.joinLocal("Nora",id());check(!credentials.contains(anon.code())&&anon.lobbyStatus().contains("\"occupied\":1"),"name-only join needs no secret room code");rejects(IllegalArgumentException.class,()->anon.joinLocal("nora",id()));
+    }
+
+    static void playerRemoval()throws Exception{
+        MemoryStore store=new MemoryStore();GameEngine e=engine(store);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek"),aid=text(e.snapshot(a),"you");
+        String before=e.snapshot(b);store.fail=true;rejects(IOException.class,()->e.removePlayer(aid));check(before.equals(e.snapshot(b))&&e.snapshot(a).contains("Alice"),"failed removal keeps roster and credentials");store.fail=false;
+        e.removePlayer(aid);rejects(SecurityException.class,()->e.snapshot(a));check(e.playersForHost().size()==1&&e.snapshot(b).contains("Bob")&&!e.snapshot(b).contains("\"name\":\"Alice\""),"only selected registration removed");
+        e.chooseCharacter(b,id(),"doctor");check(e.snapshot(b).contains("\"characterId\":\"doctor\""),"removed player's character is immediately free");String once=e.snapshot(b);e.removePlayer(aid);check(once.equals(e.snapshot(b)),"repeated removal harmless");check(engine(store).snapshot(b).equals(once),"removed seat stays revoked after restart");
+        try(LocalServer server=new LocalServer(e,new byte[0],0)){
+            check(call(server,"/api/state",null,a,false).status==401&&call(server,"/api/state",null,b,false).status==200,"HTTP revokes only removed player's token");
+            check(call(server,"/api/remove","playerId="+text(e.snapshot(b),"you"),b,true).status==404,"no player-accessible removal endpoint");
+        }
+        String newA=text(e.joinLocal("Alice",id()),"token");check(!newA.equals(a)&&e.playersForHost().size()==2,"removed player can explicitly rejoin free lobby");
+
+        MemoryStore turns=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine game=engine(turns,dice);String x=ready(game,"A","doctor"),y=ready(game,"B","dalek"),z=ready(game,"C","weeping-angel");start(game);begin(game,x);cmd(game,x,"roll","");cmd(game,x,"action","E");begin(game,y);cmd(game,y,"roll","");cmd(game,y,"chooseMove","");
+        String bid=text(game.snapshot(y),"you"),cid=text(game.snapshot(z),"you");game.removePlayer(text(game.snapshot(x),"you"));String moving=game.snapshot(y);
+        check(text(moving,"current").equals(bid)&&moving.contains("\"remaining\":6")&&moving.contains("\"accepted\":true"),"removing earlier waiting player preserves active player's roll and Go");
+        game.removePlayer(bid);rejects(SecurityException.class,()->game.snapshot(y));String next=game.snapshot(z);check(text(next,"current").equals(cid)&&next.contains("\"remaining\":0")&&next.contains("\"accepted\":false"),"removing active player advances to next Go without leftover moves");check(engine(turns).snapshot(z).equals(next),"turn after removal remains loadable");
+
+        MemoryStore enemies=new MemoryStore();GameEngine fight=fourCharacterFixture(enemies,dice);String p=ready(fight,"P","doctor"),q=ready(fight,"Q","dalek"),r=ready(fight,"R","test-only");fight.addEnemy("weeping-angel");start(fight);
+        for(String t:new String[]{p,q}){begin(fight,t);cmd(fight,t,"roll","");cmd(fight,t,"action","E");}fight.removePlayer(text(fight.snapshot(r),"you"));check(fight.snapshot(p).contains("\"phase\":\"enemies\""),"removing last active human enters scheduled enemy phase");
+        fight.requestEnemyMovement();fight.removePlayer(text(fight.snapshot(q),"you"));check(fight.snapshot(p).contains("\"helperId\":\"\""),"removed enemy helper cannot block phase");check(fight.requestEnemyMovement().equals("P"),"remaining player can receive enemy movement");cmd(fight,p,"confirmMovement","");fight.reportAttack(text(fight.snapshot(p),"you"),"Testangriff");fight.removePlayer(text(fight.snapshot(p),"you"));check(!fight.playing()&&!fight.preparing()&&fight.playersForHost().isEmpty(),"last player removal returns to empty lobby");check(engine(enemies).lobbyStatus().contains("\"occupied\":0"),"cleared enemy attack and empty lobby survive restart");
+
+        MemoryStore setup=new MemoryStore();GameEngine board=engine(setup,dice);String i=ready(board,"I","doctor"),j=ready(board,"J","dalek"),k=ready(board,"K","weeping-angel");board.startDemo();advance(board);board.removePlayer(text(board.snapshot(k),"you"));check(text(board.snapshot(i),"candidate").equals(text(board.snapshot(j),"you")),"removed roommaster candidate is replaced");cmd(board,j,"roomYes","");cmd(board,j,"tilePlace","0,0,floor,0");board.removePlayer(text(board.snapshot(j),"you"));check(board.portalState().tiles.size()==1&&text(board.snapshot(i),"candidate").equals(text(board.snapshot(i),"you")),"lost roommaster preserves draft and offers remaining player");cmd(board,i,"roomYes","");cmd(board,i,"boardSave","");board.removePlayer(text(board.snapshot(i),"you"));check(!board.preparing()&&board.portalState().tiles.size()==1,"last player removed during launch preserves physical draft");check(engine(setup).playersForHost().isEmpty(),"empty draft remains loadable");
     }
 
     static void actualFormatSeven()throws Exception{

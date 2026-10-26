@@ -8,9 +8,15 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.9.0
+## Stand 0.9.1
 
-Neu in 0.9.0: Name eingeben und Figur wählen, ohne Raumcode. Portal-Einstellungen bieten
+Neu in 0.9.1: gemeinsame Portal-Startseite mit Team unter den Zugangsdaten, rotes × zum
+Abmelden einzelner Spieler, direkter automatischer Spiel-WLAN-Start, Reset wahlweise ohne Sicherung.
+Unterer Portalreset beendet zusätzlich den App-Hotspot und leert die Ansicht. Große unbeschnittene
+Quartettbilder, gekürzter Nord-Hinweis und gleichzeitig drehbare Karte/Bewegungskompass je Client.
+Einstellungen ohne Kerker-/WLAN-Einträge.
+
+Seit 0.9.0: Name eingeben und Figur wählen, ohne Raumcode. Portal-Einstellungen bieten
 benannte vollständige Spielstände, Laden, Datei-Export/Import und Reset mit vorheriger Sicherung.
 Neue Kacheln enthalten vier Bewegungsfelder; zehn Typen, dicke rote Wände und gespeicherter
 Kerkerzustand. Pro Handy drehbarer Himmelsrichtungskompass; Portal steht immer im Norden.
@@ -65,7 +71,7 @@ Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und 
 Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
 Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
 
-Validiert: 458 Kern-/HTTP-Prüfungen und 180 DOM-Prüfungen bestanden. Aktuellen Android-Build-
+Validiert: 481 Kern-/HTTP-Prüfungen und 180 DOM-Prüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -103,7 +109,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.9.0
+## Installationshinweis 0.9.1
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
@@ -118,9 +124,9 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
 ## Technikdemo verwenden
 
 1. APK auf dem Spielleiter-Handy installieren und App öffnen.
-2. „Spiel-WLAN einrichten“ wählen. Für das einfache Passwort einmal den Android-System-Hotspot
-   mit **Dr_Who / drwho123** einrichten und die tatsächlichen Daten in der App bestätigen.
-   Alternativ „Automatisch starten“: Android vergibt dafür eigene Zugangsdaten.
+2. **Spiel-WLAN starten** wählen. Die App startet direkt den Android-Lokalhotspot. Nur eine noch
+   fehlende Android-Berechtigung muss bestätigt werden. Die tatsächlichen, von Android vergebenen
+   WLAN-Zugangsdaten erscheinen am Portal.
 3. Spieler scannen zuerst „WLAN-QR“, danach „Seiten-QR“. Der Seiten-QR enthält die direkte
    Adresse ohne zusätzlichen Portalcode. Alternativ die angezeigte `http://drwho.local`-
    Adresse öffnen; wenn Port 80 nicht verfügbar ist, erscheint zusätzlich `:8080`.
@@ -138,7 +144,9 @@ Details und Schlüssel-Fortsetzung stehen in [ONBOARDING.md](ONBOARDING.md).
    eine Angriffsfolge beim Ziel anzeigen und anschließend den Gegnerzug abschließen.
    Offene Bewegungen bestätigt nur der Helfer, Angriffe nur das Ziel am eigenen Handy.
 9. „Einstellungen“ am Portal enthält benanntes Speichern/Laden, Datei-Export/-Import, Reset,
-   Kerkerzustand und weitere Spielleitung. Vor Reset und Laden wird automatisch gesichert.
+   Raumgefüge und weitere Spielleitung. Reset bietet Zurück / ohne Speicherung / Sichern und
+   zurücksetzen. Beim Laden wird vorher automatisch gesichert; der Reset unten am Portal beendet
+   zusätzlich den App-Hotspot und leert die Startansicht.
 
 App im Vordergrund geöffnet lassen. Nach Änderungen wird automatisch gespeichert;
 beim erneuten Öffnen wird die vorhandene Partie geladen. Keine fertige Spielversion:
