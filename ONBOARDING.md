@@ -1151,6 +1151,29 @@ Verbindliche Wünsche vom 27.10.2026, umgesetzt:
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
+**Spätere Atmosphäre und Erzählung – merken und zur passenden Entwicklungsphase ansprechen
+(Nutzerwunsch vom 27.10.2026, noch nicht umgesetzt):**
+
+- Das Spiel soll mitreißen. Das Portal soll als inszenierte „höhere Macht“ Zufälle,
+  Entscheidungen und Folgen verkünden: grafisches Highlight, humorvolle unterhaltsame Texte,
+  rund um den Tisch gut lesbar. Lesbarkeit aus mehreren Sitzrichtungen bei der Gestaltung
+  berücksichtigen; konkrete Darstellung/Animationen erst später gemeinsam festlegen.
+- Spieleraktionen für die anderen am Portal erst anzeigen, wenn sie „getroffen“ wurden.
+  Vorläufig als erst feststehende/aufgelöste Aktionen und Entscheidungen verstehen, keine
+  vorzeitigen persönlichen Auswahlmöglichkeiten zeigen. Der genaue Wortlaut ist noch zu
+  klären: bestätigte Entscheidung oder erfolgreicher Treffer; keine Trefferregel daraus ableiten.
+- **Idee, noch keine feste Spielregel:** Eine unbekannte Stimme/Nachricht aus dem All begleitet
+  das Abenteuer mit Pop-ups und macht einzelnen Spielern persönliche „unmoralische Angebote“.
+  Beispiel: hilfreichen Gegenstand erhalten und dafür Ausdauer oder Kraft abgeben.
+  Absender, Geheimhaltung, Werte, Kosten, Häufigkeit, Folgen und Balancing sind noch offen.
+  Keine Zahlen, automatischen Abzüge, Spielziele oder neue Gegenstände vorweg implementieren.
+- **Erinnerungsauslöser:** Mario daran erinnern, sobald die Entwicklung zur konkreten Festlegung
+  von Ausdauer, Kraft, Gegenstandswirkungen und Ereignis-/Szenarioregeln kommt, bevor Angebote
+  oder öffentlich/private Ereignisansichten umgesetzt werden. Diese Idee auch beim nächsten
+  entsprechenden Entwicklungsgespräch aktiv aufgreifen, nicht nur in einer Dateiliste verstecken.
+- Nur als spätere Planung speichern. Dieser Wunsch löst weder Implementierung noch neuen
+  APK-Build aus; die bereits verschobene Startaufstellung bleibt für den nächsten Build vorgemerkt.
+
 **Vormerkung vom 27.10.2026 – erst beim nächsten Build umsetzen:**
 
 - Bei der Startaufstellung sollen möglichst keine Spieler in der Nähe des Portals stehen,
