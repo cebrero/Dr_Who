@@ -20,6 +20,7 @@ public final class GameEngine {
     private final Random flavourRandom;
     private State state;
     private final List<CharacterProfile> catalogue;
+    private final RoomLibrary rooms;
 
     private static final class Player {
         String id, token, name, joinRequest;
@@ -65,11 +66,16 @@ public final class GameEngine {
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
+    public GameEngine(Store store,RoomLibrary rooms)throws IOException{this(store,new SecureRandom(),CharacterProfile.known(),Clock.systemDefaultZone(),new Random(),rooms);}
     GameEngine(Store store, SecureRandom random) throws IOException { this(store, random, CharacterProfile.known()); }
     GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue) throws IOException {
         this(store,random,catalogue,Clock.systemDefaultZone(),new Random());
     }
     GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue, Clock clock, Random flavourRandom) throws IOException {
+        this(store,random,catalogue,clock,flavourRandom,new RoomLibrary(new RoomLibrary.MemoryStore()));
+    }
+    GameEngine(Store store, SecureRandom random, List<CharacterProfile> catalogue, Clock clock, Random flavourRandom,RoomLibrary rooms) throws IOException {
+        this.rooms=Objects.requireNonNull(rooms);
         this.store = store;this.random = random;this.clock = clock;this.flavourRandom = flavourRandom;
         this.catalogue = Collections.unmodifiableList(new ArrayList<>(catalogue));
         Set<String> ids = new HashSet<>();
@@ -134,7 +140,7 @@ public final class GameEngine {
             Player p=state.players.get(state.current);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
             for(CharacterProfile c:catalogue)if(c.id.equals(p.characterId))view.activeCharacter=c;
             view.headline=view.awaitingGo?p.name+" ist dran…":p.name+" · "+characterName(p.characterId);
-            view.detail=view.awaitingGo?"Wartet auf Go am Spielerhandy.":"Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?"Bewegung oder Charakteraktion wählen.":"Noch "+state.remaining+" Felder ziehen.");
+            view.detail=view.awaitingGo?"Wartet auf Go am Spielerhandy.":"Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?(profile(p.characterId).actionAvailable?"Bewegung oder Charakteraktion wählen.":"Bewegung wählen; Spezialaktion noch offen."):"Noch "+state.remaining+" Felder ziehen.");
         }else{
             view.headline=characterName(state.enemies.get(state.enemyIndex))+" · Gegnerzug";
             view.detail=state.attackPending?"Angriff auf "+playerName(state.attackTarget)+": "+state.attackText:!state.helperId.isEmpty()?playerName(state.helperId)+" bewegt die Gegnerfigur.":"Gegneraktion an der Spielleitung festlegen.";
@@ -158,7 +164,7 @@ public final class GameEngine {
             if (state.phase.equals("players")) {
                 b.append("Am Zug: ").append(state.players.get(state.current).name).append('\n');
                 b.append(!state.turnAccepted ? "Wartet auf Go am Spielerhandy." : state.turnStage.equals("roll") ? "Zuerst am eigenen Handy würfeln." : state.turnStage.equals("choice") ?
-                    "Wurf " + state.turnRoll + ": Bewegung oder Aktion wählen." : "Noch " + state.remaining + " Felder ziehen.").append('\n');
+                    "Wurf " + state.turnRoll + (profile(state.players.get(state.current).characterId).actionAvailable?": Bewegung oder Aktion wählen.":": Bewegung wählen; Spezialaktion noch offen.") : "Noch " + state.remaining + " Felder ziehen.").append('\n');
             }
             else {
                 b.append("Gegnerzug: ").append(characterName(state.enemies.get(state.enemyIndex))).append('\n');
@@ -305,9 +311,10 @@ public final class GameEngine {
             CharacterProfile c = catalogue.get(i); if (i > 0) b.append(',');
             String owner = ""; for (Player p : state.players) if (p.characterId.equals(c.id)) owner = p.id;
             b.append("{\"id\":").append(quote(c.id)).append(",\"name\":").append(quote(c.name))
+                .append(",\"archetype\":").append(quote(c.archetype))
                 .append(",\"description\":").append(quote(c.description)).append(",\"endurance\":").append(quote(c.endurance))
                 .append(",\"strength\":").append(quote(c.strength)).append(",\"portrait\":").append(quote(c.portrait))
-                .append(",\"actionNeedsDirection\":").append(c.actionNeedsDirection).append(",\"owner\":").append(quote(owner)).append(",\"enemy\":").append(state.enemies.contains(c.id)).append(",\"abilities\":[");
+                .append(",\"actionAvailable\":").append(c.actionAvailable).append(",\"actionNeedsDirection\":").append(c.actionNeedsDirection).append(",\"owner\":").append(quote(owner)).append(",\"enemy\":").append(state.enemies.contains(c.id)).append(",\"abilities\":[");
             for (int j = 0; j < c.abilities.size(); j++) { if (j > 0) b.append(','); b.append(quote(c.abilities.get(j))); }
             b.append("]}");
         }
@@ -327,16 +334,29 @@ public final class GameEngine {
         }
         return b.append("]}").toString();
     }
+    public synchronized String roomLibrary(String token){
+        Player actor=authenticated(state,token);requireRoomMaster(actor);
+        String name=DateTimeFormatter.ofPattern("dd.MM.yyyy-HH.mm.ss",Locale.GERMANY).withZone(clock.getZone()).format(clock.instant())+"_"+characterName(actor.characterId).replace(' ','_');
+        return rooms.json(name);
+    }
+    private void requireRoomMaster(Player actor){
+        if(!state.setupStage.equals("building")||!actor.id.equals(state.roomMaster))throw new IllegalArgumentException("Nur der Raummeister kann während des Aufbaus Räume speichern oder laden.");
+    }
     public synchronized String command(String token, String requestId, long revision, String action, String direction) throws IOException {
         Player actor = authenticated(state, token);
         requireRequest(requestId);
         String receipt = actor.id + ":" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token); // Retry never rerolls or moves twice.
-        boolean setupIntent=Arrays.asList("readDossier","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave").contains(action);
+        boolean setupIntent=Arrays.asList("readDossier","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave","roomSave","roomLoad").contains(action);
+        // The room file itself is the durable receipt. A save retry must not capture a later board.
+        if("roomSave".equals(action)&&rooms.saved(state.id+":"+receipt,direction))return snapshot(token);
         // Reading does not invalidate the roommaster's current board or another reader's intent.
         // Any actual setup/role change still invalidates older requests.
         if (revision != state.revision&&!(setupIntent&&revision>=state.lastInteractionRevision&&revision<state.revision))
             throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
+        if("roomSave".equals(action)){
+            requireRoomMaster(actor);rooms.save(state.id+":"+receipt,direction,state.board,clock.millis());return snapshot(token);
+        }
         if("readDossier".equals(action)){
             if(!state.dossierRequired||!Arrays.asList("building","briefing").contains(state.setupStage)||
                 state.setupStage.equals("building")&&actor.id.equals(state.roomMaster))
@@ -349,7 +369,7 @@ public final class GameEngine {
             if(!state.keyState.equals("owned")||!state.keyOwner.equals(actor.id))throw new IllegalArgumentException("Kein Schlüsselfund für dich.");
             State next=copy();next.keyPending=false;remember(next,receipt);commit(next);return snapshot(token);
         }
-        if(Arrays.asList("roomYes","roomNo","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave").contains(action))
+        if(Arrays.asList("roomYes","roomNo","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave","roomLoad").contains(action))
             return setupCommand(actor,token,receipt,action,direction);
         if("moveEnemy".equals(action)){
             if(!playing()||!state.phase.equals("enemies")||!actor.id.equals(state.helperId))throw new IllegalArgumentException("Kein Bewegungsauftrag für dich.");
@@ -400,7 +420,7 @@ public final class GameEngine {
                 String from = cell(p); p.x = x; p.y = y;
                 next.remaining--;
                 addSpeech(next, p.name + " zieht von " + from + " nach " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.",
-                    p.characterId,p.name,(p.characterId.equals("dalek")?"Ich rolle":"Ich gehe")+" von Feld "+from+" zu Feld "+cell(p)+". Noch "+next.remaining+" Felder liegen vor mir.",direction);
+                    p.characterId,p.name,(CharacterProfile.archetypeOf(p.characterId).equals("dalek")?"Ich rolle":"Ich gehe")+" von Feld "+from+" zu Feld "+cell(p)+". Noch "+next.remaining+" Felder liegen vor mir.",direction);
                 if(next.keyState.equals("hidden")&&next.keyX==x&&next.keyY==y){
                     next.keyState="owned";next.keyOwner=p.id;next.keyPending=true;
                     notice(next,p.name+" hat den Portalschlüssel gefunden!");next.keyEvent=next.notices.get(next.notices.size()-1).id;
@@ -414,8 +434,8 @@ public final class GameEngine {
                 next.rollEventId = UUID.randomUUID().toString(); next.rollPlayerId = p.id;
                 next.turnRoll = next.lastRoll; next.remaining = next.turnRoll;
                 next.turnStage = next.turnRoll >= 5 ? "choice" : "move";
-                addSpeech(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."),
-                    p.characterId,p.name,"Ich würfle eine "+next.turnRoll+". "+(next.turnRoll>=5?"Ich kann Bewegung oder Aktion wählen.":"Ich ziehe genau so viele Felder."),"");
+                addSpeech(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 && profile(p.characterId).actionAvailable ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."),
+                    p.characterId,p.name,"Ich würfle eine "+next.turnRoll+". "+(next.turnRoll>=5&&profile(p.characterId).actionAvailable?"Ich kann Bewegung oder Aktion wählen.":"Ich ziehe genau so viele Felder."),"");
                 break;
             case "chooseMove":
                 if (!next.turnStage.equals("choice")) throw new IllegalArgumentException("Keine Bewegungswahl offen.");
@@ -423,11 +443,12 @@ public final class GameEngine {
                 addSpeech(next,p.name+" wählt Bewegung um genau "+next.turnRoll+" Felder.",p.characterId,p.name,"Ich entscheide mich für "+next.turnRoll+" Felder Bewegung.","");
                 break;
             case "action":
+                if(!profile(p.characterId).actionAvailable)throw new IllegalArgumentException("Für diese Figur ist die Spezialaktion noch nicht festgelegt. Bitte Bewegung wählen.");
                 if (!next.turnStage.equals("choice") || next.turnRoll < 5) throw new IllegalArgumentException("Eine Aktion steht nur statt Bewegung bei einer 5 oder 6 zur Wahl.");
                 CharacterProfile acting=profile(p.characterId);
                 String selectedDirection=direction==null?"":direction;
                 if(acting.actionNeedsDirection||!selectedDirection.isEmpty())directionName(selectedDirection);
-                String actionText=p.characterId.equals("doctor")?"Ich richte meinen Schallschraubenzieher":p.characterId.equals("dalek")?"Ich richte meinen Strahl":p.characterId.equals("weeping-angel")?"Ich richte meine Fähigkeit":"Ich wähle eine Charakteraktion";
+                String actionText=p.characterId.equals("doctor")?"Ich richte meinen Schallschraubenzieher":CharacterProfile.archetypeOf(p.characterId).equals("dalek")?"Ich richte meinen Strahl":CharacterProfile.archetypeOf(p.characterId).equals("weeping-angel")?"Ich richte meine Fähigkeit":"Ich wähle eine Charakteraktion";
                 if(!selectedDirection.isEmpty())actionText+=" nach "+directionName(selectedDirection);
                 addSpeech(next,p.name+" wählt eine Charakteraktion"+(selectedDirection.isEmpty()?"":" nach "+directionName(selectedDirection))+" (Techniktest: Auswahl gespeichert, Wirkung noch nicht berechnet).",
                     p.characterId,p.name,actionText+". Auswahl gespeichert; die Wirkung ist noch nicht festgelegt.",selectedDirection);
@@ -485,6 +506,10 @@ public final class GameEngine {
             String[] args=(payload==null?"":payload).split(",",-1);
             try{
                 switch(action){
+                    case "roomLoad":
+                        requireArgs(args,1);next.board=rooms.board(payload);
+                        if(next.freshSetup){next.manualSpawns.clear();next.enemyPositions.clear();for(Player p:next.players){p.x=-1;p.y=-1;}}
+                        addLog(next,actor.name+" lädt das Raumgefüge „"+rooms.name(payload)+"“.");break;
                     case "tilePlace":requireArgs(args,4);next.board.place(number(args[0]),number(args[1]),args[2],number(args[3]));break;
                     case "tileMove":requireArgs(args,4);next.board.move(number(args[0]),number(args[1]),number(args[2]),number(args[3]));break;
                     case "tileRotate":requireArgs(args,2);next.board.rotate(number(args[0]),number(args[1]));break;
@@ -704,7 +729,7 @@ public final class GameEngine {
         StoryEntry e=new StoryEntry();e.id=UUID.randomUUID().toString();e.timestampMillis=clock.millis();
         e.dateTime=DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm 'Uhr'",Locale.GERMAN).format(Instant.ofEpochMilli(e.timestampMillis).atZone(clock.getZone()));
         e.speaker=characterId.isEmpty()?"Portal":characterId.equals("doctor")?"Dr WHO":characterName(characterId);e.playerName=playerName;e.direction=direction;
-        if(characterId.equals("dalek")&&flavourRandom.nextInt(4)==0){String[] sounds={"Knarz … grrr.","Grrr … knarz.","Krrr … grrr."};text+=" "+sounds[flavourRandom.nextInt(sounds.length)];}
+        if(CharacterProfile.archetypeOf(characterId).equals("dalek")&&flavourRandom.nextInt(4)==0){String[] sounds={"Knarz … grrr.","Grrr … knarz.","Krrr … grrr."};text+=" "+sounds[flavourRandom.nextInt(sounds.length)];}
         e.text=text;s.story.add(e);
     }
     private State copy() throws IOException { return decode(encode(state)); }

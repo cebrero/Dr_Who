@@ -1,14 +1,14 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **27.10.2026 · Version 0.11.0 · Charakterdossiers, Lesebestätigung und Portal-Fakten**
-<!-- app-version: 0.11.0 -->
-<!-- reviewed-source-sha256: 3534324a1462afde315aa386cdf7d8077d8f1ac9990ab7a2b7c81b59d88835f5 -->
+Stand: **27.10.2026 · Version 0.12.0 · Elf bestätigte Figuren und benannte Raumvorlagen**
+<!-- app-version: 0.12.0 -->
+<!-- reviewed-source-sha256: bf58cd73cb2bcf4222c47a2c6bf152902e9f16f6f64ce339ccac127b91bce152 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
-**Neu umgesetzt:** Während des Aufbaus lesen andere Spieler ihr illustriertes Dossier,
-danach auch der Raummeister. Erst alle „Gelesen“-Bestätigungen erlauben Startfilm und Go.
-Portal-Fakten begleiten den Aufbau; neue automatische Starts bevorzugen Abstand zum Portal.
-Details unter Abschnitt 8k; Werte/Kampf-/Szenarioregeln bleiben offen.
+**Neu umgesetzt:** Acht bestätigte Figurentypen / elf einzelne Miniaturen sind auswählbar,
+mit neuen Dossiers und Bildern. Raummeister kann direkt im Editor benannte Raumvorlagen speichern
+und nach Bestätigung laden. Voreinstellung Datum-Zeit_Charaktername. Details unter Abschnitt 8l.
+Ausdauer/Kraft und neue Spezialwirkungen bleiben offen; nicht definierte Aktionen sind gesperrt.
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
 Anforderungen, Entscheidungen, tatsächlichen Stand, Teststatus und nächsten Schritt hier
@@ -23,7 +23,8 @@ Handys. Nur das Host-Handy braucht eine Android-App; die anderen benötigen eine
 
 Der Nutzer möchte die Regeln und ein sinnvolles Spielziel gemeinsam entwickeln.
 Er nennt später sämtliche vorhandenen Figuren und zeigt die bereits gedruckten Spielteile.
-Keine vollständige Figurenliste und kein vollständiges Teileinventar sind bisher bekannt.
+Die beiden bestätigten Fotos zeigen acht Figurentypen mit elf Miniaturen (Abschnitt 8l).
+Ein vollständiges Kachelinventar mit Stückzahlen und Abmessungen ist weiterhin offen.
 
 ## 2. Vom Nutzer ausdrücklich gewünschte Anforderungen
 
@@ -109,7 +110,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.11.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.12.0
 
 ### Vor der Partie
 
@@ -119,12 +120,15 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
    Neue Registrierung am Portal mit bereitgestelltem TARDIS-Sound begrüßen; bestehende Plätze bleiben still.
 2. Bis zu vier Spieler treten am eigenen Handy mit Namen ohne zusätzlichen Portalcode bei.
 3. Jeder wählt eine Quartettkarte mit großem vollständigem Porträt oben und Eigenschaften darunter.
+   Jede der elf einzelnen Figuren ist exklusiv reservierbar; Duplikat-Miniaturen haben eigene IDs.
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
 4. Portal zeigt, wie viele bereits gewählt haben, plus Spielername und zugeordnete Figur.
 5. Nach der Spielerwahl kann der Host übrige bekannte Figuren als Gegner hinzufügen.
 6. Host drückt Start; der bereitgestellte Themensong spielt einmal. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
    Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
-7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, elf Typen einschließlich Portal über zwei Kacheln, 90°-Drehung,
+7. Raummeister erfasst den tatsächlichen Aufbau oder lädt eine benannte Raumvorlage direkt im Editor;
+   Speichern einer eigenen Vorlage mit editierbarem Datum-Zeit_Charaktername beendet den Bau nicht.
+   Manueller Aufbau weiterhin per Kachel-Editor (20×20, elf Typen einschließlich Portal über zwei Kacheln, 90°-Drehung,
    vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live und kurze Serienfakten.
    Andere Spieler lesen währenddessen ihr Dossier und bestätigen Gelesen. Nach dem Speichern liest
    auch der Raummeister. Erst alle Bestätigungen erlauben drei Sekunden Startfilm und Go.
@@ -137,7 +141,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.11.0 |
+| Schritt | Regel | Umsetzung 0.12.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host würfelt und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -152,11 +156,13 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 Im Prototyp ist die 5/6-Entscheidung verbindlich, sobald „Bewegen“ gewählt wurde. Während
 angefangener Bewegung kann nicht nachträglich zur Aktion gewechselt werden. Das ist eine
 technische Festlegung für klare Zustände; ein späterer Zurück-/Planungsmodus ist noch offen.
-Die aktuelle Taste „Aktion wählen · Techniktest“ öffnet bei den drei bekannten gerichteten
+Für die drei bisherigen Typen und deren Duplikate öffnet die Taste „Aktion wählen · Techniktest“ bei den gerichteten
 Fähigkeiten zuerst die Richtungsauswahl Nord/Ost/Süd/West. Erst die gesendete Richtungswahl
 beendet den Zug; Abbrechen verbraucht nichts. Gespeichert wird weiterhin nur die Auswahl,
 ohne eine Tür zu öffnen, Schaden zu verursachen oder einen Status anzuwenden. Das ist eine
-klar gekennzeichnete Übergangslösung, keine fertig implementierte Sonderfähigkeit.
+klar gekennzeichnete Übergangslösung, keine fertig implementierte Sonderfähigkeit. Bei den fünf
+neu aufgenommenen Typen ist die eigene Spezialaktion noch nicht vereinbart; Taste bleibt gesperrt,
+Host weist sie ohne Zugverbrauch ab. Bei 5/6 vorerst normale Bewegung wählen.
 
 ### Gegnerphase und Rundenende
 
@@ -239,20 +245,17 @@ Gewünschte Dauer und Schwierigkeitsgrad? Mehrere Figuren pro Spieler?
    Nur das Ziel kann diese Anzeige bestätigen. Erst nach offenen Bestätigungen kann der Host
    den Gegnerzug abschließen; nach dem letzten Gegner beginnt die nächste Runde.
 
-**Aktueller Ausbaugrad:** Drei Katalogeinträge (Doctor, Dalek, Weinender Engel), ausschließlich
-weil diese bereits vom Nutzer genannt wurden. Keine weiteren Serienfiguren erfunden. Daher
-können aktuell maximal drei unterschiedliche Figuren gewählt werden, obwohl vier Spielerplätze
-vorhanden sind. Für vier spielende Personen braucht es mindestens eine weitere benannte Figur;
-für zusätzliche Gegner entsprechend weitere verfügbare Figuren. Mehrere Exemplare eines Typs
-werden später nach tatsächlichem Inventar als separate Figuren-IDs modelliert.
+**Aktueller Ausbaugrad:** Acht bestätigte Typen, elf physische Figuren: Doctor (1), Dalek (2),
+Weinender Engel (2), Sontaraner (1), Cyberman (2), Schneemann (1), Adipose (1), Zygon (1).
+Fotozuordnung vom Nutzer bestätigt, Zygon zusätzlich separat bestätigt. Alle sind auswählbar,
+maximal vier Personen. Zweite Miniaturen besitzen eigene IDs; Partner-/Gegnerregel bleibt gleich.
+Vollständige IDs, Bedienstand, Quellen und Bilder unter Abschnitt 8l.
 
-Steckbriefkarten haben Bildbereich, Beschreibung, Ausdauer, Kraft und Sonderfähigkeiten.
-Ab 0.4.0 sind für die drei bekannten Figuren lokale SVG-Illustrationen hinterlegt. Echte
-Figurenfotos fehlen weiterhin. Native Portal-Avatare zeigen stilisierte Charakterbilder und
-bevorzugen später vorhandene JPEGs unter `app/src/main/assets/portraits/<charakter-id>.jpg`.
-Für die Browser-Steckbriefe wird der Bildpfad im Charakterkatalog gepflegt. Alles funktioniert offline.
-Ausdauer und Kraft stehen ausdrücklich auf „Noch festzulegen“; Fähigkeitstexte geben die
-bisherigen Nutzerideen wieder und sind noch keine implementierten Kampfregeln.
+Steckbriefe zeigen vollständige lokale KI-Porträts und Beschreibungen. Nutzerfotos belegen den
+Miniaturenbestand; sie sind nicht automatisch öffentliche Auswahl-Assets. Doppelfiguren verwenden
+über ihren Archetyp dasselbe Porträt/Dossier, bleiben aber einzelne Figuren. Ausdauer und Kraft
+weiter ausdrücklich „Noch festzulegen“. Bisherige drei Aktionen gerichtete Techniktests; fünf
+neue Typen haben bis zur gemeinsamen Regelentscheidung eine gesperrte Spezialaktion.
 
 Gegnersteuerung ist derzeit ein moderierter Technikablauf: Der Host fordert die Bewegung an,
 nennt Weg/Ziel und trägt die konkrete Angriffsfolge ein. Automatische Entscheidung, Positionen
@@ -283,7 +286,7 @@ Er erfasst vorhandene Teile ohne unbekannte Stückzahlen zu erfinden; ein Genera
 | Verließ | unbekannt | Feldanzahl, Zugänge, Aufstellmaß | genannt |
 | Friedhof | unbekannt | Feldanzahl, Zugänge, Aufstellmaß | genannt |
 | Brunnen | unbekannt | blockiert Feld oder begehbar? | genannt |
-| Figuren | unbekannt | Name, Anzahl, Sockelgröße | Nutzer zeigt sie später |
+| Figuren | 11 auf zwei bestätigten Fotos | 8 Typen, Sockelgröße unbekannt | Abschnitt 8l; weitere Figuren möglich |
 | Portalhalterung | unbekannt | Portal belegt zwei Rasterfelder; Telefon, sichtbare Displayfläche fehlen | zweifeldrig im Editor |
 
 Zusätzlich klären: Entspricht jedes gedruckte Plättchen einem Bewegungsfeld oder mehreren?
@@ -324,7 +327,8 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 10, ältere Formate
+**Heute umgesetzt:** Zusätzlich eine dauerhafte benannte Raumsammlung direkt beim Raummeister
+(Abschnitt 8l), getrennt von vollständigen Spielständen. Ein versionierter binärer lokaler Spielstand (Format 10, ältere Formate
 1–9 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
@@ -1207,7 +1211,122 @@ Charakterwerte, Gegenstandswirkungen und Kampfregeln. Vorhandene Wünsche werden
 keine neuen Werte/Wirkungen festgelegt. Spätere Erzähl-/Angebotsidee bleibt offen.
 
 
-## 9. Technische Grundlage 0.11.0
+## 8l. Bestätigte Figuren und benannte Raumvorlagen ab 0.12.0
+
+Neue Wünsche vom **27.10.2026**, umgesetzt. Der Nutzer bestätigte die erkannten Figuren
+aus zwei Fotos ausdrücklich als auswählbar. Der zusätzlich zugeordnete **Zygon** wurde
+in einer separaten Auswahl ebenfalls ausdrücklich bestätigt. Keine Originalfotos öffentlich hochgeladen.
+
+### Acht Typen, elf einzelne Figuren
+
+| Typ | Anzahl auf den bestätigten Fotos | Katalog-IDs |
+| --- | --- | --- |
+| Der Doctor | 1 | `doctor` |
+| Dalek | 2 | `dalek`, `dalek-2` |
+| Weinender Engel | 2 | `weeping-angel`, `weeping-angel-2` |
+| Sontaraner | 1 | `sontaran` |
+| Cyberman | 2 | `cyberman`, `cyberman-2` |
+| Schneemann | 1 | `snowman` |
+| Adipose | 1 | `adipose` |
+| Zygon | 1 | `zygon` |
+
+- Jede physische Miniatur hat eine eigene exklusive ID. Zwei Spieler können unterschiedliche
+  Daleks, Engel oder Cybermen wählen. Eine einzelne ID bleibt exklusiv; keine Doppelvergabe.
+  Erste drei IDs und bestehende Partien bleiben unverändert. Maximal **vier Menschen**.
+- Alle beigetretenen Spieler bleiben Partner; unbesetzte einzelne Figuren werden nur durch
+  Hinzufügen am Portal Gegner. Keine automatische Aufnahme aller elf Figuren.
+- Sontaraner wird allgemein geführt. Die Ähnlichkeit zu Strax reicht nicht, um eine konkrete
+  Serienperson zwingend festzuschreiben. Doctor-Inkarnation weiterhin nicht verbindlich bestimmt.
+- Neue fünf Typen erhalten große Porträts, zusätzliche Szenen, Beschreibungen und vollständige
+  scrollbare Dossiers mit früher Bedienung, Herkunft/Spezies und getrenntem Serienwissen.
+  Fez/Schleife des Adipose greifen die Miniatur auf und sind kein Bonus.
+- Doppelminiaturen teilen Hintergrund/Porträt ihres `archetype`, behalten aber eigenen Namen,
+  Besitzer, Position und Gegnerstatus. Auch native Avatare sowie Dalek-Stimme nutzen den Typ.
+- **Keine Werte oder Spezialwirkungen erfunden.** Ausdauer/Kraft aller Figuren weiter offen.
+  Bei neuen fünf Typen ist `actionAvailable=false`: Taste **Spezialaktion noch offen** gesperrt,
+  Host weist einen unzulässigen Aktionsversuch ohne Zugverbrauch ab. Go, W6 und normale Bewegung
+  funktionieren. Bei 5/6 vorerst Bewegung wählen; kein freies Passen. Vorhandene gerichtete
+  Techniktest-Aktionen der drei bisherigen Typen gelten auch für deren zweite Miniatur.
+- Serienmerkmale (Klonkrieger-Ausrüstung, Cyberhülle/Umwandlung, belebter Schnee, Adipose-
+  Entstehung, Zygon-Gestaltwandlung) sind **keine** bestätigten Tabletop-Wirkungen. Kosten,
+  Reichweiten, Ziele und konkrete Bedienung eigener Fähigkeiten werden gemeinsam festgelegt.
+
+### Räume direkt beim Raummeister speichern und laden
+
+- Editor hat **Raum speichern** und **Raum laden**, zusätzlich zum bisherigen **Speichern &
+  starten**. Vorlagen speichern beendet den Aufbau nicht; Laden startet ebenfalls keine Partie.
+- Speicherfenster mit editierbarem Namen. Host-Voreinstellung nach gewünschtem Muster
+  Datum-Zeit_Charaktername, konkret **dd.MM.yyyy-HH.mm.ss_Charaktername**; Leerzeichen des
+  Charakternamens werden Unterstriche. Beispiel `27.10.2026-18.35.20_Der_Doctor`.
+  Host-Zeitzone maßgeblich; beim Öffnen vorbelegen, nicht beim Polling überschreiben.
+- Name 1–80 Zeichen ohne Steuerzeichen. Dateiname ist eine interne UUID, niemals der Name.
+  Ein bereits vergebener Name wird mit verständlichem Fehler abgewiesen; anderen Namen wählen.
+  Kein stilles Überschreiben bestehender Räume.
+- Ladeauswahl zeigt Namen, Speicherzeit, Kacheln und Bewegungsfelder. Auswahl verlangt danach
+  **Raum laden** als Bestätigung, dass der aktuelle Entwurf ersetzt wird. Zurück möglich.
+- Raumvorlage enthält Kacheln, Drehungen, 2×2-/Altraster, zusammenhängendes Portal und Kerker-
+  zustände. Keine Spieleranmeldungen, Story, Würfel, Taschen, geheimen Schlüssel oder alten
+  Figurenbesitzer übernehmen. Neue Startaufstellung wird für die aktuelle Besetzung vorgeschlagen;
+  bewusst geladene Vorlage ersetzt deren bisherige manuelle Startvorschläge. Beim Umbau einer
+  laufenden Partie gültige aktuelle Positionen erhalten, ungültige wie bisher reparieren.
+- Gespeicherte Räume bleiben über App-Neustart und Spielreset sowie vollständiges Spiel-Laden
+  erhalten. Aktiver Plan weiterhin Bestandteil vollständiger Spielstände/Exporte; die zusätzliche
+  Raumsammlung wird getrennt im privaten App-Speicher gehalten. Raumexport/-import, Umbenennen
+  und Löschen sind noch keine Oberfläche dieser Version.
+- Nur authentisierter aktueller Raummeister in `building` darf listen/speichern/laden.
+  `GET /api/rooms` liefert Liste und Namensvorgabe, Schreibvorgänge als `roomSave/roomLoad`
+  über bestehende authentisierte Command-Route. Keine allgemeine Administrations-API.
+- `RoomLibrary` testbar ohne Android, eigene streng geprüfte Binärdateien **Raumformat 1**.
+  Native `RoomFiles` schreibt privat atomar unter `saved-rooms/<UUID>.drwroom`. Fehlerhafte
+  Dateien bleiben unangetastet; gültige Räume weiter verfügbar, Zahl nicht lesbarer Dateien anzeigen.
+- Speichern erfordert vorhandene Kachel. Host speichert seinen bestätigten Plan, keine freie
+  Karte aus dem Browser. Speicherversuch erhält stabile aus Partie/Spieler/Anfrage abgeleitete
+  UUID als dauerhafte Quittung. Verlorene Antwort/Neustart/Retry erzeugt keine zweite Vorlage
+  und übernimmt nicht einen inzwischen geänderten Aufbau. Neue veraltete Speicheranfrage ablehnen.
+- Ladefehler lassen den laufenden Entwurf unverändert. Erst persistenter Spielzustand wird
+  bestätigt, identischer Retry fügt keinen zweiten Storyeintrag hinzu. Ladeauswahl/Name behalten
+  Eingaben beim Polling; unbestätigte Anfragen frieren Name und Ziel ein und bieten Retry im Dialog.
+  Hintergrund gesperrt, Tastatur/Fokus/Abbrechen, Anmelde- und Versionswechsel sauber aufräumen.
+- Neue Raum-JS/CSS explizit in Server-Allowlist; kleine Editorhöhe 320×568 mit kompakter Palette
+  und eigener Rasterbewegung, kein erforderlicher Dokument-Seitenlauf im geprüften Browser.
+
+### Neue Quellen und Bilder
+
+Offizielle Serienquellen am **27.10.2026** geprüft, frei auf Deutsch zusammengefasst:
+
+- https://www.doctorwho.tv/characters/sontarans
+- https://www.doctorwho.tv/characters/cybermen
+- https://www.doctorwho.tv/stories/the-snowmen
+- https://www.doctorwho.tv/characters/the-great-intelligence
+- https://www.doctorwho.tv/characters/adipose
+- https://www.doctorwho.tv/characters/zygons
+- Visueller Zygon-Vergleich: https://www.doctorwho.tv/news-and-features/new-doctor-who-miniatures-games-from-warlord
+
+Je ein neues Porträt und eine neue Szene für Sontaraner, Cyberman, Schneemann, Adipose und Zygon
+unter `app/src/main/assets/portraits/`. Insgesamt zehn lokale JPEGs aus integrierter Bildgenerierung,
+keine CLI/API-Ausweichlösung und keine offiziellen Serienfotos. Originale als PNG erzeugt, für
+Offline-App proportional verkleinert und als JPEG gespeichert. Keine ursprünglichen Bilder ersetzen.
+Dossiers kennzeichnen freie KI-Illustrationen; Quellen aufklappbar. Finale Prompts:
+
+- `sontaran.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable Doctor Who Sontaran, short stocky adult alien clone warrior, bulbous wrinkled ochre potato-shaped bald head, stern expressive face, dark blue-purple segmented military armour, helmet removed, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, petrol-blue shadows and warm brass edge light, softly blurred alien military corridor. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `sontaran-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable Doctor Who Sontaran, short stocky adult alien clone warrior, bulbous wrinkled ochre potato-shaped bald head, stern expressive face, dark blue-purple segmented military armour, helmet removed, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, petrol-blue shadows and warm brass edge light, softly blurred alien military corridor. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `cyberman.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable Doctor Who Cyberman, silver armoured humanoid with iconic handles at sides of domed helmet, two black eye apertures and rectangular mouth slit, articulated silver limbs, circular cool blue chest unit, complete full body centered with generous space around all edges, cinematic photographic realism, weathered metal, softly blurred dark technological corridor, restrained petrol-blue rim light and warm brass reflections. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `cyberman-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable Doctor Who Cyberman, silver armoured humanoid with iconic handles at sides of domed helmet, two black eye apertures and rectangular mouth slit, articulated silver limbs, circular cool blue chest unit, complete full body centered with generous space around all edges, cinematic photographic realism, weathered metal, softly blurred dark technological corridor, restrained petrol-blue rim light and warm brass reflections. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `zygon.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable Doctor Who Zygon, reddish-brown organic humanoid shapeshifter, elongated domed ridged head continuous with broad shoulders, small dark eyes, rows of circular suction cups down head and chest, ribbed fleshy torso and clawed hands, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, softly blurred organic alien interior, petrol-blue shadow and warm amber side light, no blood or gore. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `zygon-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable Doctor Who Zygon, reddish-brown organic humanoid shapeshifter, elongated domed ridged head continuous with broad shoulders, small dark eyes, rows of circular suction cups down head and chest, ribbed fleshy torso and clawed hands, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, softly blurred organic alien interior, petrol-blue shadow and warm amber side light, no blood or gore. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `snowman.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable sinister sentient snowman from Doctor Who The Snowmen, white rounded snow head with two dark angled eye holes and wide jagged black smiling mouth, simple tapered packed-snow body, no hat, no scarf, no nose carrot, no stick arms, complete snow creature centered with generous space around edges, cinematic photographic realism, Victorian street at blue winter dusk softly blurred behind, snow texture and gentle warm lamplight, eerie playful not gory. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `snowman-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable sinister sentient snowman from Doctor Who The Snowmen, white rounded snow head with two dark angled eye holes and wide jagged black smiling mouth, simple tapered packed-snow body, no hat, no scarf, no nose carrot, no stick arms, complete snow creature centered with generous space around edges, cinematic photographic realism, Victorian street at blue winter dusk softly blurred behind, snow texture and gentle warm lamplight, eerie playful not gory. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `adipose.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable Doctor Who Adipose, small plump pear-shaped white alien with little arms and feet, tiny black eyes, cheerful little smiling mouth and one tooth, wearing a small red fez and orange bowtie matching a homemade tabletop miniature, complete creature centered with generous headroom and space at feet, cinematic photographic realism, softly blurred petrol-blue cosmic room with warm brass highlights, endearing smooth soft white skin, no other characters. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+- `adipose-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable Doctor Who Adipose, small plump pear-shaped white alien with little arms and feet, tiny black eyes, cheerful little smiling mouth and one tooth, wearing a small red fez and orange bowtie matching a homemade tabletop miniature, complete creature centered with generous headroom and space at feet, cinematic photographic realism, softly blurred petrol-blue cosmic room with warm brass highlights, endearing smooth soft white skin, no other characters. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
+
+**Version:** App **0.12.0 / Code 19**, **API-Protokoll 7**. Spielstandformat **10 unverändert**,
+ältere Formate 1–9 weiterhin lesbar. Raumdateien haben unabhängiges Format 1. APK mit bisherigem
+Schlüssel bauen; als normales Update installieren und Clients neu laden. Keine Deinstallation.
+Private Originalaudios bleiben bytegleich. Bekannte Android-/Hotspot-/Audio-/native Gerätetests
+nicht durch Browserprüfungen als erledigt behaupten.
+
+
+## 9. Technische Grundlage 0.12.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1364,8 +1483,8 @@ fehlenden Stückzahlen/Abmessungen dienen danach dem Generator; keine unbekannte
 Der vorgemerkte TARDIS-Icon-Wunsch ist mit 0.5.0 umgesetzt. Die konkreten Startbildschirm-
 Anpassungen sind in Abschnitt 8a dokumentiert und bei weiteren Änderungen zu bewahren.
 
-Die kooperative Rollenverteilung ist geklärt. Als Nächstes Figurenliste und Fotos sowie
-Ausdauer/Kraft und gewünschte Sonderfähigkeiten erfassen; danach den Zielvorschlag „Der Zeitriss“
+Die Rollenverteilung und elf Figuren aus zwei Fotos sind geklärt. Als Nächstes Ausdauer/Kraft
+und konkrete neue Sonderfähigkeiten gemeinsam festlegen; danach den Zielvorschlag „Der Zeitriss“
 konkretisieren und Gelände aufnehmen. Als kleinster sinnvoller Inventarschritt
 reichen zunächst ein Foto von jeder Plättchenform, Stückzahl und Breite×Tiefe sowie die Angabe,
 ob Wände/Türen fest oder aufsteckbar sind. Noch keine vollständige Datenerhebung erzwingen.
@@ -1374,6 +1493,29 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.12.0 am 27.10.2026:
+
+- **658 Kern-/HTTP-Prüfungen bestanden** (568 bisherige + 90 neue): benannte Vorlagen,
+  Berechtigungen, privater Inhalt, Datum/Charakter-Vorgabe, Zustand bei Schreibfehler, dauerhafte
+  Retrys, veraltete Erstanfrage, Neustart/Reset, vollständige Kacheln/Drehungen/Kerker/Portal,
+  beschädigte Datei ohne Datenverlust, elf IDs/acht Typen, vier echte Auswahlfiguren, Duplikate,
+  Gegnertrennung, Save/Load und gesperrte undefinierte Aktionen bei unveränderter Bewegung.
+- **301 DOM-/Grafikprüfungen bestanden** (271 bisherige + 30 neue): Editor-Tasten, Namensvorgabe,
+  stabile Eingabe, Fokus/Escape, Bestätigungsdialog, sichere Namen, verlorene Antworten und
+  identische Save/Load-Retry, Rückkehr bei entfernter Anmeldung, fünf neue bebilderte Dossiers,
+  keine Wirkung/kein Zugverbrauch durch undefinierte Aktion.
+- Bisherige drei mobile Browserabläufe bestanden. Neuer Zwei-Client-Test am echten Java-Host:
+  elf Auswahlkarten und geladene Porträts, Dalek-2-Dossier, eigene Raumliste/Name, absichtlich
+  verlorene erfolgreiche Speicherantwort ohne Doppeldaten, Host-Neustart, bestätigtes Laden,
+  Vorlagen nach Spielreset wiederverwenden, 320×568-Editor ohne Dokumentlauf, fünf neue Dossiers
+  visuell kontrolliert, normales Gelesen/Go/W6 und Bewegung mit gesperrter neuer Aktion.
+- Android `:core:smokeTest :app:clean :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**,
+  erneut 658 Kernprüfungen; Lint **0 Fehler / 19 Warnungen**. Version 0.12.0 / Code 19.
+  Signatur identisch seit 0.5.0; 29 lokale Grafik-/Client-/Audioassets und Anleitung bytegleich
+  gegen APK geprüft, beide Original-OGGs unkomprimiert. Finale Anleitung vor Ausgabe nochmals
+  einbetten und abgleichen. Native Raumdateien und reale Telefon-/Hotspot-/Audio-/Sitzrichtungs-
+  prüfung bleiben Gerätetests.
 
 Für 0.11.0 am 27.10.2026:
 
@@ -1743,6 +1885,8 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 27.10.2026 | 0.10.2 | Bestätigte Figurenwahl mit abbrechbarem TARDIS-Wartefenster und zehn wechselnden eigenen Gags, eigenes Porträt als Großansicht, Lederbeutel-Icon und scrollendes Inventar mit drei Spalten |
 
 | 27.10.2026 | 0.11.0 | Scrollbare illustrierte Charakterdossiers während Aufbau, frühe Bedienung/persönliche Fähigkeiten und offizielle Hintergrundquellen, persistentes Gelesen-Gate vor Startfilm/Go, kurze ausblendende Portal-Fakten, neue automatische Startplätze mit Portalabstand; Format 10 / Protokoll 6 |
+
+| 27.10.2026 | 0.12.0 | Bestätigte acht Typen/elf Miniaturen mit eigenen Auswahl-IDs und neuen Offline-Porträts/Dossiers, undefinierte Aktionen gesperrt; dauerhafte benannte Raumvorlagen direkt beim Raummeister, editierbare Datum-Zeit_Charaktername-Vorgabe, bestätigtes Laden und persistente Retrys; Protokoll 7, Spielstandformat 10 unverändert, Raumformat 1 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

@@ -87,7 +87,7 @@ public final class CoreTest {
         java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice){((Dice)rng).helperDraws=0;((Dice)rng).rolls=0;}
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); RoomLibraryTest.run(); CharacterInventoryTest.run(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -200,7 +200,7 @@ public final class CoreTest {
         String aliceId=text(state,"you");String winner=doctorOwner.equals(aliceId)?a:b,loser=winner.equals(a)?b:a;
         rejects(IllegalArgumentException.class,()->e.chooseCharacter(loser,id(),"doctor"));
         e.chooseCharacter(loser,id(),"dalek");check(e.readyForPlay(),"all ready after exclusive choices");
-        check(e.availableEnemies().size()==1,"only unused character can be added");
+        check(e.availableEnemies().size()==CharacterProfile.known().size()-2,"only unused characters can be added");
         rejects(IllegalArgumentException.class,()->e.addEnemy("doctor"));
         e.addEnemy("weeping-angel");String before=e.snapshot(a);e.addEnemy("weeping-angel");
         check(before.equals(e.snapshot(a)),"adding enemy twice is idempotent");
@@ -554,7 +554,7 @@ public final class CoreTest {
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             Response info=call(server,"/api/info",null,null,false);
-            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":6,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":7,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");

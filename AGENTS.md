@@ -21,8 +21,9 @@
     im Tab Spiel. Bei Gegnerbewegung Helfer zufällig am Host
     bestimmen und speichern; Angriffsansicht gezielt beim betroffenen Spieler anzeigen.
     Nicht behaupten, eine lokale Browserseite könne gesperrte Telefone fernentsperren.
-11. Charakterfotos und endgültige Ausdauer-/Kraftwerte fehlen noch. Platzhalter klar
-    kennzeichnen; keine zusätzlichen Serienfiguren oder Spielwerte ohne Abstimmung erfinden.
+11. Endgültige Ausdauer-/Kraftwerte fehlen. Elf Miniaturen aus zwei Nutzerfotos sind seit
+    0.12.0 bestätigt; Katalog/IDs in ONBOARDING.md 8l. Bilder sind KI-Illustrationen.
+    Keine weiteren Figuren oder Werte ohne Abstimmung erfinden.
 12. Seit 0.7.0 startet jeder Spielerzug nach Popup Your move... / Go, danach W6 am eigenen Gerät. 1–4: exakt Augenzahl ziehen;
     5/6: genau diese Bewegung ODER Charakteraktion. Orthogonal, Richtungswechsel erlaubt.
     Kein freies Passen. Blockierte Wege und Feldwiederholungen sind noch offene Regeln.
@@ -167,3 +168,13 @@
 50. Neue automatische Startfelder bevorzugen begehbaren Abstand zum Portal; gültige manuelle
     sowie alte/laufende Plätze erhalten. Keine Mindestdistanz/Mission erfinden. Portal-Fakten
     nur kosmetisch während Aufbau; Serienwissen ist keine neue Tabletop-Wirkung.
+
+51. Seit 0.12.0 elf einzelne Figuren aus acht bestätigten Typen. Duplikate eigene IDs,
+    Archetyp für Dossier/Porträt/Sprachstil. Neue fünf Typen haben keine vereinbarte Aktion:
+    actionAvailable=false, kein Zugverbrauch bei Versuch. Keine Werte/Wirkungen erfinden.
+52. Raummeister in building speichert/lädt benannte Vorlagen. Datum-Zeit_Charaktername
+    am Host vorgeben, Eingabe bei Polling erhalten. Räume getrennt von Partien speichern,
+    keine Tokens/Story/Items/Schlüssel importieren. Reset erhält Raumsammlung. Laden bestätigen.
+53. Raumformat 1, Spielstandformat 10 unverändert, Protokoll 7. Dauerhafte Save-Quittung
+    verhindert Duplikate nach Antwortverlust/Neustart. Erst neue passende Revision speichern;
+    bestehende Quittung darf keinen späteren Plan übernehmen. Kaputte Originale erhalten.

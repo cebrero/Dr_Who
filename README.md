@@ -8,9 +8,15 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.11.0
+## Stand 0.12.0
 
-Neu in 0.11.0: Illustrierte scrollbare Charakterdossiers während des Aufbaus, danach auch für
+Neu in 0.12.0: Acht bestätigte Typen / elf einzelne Figuren mit neuen Bildern und Dossiers.
+Duplikate sind unabhängig auswählbar; undefinierte neue Aktionen bleiben gesperrt.
+Raummeister speichern und laden benannte Räume direkt im Editor, voreingestellt ist
+Datum-Zeit_Charaktername. Raumvorlagen bleiben über Spielreset und Neustarts erhalten.
+Details in ONBOARDING.md, Abschnitt 8l. API-Protokoll 7, Spielstandformat 10 unverändert.
+
+Seit 0.11.0: Illustrierte scrollbare Charakterdossiers während des Aufbaus, danach auch für
 Raummeister. Frühe Bedienanleitung, persönliche Fähigkeiten, Herkunft und offizielle Quellen.
 Erst alle Gelesen-Bestätigungen geben Startfilm/Go frei. Kurze ein-/ausblendende Portal-Fakten
 und neue automatische Startplätze möglichst mit Abstand zum Portal. Format 10 / Protokoll 6;
@@ -73,16 +79,20 @@ Verbindungshilfe, Namen, Figuren und Auswahlfortschritt. Alles wird lokal gespei
 Nach Start fliegt die TARDIS drei Sekunden während der Raummeister-Auswahl. Echte Spieler
 werden zufällig mit Ja/Nein gefragt. Nach allen Nein wählt das Portal verbindlich einen Spieler.
 Der Raummeister erfasst den Tisch per **20×20-Kacheleditor** mit vier Bewegungsfeldern pro Kachel:
-Stein, Ecke, einseitige/gegenüberliegende Wände, Kerker, Friedhof, Kompass, Lava, Lava/Stein und Brunnen. Kacheln ziehen, antippen zum Drehen, verschieben und in den
-Mülleimer ziehen; alternativ per Tipp/Tastatur bedienen. Startfiguren sind sichtbar und versetzbar.
-Jede Änderung wird gespeichert und am Portal live gezeigt. Erst Abschluss und Startfilm öffnen
-die erste Spielrunde. Große Portalereignisse erscheinen je drei Sekunden. Leere Rasterstellen
+Stein, Ecke, einseitige/gegenüberliegende Wände, Kerker, Friedhof, Kompass, Lava, Lava/Stein, Brunnen und Portal über zwei Kacheln. Kacheln ziehen, antippen zum Drehen, verschieben und in den
+Mülleimer ziehen. Neue Kacheln nur per Drag platzieren; Tippen auf vorhandene Kacheln dreht sie.
+Startfiguren sind sichtbar und im eigenen Modus versetzbar.
+Jede Änderung wird gespeichert und am Portal live gezeigt. Raumvorlagen lassen sich direkt
+im Editor benennen, speichern und nach Bestätigung laden. Andere Spieler lesen während des
+Aufbaus ihr Dossier, danach auch der Raummeister. Erst alle Gelesen-Bestätigungen und der
+Startfilm öffnen die erste Spielrunde. Große Portalereignisse erscheinen je drei Sekunden. Leere Rasterstellen
 existieren nicht; massive rote Außenwände blockieren Bewegungen. Kerker lassen sich öffnen/schließen;
 Lava-, Brunnen- und andere Geländewirkungen sind noch nicht festgelegt.
 Altpartien behalten ihr 6×6-Testfeld; unter Spielleitung lässt sich der reale Plan nachtragen,
 ohne Runde und Zug zu verwerfen. Der Plan bleibt zum Wiederaufbau abrufbar.
 Jeder Spieler bestätigt zuerst **Your move... / Go** am eigenen Handy und würfelt danach. Bei 1–4 zieht er genau diese Anzahl Felder;
-bei 5/6 wählt er Bewegung um genau die Augenzahl oder eine Charakteraktion. Bewegungen
+bei 5/6 wählt er Bewegung um genau die Augenzahl oder eine freigegebene Charakteraktion.
+Für die fünf neuen Typen bleiben noch nicht vereinbarte Spezialaktionen gesperrt. Bewegungen
 verlaufen orthogonal mit Richtungswechseln. Reststrecke und Würfelzustand werden gespeichert.
 Bei der gerichteten Aktionswahl erscheint ein Nord/Ost/Süd/West-Popup; Abbrechen verbraucht
 nichts. Die eigentliche Wirkung ist weiterhin ein gekennzeichneter Techniktest. Bis Go zeigt das
@@ -90,12 +100,13 @@ Portal die Charakterkarte mit „Spielername ist dran…“. Die Story speichert
 Sprecher und Ich-Aussagen; gelegentliche Dalek-Geräusche bleiben beim Neuladen identisch.
 Alte Aussagen ohne gespeicherten Zeitpunkt erscheinen als Archiv.
 Gegnerbewegung und konkrete Angriffsfolge werden in dieser Technikdemo vom Host vorgegeben;
-automatische Gegner-KI, Charakterregeln, Inventar, Brettgenerator und Kampagne sind noch geplant.
-Es gibt bisher die drei vom Nutzer genannten Katalogeinträge Doctor, Dalek und Weinender Engel.
-Für vier spielende Personen ist noch ein vierter Charakter zu benennen. Fotos fehlen noch;
-Ausdauer und Kraft sind ausdrücklich offen. Die Karten enthalten dafür vorbereitete Felder.
+automatische Gegner-KI, verbindliche Charakter-/Gegenstandswirkungen, Brettgenerator und Kampagne sind noch geplant.
+Es gibt elf bestätigte Miniaturen aus acht Typen: Doctor, Daleks, Weinende Engel, Sontaraner,
+Cybermen, Schneemann, Adipose und Zygon. Mehrfachfiguren sind einzeln auswählbar.
+Vier Personen können aus dem bestätigten Bestand wählen. Lokale KI-Porträts und Dossiers sind
+vorhanden; Ausdauer und Kraft bleiben ausdrücklich offen.
 
-Validiert: 532 Kern-/HTTP-Prüfungen und 209 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
+Validiert: 658 Kern-/HTTP-Prüfungen und 301 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -135,7 +146,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.11.0
+## Installationshinweis 0.12.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:

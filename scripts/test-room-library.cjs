@@ -1,0 +1,35 @@
+const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert/strict');let checks=0;const check=(v,m)=>{assert(v,m);checks++},tick=()=>new Promise(r=>setImmediate(r)),copy=o=>JSON.parse(JSON.stringify(o));
+let html=fs.readFileSync('app/src/main/assets/player.html','utf8');for(const file of ['room-library.js','board-art.js','character-dossiers.js'])html=html.replace('<script src="/'+file+'"></script>','<script>'+fs.readFileSync('app/src/main/assets/'+file,'utf8')+'</script>');
+let s={sessionId:'rooms',revision:10,started:true,ready:true,selectedCount:2,round:1,lastRoll:0,you:'B',current:null,phase:'players',helperId:'',activeEnemy:'',attack:{pending:false},turn:{accepted:false,stage:'roll',roll:0,remaining:0},setup:{stage:'building',id:'setup',roomMaster:'B',candidate:'',forced:false,saved:false,legacy:false,dossierRequired:true,readBy:[]},board:{size:20,subdivisions:2,tiles:[{x:0,y:0,kind:'floor',rotation:0}]},players:[{id:'A',name:'Alice',characterId:'doctor',x:0,y:0},{id:'B',name:'Bob',characterId:'zygon',x:1,y:0}],characters:[{id:'doctor',archetype:'doctor',name:'Der Doctor',portrait:'/portraits/doctor.jpg',description:'',endurance:'Noch festzulegen',strength:'Noch festzulegen',abilities:[],owner:'A'},{id:'zygon',archetype:'zygon',name:'Zygon',portrait:'/portraits/zygon.jpg',description:'',endurance:'Noch festzulegen',strength:'Noch festzulegen',abilities:[],actionAvailable:false,owner:'B'}],enemies:[],log:[],bag:[]};
+const data={defaultName:'27.10.2026-18.35.20_Zygon',unreadable:0,rooms:[{id:'room-1',name:'<img src=x onerror=boom()> Raum',created:1,tiles:3,fields:12}]};let posts=[],offline=false,fetchOffline=false,expired=false;
+function page(saved={token:'b',sessionId:'rooms',northSetup:'rooms:setup'}){return new JSDOM(html,{url:'http://192.168.4.1',runScripts:'dangerously',beforeParse(w){w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify(saved));w.fetch=async(path,opts)=>{
+ if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.12.0',protocolVersion:7,sessionId:'rooms'})};
+ if(expired&&path==='/api/state')return{ok:false,status:401,json:async()=>({error:'entfernt'})};
+ if(path==='/api/rooms'){if(fetchOffline)throw Error('Netz weg');return{ok:true,json:async()=>copy(data)}}
+ if(path==='/api/command'){const f=new URLSearchParams(opts.body);posts.push(f);if(offline)throw Error('Keine Antwort');if(f.get('action')==='roomLoad'){s.revision++;s.board.tiles=[{x:4,y:4,kind:'portal',rotation:1}]}}
+ return{ok:true,json:async()=>copy(s)};
+}}})}
+(async()=>{const dom=page(),w=dom.window,d=w.document,$=id=>d.getElementById(id);try{
+ await tick();await tick();check(!$('boardEditor').hidden&&!$('openRoomSave').disabled&&!$('openRoomLoad').disabled,'builder has dedicated save and load controls');
+ $('openRoomSave').click();await tick();check(!$('archiveDialog').hidden&&$('roomName').value===data.defaultName,'host supplies character/time default');check(d.activeElement===$('roomName'),'name field receives focus');
+ $('roomName').value='Mein <Raum>'; $('roomName').dispatchEvent(new w.Event('input'));w.render(copy(s));check($('roomName').value==='Mein <Raum>','polling preserves edited name');
+ offline=true;$('archiveSaveForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await tick();check(posts.at(-1).get('action')==='roomSave'&&posts.at(-1).get('direction')==='Mein <Raum>','save sends only name and host revision, no client-supplied board');
+ const req=posts.at(-1).get('requestId');check($('roomName').disabled&&!$('archiveSave').disabled&&$('archiveClose').disabled,'unknown save result freezes name and offers identical retry');
+ offline=false;$('archiveSaveForm').dispatchEvent(new w.Event('submit',{cancelable:true}));await tick();check(posts.at(-1).get('requestId')===req&&$('archiveDialog').hidden,'save retry keeps ID and closes on confirmation');
+ $('openRoomLoad').click();await tick();const row=$('archiveList').querySelector('button');check(row.textContent.includes('<img src=x onerror=boom()>')&&!row.querySelector('img'),'saved names are safe text');
+ row.click();check(!$('archiveConfirm').hidden&&posts.at(-1).get('action')==='roomSave','choosing row does not yet replace draft');$('archiveBack').click();check(!$('archiveList').hidden,'confirmation can return to room list');$('archiveList').querySelector('button').click();
+ offline=true;$('archiveLoadConfirm').click();await tick();const load=posts.at(-1).get('requestId');check(posts.at(-1).get('action')==='roomLoad'&&posts.at(-1).get('direction')==='room-1','load addresses opaque room ID');check(!$('archiveLoadConfirm').disabled&&$('archiveBack').disabled,'unknown load result offers same request');
+ offline=false;$('archiveLoadConfirm').click();await tick();check(posts.at(-1).get('requestId')===load&&$('archiveDialog').hidden&&s.setup.stage==='building','load retry returns to editor without starting game');
+ fetchOffline=true;$('openRoomLoad').click();await tick();check(!$('archiveRefresh').hidden&&$('archiveStatus').textContent.includes('Netz weg'),'library fetch failure remains recoverable in modal');fetchOffline=false;$('archiveRefresh').click();await tick();check(!$('archiveList').hidden,'library retry displays available rooms');
+ d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));check($('archiveDialog').hidden,'Escape closes idle archive');
+ s.you='A';s.revision++;w.render(copy(s));check($('boardEditor').hidden&&$('archiveDialog').hidden,'other clients never gain roommaster controls');
+ const base=copy(s);for(const id of ['sontaran','cyberman','snowman','adipose','zygon']){
+  const now=copy(base);now.players[0].characterId=id;now.characters.push({id,archetype:id,name:id,portrait:'/portraits/'+id+'.jpg',endurance:'Noch festzulegen',strength:'Noch festzulegen',abilities:[],actionAvailable:false});w.render(now);
+  check($('dossierScroll').querySelector('.archive-scene img').src.endsWith('/'+id+'-scene.jpg'),'new figure has researched illustrated dossier '+id);
+  check($('dossierScroll').querySelector('.archive-ability').textContent.includes('noch')&&$('dossierScroll').querySelector('.archive-rule-note').textContent.includes('gesperrt'),'new figure does not promise unagreed ability '+id);
+ }
+ s=base;s.setup.stage='play';s.setup.saved=true;s.current='A';s.turn={accepted:true,stage:'choice',roll:6,remaining:6};s.players[0].characterId='zygon';s.characters.find(c=>c.id==='zygon').actionAvailable=false;s.revision++;w.render(copy(s));
+ check($('actionChoiceButton').disabled&&$('actionChoiceButton').textContent.includes('offen'),'new undefined ability is visibly disabled');const n=posts.length;w.openActionPicker();check(posts.length===n,'disabled new ability cannot submit or consume turn');
+ expired=true;await w.poll();check(!$('join').hidden&&$('archiveDialog').hidden&&!$('setupArea').inert,'session removal cleans archive modal and background lock');
+ console.log('PASS: '+checks+' room archive and expanded dossier checks');
+}finally{w.close()}})().catch(e=>{console.error(e);process.exitCode=1});

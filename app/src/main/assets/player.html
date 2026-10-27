@@ -118,7 +118,8 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 </style>
 <link rel="stylesheet" href="/board-art.css">
 <link rel="stylesheet" href="/character-dossiers.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.11.0</small></header>
+<link rel="stylesheet" href="/room-library.css">
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.12.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -139,6 +140,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
   <div class="setup-heading"><div><small class="setup-kicker">DU BIST RAUMMEISTER</small><h2>Das Raumgefüge</h2></div><button id="saveBoard" class="primary" type="button">Speichern & starten</button></div>
   <p class="setup-copy">Baue euren Tisch nach. Ziehe Kacheln ins Raster, tippe zum Drehen. Nur belegte Stellen existieren.</p>
   <div class="board-tools"><button type="button" id="boardZoom">Kleine Kacheln</button><button type="button" id="spawnMode">Startfiguren setzen</button><button type="button" id="clearPalette">Drehen / verschieben</button></div>
+  <div class="room-library-tools"><button id="openRoomSave" type="button">Raum speichern</button><button id="openRoomLoad" type="button">Raum laden</button></div>
   <div id="spawnList" class="spawn-list" hidden></div><p id="boardStatus" class="board-status" role="status" aria-live="polite"></p>
   <div id="boardViewport" class="board-viewport"><div id="editorGrid" class="board-grid" role="group" aria-label="Aufbau 20 mal 20 Felder, A1 bis T20"></div></div>
   <div id="boardLegend" class="board-legend"></div>
@@ -181,13 +183,15 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <div id="roomDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="roomTitle" tabindex="-1" hidden><div class="modal-surface"><small>DEINE REISE BEGINNT</small><h2 id="roomTitle">Wirst du Raummeister?</h2><p>Möchtest du das Raumgefüge wiederherstellen und euren gedruckten Aufbau im Plan erfassen?</p><button id="roomYes" type="button" class="primary">Ja, ich stelle es wieder her</button><button id="roomNo" type="button" class="wide">Nein, jemand anderes</button><p id="roomStatus" role="status" aria-live="polite"></p></div></div>
 <div id="turnDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="yourMoveTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="yourMoveTitle">Your move...</h2><p>Das Portal wartet auf dich.</p><button id="goButton" class="primary" type="button">Go</button><p id="goStatus" role="status" aria-live="polite"></p></div></div>
 <div id="directionDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="directionTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="directionTitle">Welche Richtung?</h2><p id="directionHint">Wohin soll deine Aktion wirken?</p><div id="actionDirections" class="compass-wheel"><button type="button" data-action-dir="N">↑ Nord</button><button type="button" data-action-dir="W">← West</button><button type="button" data-action-dir="S">↓ Süd</button><button type="button" data-action-dir="E">Ost →</button></div><p id="actionStatus" role="status" aria-live="polite"></p><button id="actionRetry" class="primary" type="button" hidden>Gleiche Aktion erneut senden</button><button id="cancelDirection" class="wide" type="button">Abbrechen</button></div></div>
+<div id="archiveDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="archiveTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="archiveTitle"></h2><p id="archiveIntro"></p><form id="archiveSaveForm" hidden><label for="roomName">Name des Raums</label><input id="roomName" maxlength="80" autocomplete="off"><button id="archiveSave" type="submit" class="primary">Raum speichern</button></form><div id="archiveList" role="group" aria-label="Gespeicherte Räume" hidden></div><div id="archiveConfirm" hidden><p><strong id="archiveSelectedName"></strong></p><button id="archiveLoadConfirm" type="button" class="primary">Raum laden</button><button id="archiveBack" type="button">Zur Raumauswahl</button></div><p id="archiveStatus" role="status" aria-live="polite"></p><button id="archiveRefresh" type="button" hidden>Erneut laden</button><button id="archiveClose" type="button">Zurück zum Aufbau</button></div></div>
+<script src="/room-library.js"></script>
 <script src="/board-art.js"></script>
 <script src="/character-dossiers.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.11.0',PROTOCOL_VERSION=6;
+const CLIENT_VERSION='0.12.0',PROTOCOL_VERSION=7;
 let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
@@ -209,7 +213,9 @@ function controls(){
  document.querySelectorAll('#controls button').forEach(b=>b.disabled=!active||state.turn.stage!=='move');
  $('roll').disabled=!active||state.turn.stage!=='roll';
  $('moveChoiceButton').disabled=!active||state.turn.stage!=='choice';
- $('actionChoiceButton').disabled=!active||state.turn.stage!=='choice';
+ const character=state?.characters.find(c=>c.id===state.players.find(p=>p.id===state.you)?.characterId);
+ $('actionChoiceButton').disabled=!active||state.turn.stage!=='choice'||character?.actionAvailable===false;
+ $('actionChoiceButton').textContent=character?.actionAvailable===false?'Spezialaktion noch offen':'Aktion wählen · Techniktest';
  $('retry').hidden=!pending||compatibilityBlocked;$('retry').disabled=busy;
  $('confirmMovement').disabled=!state||busy||!!pending;
  $('ackAttack').disabled=!state||busy||!!pending;
@@ -272,10 +278,11 @@ function syncModals(){
  const keyPickup=state?.keyPickup?.pending&&!compatibilityBlocked;
  const waiting=lobbyWaiting();if(!state||(!isPlaying(state)&&!isReadingDossier())||keyPickup||waitForGo||state.attack.pending&&state.attack.targetId===state.you||state.phase==='enemies'&&state.helperId===state.you)portraitCharacter=null;
  if(portraitCharacter){$('portraitTitle').textContent=portraitCharacter.name;$('portraitFull').alt=portraitCharacter.name+' · großes Porträt';if($('portraitFull').getAttribute('src')!==portraitCharacter.portrait){$('portraitFull').hidden=false;$('portraitError').hidden=true;$('portraitFull').src=portraitCharacter.portrait}}
- const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':portraitCharacter?'portraitDialog':waiting?'lobbyWaitDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
+ const archive=archiveIsOpen();renderRoomArchive();
+ const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':archive?'archiveDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':portraitCharacter?'portraitDialog':waiting?'lobbyWaitDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
  if(modal!==shownModal){
   const old=shownModal;if(modal)modalError='';if(!old&&modal)previousFocus=document.activeElement;
-  shownModal=modal;$('keyDialog').hidden=modal!=='keyDialog';$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';$('portraitDialog').hidden=modal!=='portraitDialog';$('lobbyWaitDialog').hidden=modal!=='lobbyWaitDialog';
+  shownModal=modal;$('archiveDialog').hidden=modal!=='archiveDialog';$('keyDialog').hidden=modal!=='keyDialog';$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';$('portraitDialog').hidden=modal!=='portraitDialog';$('lobbyWaitDialog').hidden=modal!=='lobbyWaitDialog';
   document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>e.inert=!!modal);
   if(modal){$(modal).focus()}
   else if(old){
@@ -292,11 +299,12 @@ function syncModals(){
  $('roomYes').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomYes';$('roomNo').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomNo';
  $('roomStatus').textContent=busy?'Deine Antwort wird gespeichert …':pending?'Bestätigung fehlt. Sende dieselbe Antwort erneut.':modalError;
  if(setupActive())renderSetup(state);
- if(newlyOpened){const target=modal==='keyDialog'?$('ackKey'):modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):modal==='portraitDialog'?$('closePortrait'):modal==='lobbyWaitDialog'?$('cancelLobbyWait'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
+ if(newlyOpened){const target=modal==='archiveDialog'?roomArchiveFocus():modal==='keyDialog'?$('ackKey'):modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):modal==='portraitDialog'?$('closePortrait'):modal==='lobbyWaitDialog'?$('cancelLobbyWait'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
 }
 function openActionPicker(){
  if(!ownTurn()||!state.turn.accepted||state.turn.stage!=='choice'||rolling||busy||pending)return;
  const me=state.players.find(p=>p.id===state.you),character=state.characters.find(c=>c.id===me.characterId);
+ if(character?.actionAvailable===false)return;
  if(character&&character.actionNeedsDirection){directionPicking=true;$('directionHint').textContent=character.name+': Wohin soll deine Aktion wirken?';syncModals()}
  else command('action');
 }
@@ -399,6 +407,7 @@ function render(s){
  if(compatibilityBlocked)return;
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
  if(pending?.action==='readDossier'&&s.setup?.readBy?.includes(s.you)){pending=null;persist()}
+ if(['roomSave','roomLoad'].includes(pending?.action)&&!(s.setup?.stage==='building'&&s.setup.roomMaster===s.you)){pending=null;persist();resetRoomArchive()}
  state=s;$('join').hidden=true;
  const me=s.players.find(p=>p.id===s.you),playing=isPlaying(s);
  const attacked=playing&&s.attack.pending&&s.attack.targetId===s.you;
@@ -437,7 +446,7 @@ function render(s){
  $('rollResult').textContent=rolling?'Dein Wurf entsteht im Zeitwirbel …':s.turn.roll?'Dein Wurf: '+s.turn.roll:'';
  $('roll').setAttribute('aria-label',rolling?'W6 wird gewürfelt. Ergebnis folgt.':s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'Würfeln · Würfel antippen');
  $('diceHint').hidden=s.turn.stage!=='roll'||rolling;$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||s.turn.stage!=='move';
- $('turnPrompt').textContent=rolling?'':s.turn.stage==='roll'?'':s.turn.stage==='choice'?'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?':'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
+ $('turnPrompt').textContent=rolling?'':s.turn.stage==='roll'?'':s.turn.stage==='choice'?(own?.actionAvailable===false?'Du würfelst '+s.turn.roll+'. Ziehe genau '+s.turn.roll+' Felder. Deine Spezialaktion legen wir noch fest.':'Du würfelst '+s.turn.roll+'. Bewegen oder Aktion wählen?'):'Noch '+s.turn.remaining+' von '+s.turn.roll+' Feldern ziehen.';
  $('moveChoiceButton').textContent=s.turn.roll+' Felder ziehen';
  $('turnConsole').classList.toggle('with-compass',!rolling&&s.turn.stage==='move');
  updateTurnMap();renderBag(s);renderStory(s);controls();
@@ -457,8 +466,8 @@ function returnToJoin(message){
 }
 function resetJoinPresentation(){
  document.body.classList.remove('in-game','building','editing-board','reading-dossier');
- for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','setupDossier','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog','portraitDialog','lobbyWaitDialog'])$(id).hidden=true;
- shownModal='';previousFocus=null;directionPicking=false;portraitCharacter=null;toolTap=null;$('portraitFull').removeAttribute('src');
+ for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','archiveDialog','setupDossier','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog','portraitDialog','lobbyWaitDialog'])$(id).hidden=true;
+ resetRoomArchive();shownModal='';previousFocus=null;directionPicking=false;portraitCharacter=null;toolTap=null;$('portraitFull').removeAttribute('src');
  if(drag)finishDrag({pointerId:drag.pointer},true);
  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>{e.inert=false;e.removeAttribute('inert')});
  $('join').hidden=false;
@@ -529,7 +538,7 @@ $('join').addEventListener('submit',async event=>{
 $('code').addEventListener('input',clearJoinError);$('name').addEventListener('input',clearJoinError);
 async function send(){
  if(!pending||busy)return;const access=token,request=pending;modalError='';busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
- try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();if(request.action==='tileMove')selectedTile=request.direction.split(',').slice(2).join(',');render(s);$('message').textContent='Gespeichert.'}
+ try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();const roomMessage=roomArchiveCommandSucceeded(request);if(request.action==='tileMove')selectedTile=request.direction.split(',').slice(2).join(',');render(s);$('message').textContent=roomMessage||'Gespeichert.'}
  catch(e){
   if(token!==access||pending!==request||compatibilityBlocked)return;
   if(e.status===401){returnToJoin('Dein Spielerplatz ist nicht mehr angemeldet. Du kannst hier neu beitreten.');return}
@@ -599,7 +608,7 @@ function renderSetup(s){
  $('setupTitle').textContent=setup.stage==='selecting'?'der Raummeister wird gerade ausgewählt...':setup.stage==='offering'?(candidate?.name||'Ein Mitreisender')+' wird gerade gefragt…':setup.stage==='launching'?'Das Abenteuer beginnt!':(master?.name||'Der Raummeister')+' stellt das Raumgefüge wieder her…';
  $('setupSub').textContent=setup.stage==='building'?(setup.forced?'Alle haben abgelehnt. Das Portal hat '+(master?.name||'einen Spieler')+' bestimmt.':'Der Raummeister hat zugesagt.')+' Den aktuellen Aufbau siehst du am Portal.':setup.stage==='launching'?'Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.':'Das Portal wählt nur echte Mitspieler. Ihr müsst nichts am Portal bedienen.';
  if(editing){
-  paintBoard($('editorGrid'),s,true);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;
+  paintBoard($('editorGrid'),s,true);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomSave').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomLoad').disabled=!canBuild();
   $('boardStatus').textContent=busy?'Änderung wird am Portal gespeichert …':pending?'Bestätigung fehlt. Bitte dieselbe Anfrage erneut senden.':'';
   if(!busy&&!pending&&!modalError)$('boardStatus').textContent=spawnMode?'Wähle unten einen Spieler und tippe sein Startfeld an.':paletteKind?tileKinds[paletteKind]+' gewählt. Ziehe die Kachel aus der Auswahl ins Raster.':s.board.tiles.length+' Kacheln gespeichert · Antippen dreht um 90°.';
   if(modalError&&!busy&&!pending)$('boardStatus').textContent=modalError;
@@ -703,9 +712,9 @@ $('actionRetry').addEventListener('click',send);
 $('cancelDirection').addEventListener('click',()=>{if(!busy&&!pending){directionPicking=false;syncModals()}});
 document.addEventListener('keydown',event=>{
  if(!shownModal)return;const dialog=$(shownModal);
- if(event.key==='Escape'){event.preventDefault();if(shownModal==='directionDialog'&&!busy&&!pending){directionPicking=false;syncModals()}else if(shownModal==='portraitDialog')closePortrait();else if(shownModal==='lobbyWaitDialog')cancelLobbyWaiting();return}
+ if(event.key==='Escape'){event.preventDefault();if(shownModal==='archiveDialog'&&!busy&&!pending)closeRoomArchive();else if(shownModal==='directionDialog'&&!busy&&!pending){directionPicking=false;syncModals()}else if(shownModal==='portraitDialog')closePortrait();else if(shownModal==='lobbyWaitDialog')cancelLobbyWaiting();return}
  if(event.key==='Tab'){
-  const items=Array.from(dialog.querySelectorAll('button:not(:disabled)')).filter(e=>!e.closest('[hidden]'));
+  const items=Array.from(dialog.querySelectorAll('button:not(:disabled),input:not(:disabled)')).filter(e=>!e.closest('[hidden]'));
   if(!items.length){event.preventDefault();dialog.focus();return}
   const first=items[0],last=items[items.length-1];
   if(!dialog.contains(document.activeElement)||event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}

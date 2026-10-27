@@ -16,7 +16,7 @@ final class CharacterAvatarView extends View {
     void setCharacter(String id,String name){
         setContentDescription(id.isEmpty()?"Figur noch nicht gewählt":name+" · Charakterbild");
         if(this.id.equals(id))return;this.id=id;photo=null;
-        if(id.matches("[a-z0-9-]{1,64}"))try(InputStream in=getContext().getAssets().open("portraits/"+id+".jpg")){photo=BitmapFactory.decodeStream(in);}catch(IOException ignored){}
+        if(id.matches("[a-z0-9-]{1,64}"))try(InputStream in=getContext().getAssets().open("portraits/"+de.cebrero.drwho.core.CharacterProfile.archetypeOf(id)+".jpg")){photo=BitmapFactory.decodeStream(in);}catch(IOException ignored){}
         invalidate();
     }
     @Override protected void onDraw(Canvas canvas){

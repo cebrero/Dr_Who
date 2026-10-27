@@ -1,11 +1,11 @@
 {
   "name": "dr-who-ui-tests",
   "private": true,
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Optional DOM tests for the Android-hosted player page; no browser runtime dependencies.",
   "scripts": {
-    "test": "node scripts/test-player.cjs && node scripts/test-join.cjs && node scripts/test-board.cjs && node scripts/test-key.cjs && node scripts/test-lobby.cjs && node scripts/test-briefing.cjs",
-    "test:browser": "node scripts/test-browser.cjs && node scripts/test-key-browser.cjs && node scripts/test-briefing-browser.cjs"
+    "test": "node scripts/test-player.cjs && node scripts/test-join.cjs && node scripts/test-board.cjs && node scripts/test-key.cjs && node scripts/test-lobby.cjs && node scripts/test-briefing.cjs && node scripts/test-room-library.cjs",
+    "test:browser": "node scripts/test-browser.cjs && node scripts/test-key-browser.cjs && node scripts/test-briefing-browser.cjs && node scripts/test-room-browser.cjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

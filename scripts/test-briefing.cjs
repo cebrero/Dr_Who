@@ -1,13 +1,13 @@
 const {JSDOM}=require('jsdom'),fs=require('node:fs'),assert=require('node:assert/strict');
 let checks=0;const check=(v,m)=>{assert(v,m);checks++},tick=()=>new Promise(r=>setImmediate(r)),clone=o=>JSON.parse(JSON.stringify(o));
 let html=fs.readFileSync('app/src/main/assets/player.html','utf8');
-for(const file of ['board-art.js','character-dossiers.js'])html=html.replace('<script src="/'+file+'"></script>','<script>'+fs.readFileSync('app/src/main/assets/'+file,'utf8')+'</script>');
+for(const file of ['room-library.js','board-art.js','character-dossiers.js'])html=html.replace('<script src="/'+file+'"></script>','<script>'+fs.readFileSync('app/src/main/assets/'+file,'utf8')+'</script>');
 const profiles=[['doctor','Der Doctor'],['dalek','Dalek'],['weeping-angel','Weinender Engel']].map(([id,name],i)=>({id,name,portrait:'/portraits/'+id+'.jpg',description:'Charakter',endurance:'Noch festzulegen',strength:'Noch festzulegen',abilities:['Noch offen'],actionNeedsDirection:true,owner:['A','B','C'][i],enemy:false}));
 let current={sessionId:'briefing',revision:1,started:true,ready:true,selectedCount:3,round:1,lastRoll:0,you:'A',current:null,phase:'players',helperId:'',activeEnemy:'',attack:{pending:false},turn:{accepted:false,stage:'roll',roll:0,remaining:0},setup:{stage:'building',id:'setup',roomMaster:'B',candidate:'',forced:false,saved:false,legacy:false,dossierRequired:true,readBy:[]},board:{size:20,subdivisions:2,tiles:[{x:0,y:0,kind:'floor',rotation:0}]},players:[{id:'A',name:'Alice',characterId:'doctor',x:0,y:0},{id:'B',name:'Bob',characterId:'dalek',x:1,y:0},{id:'C',name:'Cora',characterId:'weeping-angel',x:0,y:1}],characters:profiles,enemies:[],log:[],bag:[]};
 let posts=[],offline=false,lostReply=false,expired=false;
 function page(){return new JSDOM(html,{url:'http://192.168.4.1/',runScripts:'dangerously',beforeParse(w){w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'token',sessionId:'briefing',northSetup:'briefing:setup'}));w.fetch=async(path,opts)=>{
  if(expired&&path==='/api/state')return{ok:false,status:401,json:async()=>({error:'Entfernt'})};
- if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.11.0',protocolVersion:6,sessionId:'briefing'})};
+ if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.12.0',protocolVersion:7,sessionId:'briefing'})};
  if(path==='/api/command'){
   const form=new URLSearchParams(opts.body);posts.push(form);if(offline)throw Error('offline');
   if(form.get('action')==='readDossier'){if(!current.setup.readBy.includes(current.you))current.setup.readBy.push(current.you);current.revision++;if(lostReply){lostReply=false;throw Error('reply lost')}}
