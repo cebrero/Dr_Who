@@ -1174,6 +1174,44 @@ Verbindliche Wünsche vom 27.10.2026, umgesetzt:
 - Nur als spätere Planung speichern. Dieser Wunsch löst weder Implementierung noch neuen
   APK-Build aus; die bereits verschobene Startaufstellung bleibt für den nächsten Build vorgemerkt.
 
+### Spätere Finalphase: bereitgestellte Portalanimation
+
+Nutzerdatei und Gestaltungswunsch vom 27.10.2026, **geprüft und vorgemerkt, noch nicht eingebaut**:
+
+- Wenn kurz vor dem Ende alle übrigen Zielbedingungen erfüllt sind und nur noch der passende
+  Spieler das Portal erreichen muss, soll **portal_blue.mp4** als durchgehender Hintergrund
+  am Portal laufen. Wer der passende Spieler ist und welche Zielbedingungen dazugehören,
+  werden erst mit der Mission festgelegt; nicht allein aufgrund der Portaldistanz auslösen.
+- In dieser Ansicht normale Statuskarten durch kurze Ereignis-/Aktionsmeldungen als
+  **große, fette weiße Schrift über dem Video** ersetzen. Vorbeilaufender oder ausblendender
+  Text ist gewünscht. Vorschlag: Ein-/Ausblenden als gut lesbarer Standard, Laufschrift als
+  Alternative; konkretes Timing später testen. Wegen des hellen Hintergrunds kräftiger dunkler
+  Textschatten bzw. dezenter Kontrastverlauf, ohne das Video durch große Karten zu verdecken.
+- Zufälle und Entscheidungen weiterhin ausschließlich vom gespeicherten Hostzustand übernehmen.
+  Animation/Schleife lösen keine zweite Aktion aus; persönliche Angebote oder noch nicht
+  feststehende Spielerentscheidungen nicht auf dem gemeinsamen Portal verraten.
+- Hintergrund soll während dieser Endphase weiterlaufen, auch zwischen Texteinblendungen.
+  Schleifenübergang, tatsächliche Telefonleistung, Ausrichtung und Lesbarkeit rund um den Tisch
+  später am Gerät prüfen. Noch keine nahtlose Schleife oder fertige Siegbedingung behaupten.
+- **Original unverändert als persönliche Datei vorhanden:** `portal_blue.mp4`. Für eine spätere
+  Integration daraus wiederherstellen; wie die Audios nicht ins öffentliche GitHub-Repository
+  hochladen. Eine private Build-Kopie erst bei tatsächlicher Integration unter
+  `app/src/privateAssets/video/portal_blue.mp4` ablegen und passenden lokalen Player ergänzen.
+  Bei Bedarf effiziente Wiedergabekopie erstellen, Original behalten. Aktuell keine App-Assets,
+  Buildregeln, APK oder Quellhashprüfung geändert.
+
+| Merkmal | Geprüftes Original |
+| --- | --- |
+| Datei | portal_blue.mp4 |
+| Bild | H.264 Main, yuv420p, 720×1280, Hochformat 9:16, 30 Bilder/s |
+| Dauer | 15,033 Sekunden |
+| Ton | Kein Audiostream |
+| Größe | 43.388.010 Bytes |
+| SHA-256 | e160ac9eadc8b27007cf577def1d9643e755320fede2fe5a4d83cc213c6ecade |
+| Prüfung | Metadaten gelesen, vollständige Videodecodierung ohne Fehler, mehrere Frames visuell betrachtet |
+
+### Nächster Build: Startaufstellung mit Abstand zum Portal
+
 **Vormerkung vom 27.10.2026 – erst beim nächsten Build umsetzen:**
 
 - Bei der Startaufstellung sollen möglichst keine Spieler in der Nähe des Portals stehen,
