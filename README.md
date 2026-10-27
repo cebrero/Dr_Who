@@ -8,16 +8,24 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.12.0
+## Stand 0.13.0
 
-Neu in 0.12.0: Acht bestätigte Typen / elf einzelne Figuren mit neuen Bildern und Dossiers.
+Neu in 0.13.0: Zielabstimmung vor der Raummeisterwahl mit Mehrheit und einmaligem Los bei
+Gleichstand. Zufall ist eine zufällige eigene Stimme. Das Portal zeigt die bereitgestellte
+Vollbildanimation und fehlende Stimmen. Der Portalwürfel deckt erst nach dem Spielerwürfel auf.
+Eckkachel-Wandprüfung folgt der sichtbaren Nord-/West-Grafik. Alle Dossiers erzählen aus der
+Spielwelt, ohne Quellen-/Bildhinweise. Details Abschnitt 8m/8n; API 8, Spielstandformat 11.
+Automatische Siegprüfung und die genaue Zielzelle vor dem Portal bleiben offen.
+
+Seit 0.12.0: Acht bestätigte Typen / elf einzelne Figuren mit neuen Bildern und Dossiers.
 Duplikate sind unabhängig auswählbar; undefinierte neue Aktionen bleiben gesperrt.
 Raummeister speichern und laden benannte Räume direkt im Editor, voreingestellt ist
 Datum-Zeit_Charaktername. Raumvorlagen bleiben über Spielreset und Neustarts erhalten.
 Details in ONBOARDING.md, Abschnitt 8l. API-Protokoll 7, Spielstandformat 10 unverändert.
 
 Seit 0.11.0: Illustrierte scrollbare Charakterdossiers während des Aufbaus, danach auch für
-Raummeister. Frühe Bedienanleitung, persönliche Fähigkeiten, Herkunft und offizielle Quellen.
+Raummeister. Frühe Bedienanleitung, persönliche Fähigkeiten und Herkunft als immersive Akte aus der Spielwelt.
+Recherchequellen und Bildherkunft stehen nur in ONBOARDING.md, nicht in den Dossiers.
 Erst alle Gelesen-Bestätigungen geben Startfilm/Go frei. Kurze ein-/ausblendende Portal-Fakten
 und neue automatische Startplätze möglichst mit Abstand zum Portal. Format 10 / Protokoll 6;
 keine neuen Kampfwerte. Details in ONBOARDING.md, Abschnitt 8k.
@@ -106,7 +114,7 @@ Cybermen, Schneemann, Adipose und Zygon. Mehrfachfiguren sind einzeln auswählba
 Vier Personen können aus dem bestätigten Bestand wählen. Lokale KI-Porträts und Dossiers sind
 vorhanden; Ausdauer und Kraft bleiben ausdrücklich offen.
 
-Validiert: 658 Kern-/HTTP-Prüfungen und 301 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
+Validiert: 719 Kern-/HTTP-Prüfungen und 317 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -116,7 +124,9 @@ Ein realer Vier-Spieler-Hotspottest steht noch aus.
 - Android Gradle Plugin ist auf 8.13.2 festgelegt.
 - Projekt in Android Studio öffnen. SDK bei Bedarf über den SDK Manager installieren.
 - Vor dem Build die beiden privaten Audiodateien nach `app/src/privateAssets/audio/` wiederherstellen;
-  exakte Namen/Hashes siehe ONBOARDING Abschnitt 8g. Sie sind nicht Teil des Quellrepositorys.
+  exakte Namen/Hashes siehe ONBOARDING Abschnitt 8g. Zusätzlich private Portalanimation unter
+  `app/src/privateAssets/video/portal_blue.mp4` wiederherstellen (Abschnitt 8n).
+  Diese Originalmedien sind nicht Teil des Quellrepositorys.
 - Im Projektordner (Linux/macOS):
 
 ```sh
@@ -146,7 +156,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.12.0
+## Installationshinweis 0.13.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:

@@ -178,3 +178,21 @@
 53. Raumformat 1, Spielstandformat 10 unverändert, Protokoll 7. Dauerhafte Save-Quittung
     verhindert Duplikate nach Antwortverlust/Neustart. Erst neue passende Revision speichern;
     bestehende Quittung darf keinen späteren Plan übernehmen. Kaputte Originale erhalten.
+
+54. Neuester Wunsch nach APK 0.12.0: Steckbriefe/Dossiers als Akten über wirklich existierende
+    Wesen erzählen. Keine „in der Serie“-Kommentare, Referenzlinks oder Quellen-/Bildhinweisrubrik
+    in der Spielansicht. Recherche/Bildherkunft nur in ONBOARDING.md. Bedienung/aktuelle Sperren
+    ehrlich erklären; Erzählwissen erfindet keine neuen Werte oder ausführbaren Fähigkeiten.
+
+55. Seit 0.13.0 Start zuerst voting: beide bekannten Ziele, Mehrheit, Gleichstand einmal am Host
+    auslosen; Zufall ist zufällige eigene Stimme. Persistente Abstimmung/Ergebnis vor Raummeister.
+    Keine Zeit-Ersatzstimme. Offline-Spieler nur explizit am Host entfernen. Keine Siegfeldregel erfinden.
+56. Portalwürfel wartet auf gespeichertes ackRoll des aktiven Wurfbesitzers, erst nach 2,6-s-Client-
+    Animation. Dann 650-ms-Abschluss; Ergebnisse/Story vorher nicht anzeigen. Kosmetische ACK erhöht
+    keine Spielrevision; nächste gültige Folgeaktion bestätigt ebenfalls, falls ACK verloren ging.
+57. Eckkachel-Grundlage Nord/West passend zur vorhandenen Grafik; frühere Logik Nord/Ost war falsch.
+    Alle vier Drehungen und innere vier Teilfelder prüfen. Versteckter Schlüssel blockiert niemals.
+58. Format 11 / Protokoll 8; Formate 1–10 lesbar, Raumformat 1 unverändert. Private MP4 wie Audios
+    wiederherstellen und bytegleich/uncompressed im APK prüfen; lokal nur bei Abstimmung abspielen.
+59. Erzählidee am 27.10.2026 einmal erinnert, Automation danach pausiert. Nicht nochmals erinnern;
+    Kosten/Geheimhaltung/Balancing weiterhin gemeinsam entwerfen, keine Angebote ungefragt bauen.

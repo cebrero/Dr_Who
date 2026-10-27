@@ -1,11 +1,16 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **27.10.2026 · Version 0.12.0 · Elf bestätigte Figuren und benannte Raumvorlagen**
-<!-- app-version: 0.12.0 -->
-<!-- reviewed-source-sha256: bf58cd73cb2bcf4222c47a2c6bf152902e9f16f6f64ce339ccac127b91bce152 -->
+Stand: **27.10.2026 · Version 0.13.0 · Spielziel-Abstimmung, Spielerwürfel zuerst und Eckkacheln**
+<!-- app-version: 0.13.0 -->
+<!-- reviewed-source-sha256: 3ba759fa2b1da7444029ee7b9230649ec98d6815b9c52679c761d555c0defd87 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
-**Neu umgesetzt:** Acht bestätigte Figurentypen / elf einzelne Miniaturen sind auswählbar,
+**Neu in 0.13.0:** Immersive Dossiers ohne Serien-/Bildhinweise; Zielabstimmung vor der
+Raummeisterwahl (Mehrheit, bei Gleichstand Host-Los), private Vollbild-Portalanimation während
+Abstimmung/Ergebnis. Der Portalwürfel wartet auf die Aufdeckung am Spielerhandy. Eckkachel-Wände
+entsprechen jetzt ihrer sichtbaren Grafik. Details 8m/8n; Build-/Teststatus Abschnitt 11.
+
+**Seit 0.12.0:** Acht bestätigte Figurentypen / elf einzelne Miniaturen sind auswählbar,
 mit neuen Dossiers und Bildern. Raummeister kann direkt im Editor benannte Raumvorlagen speichern
 und nach Bestätigung laden. Voreinstellung Datum-Zeit_Charaktername. Details unter Abschnitt 8l.
 Ausdauer/Kraft und neue Spezialwirkungen bleiben offen; nicht definierte Aktionen sind gesperrt.
@@ -110,7 +115,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.12.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.13.0
 
 ### Vor der Partie
 
@@ -124,7 +129,9 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
    Gewählte Figuren sind für andere gesperrt. Alle beigetretenen Spieler sind Partner.
 4. Portal zeigt, wie viele bereits gewählt haben, plus Spielername und zugeordnete Figur.
 5. Nach der Spielerwahl kann der Host übrige bekannte Figuren als Gegner hinzufügen.
-6. Host drückt Start; der bereitgestellte Themensong spielt einmal. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
+6. Host drückt Start; der bereitgestellte Themensong spielt einmal. Zuerst stimmen alle am eigenen
+   Handy über eines der beiden Spielziele ab. Mehrheit, Gleichstand durch einmaliges Portal-Los;
+   Zufall bestimmt die eigene Stimme. Ergebnis drei Sekunden, dann drei Sekunden TARDIS-Flug und zufällige Raummeister-Anfrage an echte
    Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
 7. Raummeister erfasst den tatsächlichen Aufbau oder lädt eine benannte Raumvorlage direkt im Editor;
    Speichern einer eigenen Vorlage mit editierbarem Datum-Zeit_Charaktername beendet den Bau nicht.
@@ -141,10 +148,10 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.12.0 |
+| Schritt | Regel | Umsetzung 0.13.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
-| 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host würfelt und speichert verbindlich; kein erneutes Würfeln bei Retry |
+| 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host speichert verbindlich. Client animiert 2,6 s und bestätigt Aufdeckung; Portal deckt erst danach auf. Kein erneutes Würfeln bei Retry |
 | 2a | Bei 1, 2, 3 oder 4: genau diese Zahl Felder ziehen | Direkt zur Bewegung; dies ist die aus der Nutzerregel abgeleitete Interpretation |
 | 2b | Bei 5 oder 6: Bewegung ODER Charakteraktion wählen | Zwei Auswahlmöglichkeiten; kein Bewegen plus Aktion |
 | 3a | Bewegung immer genau um die Augenzahl, nicht nur bis zu dieser Zahl | Reststrecke wird nach jedem gespeicherten Schritt reduziert |
@@ -328,8 +335,8 @@ Ein vollständiger späterer Spielstand enthält:
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
 **Heute umgesetzt:** Zusätzlich eine dauerhafte benannte Raumsammlung direkt beim Raummeister
-(Abschnitt 8l), getrennt von vollständigen Spielständen. Ein versionierter binärer lokaler Spielstand (Format 10, ältere Formate
-1–9 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+(Abschnitt 8l), getrennt von vollständigen Spielständen. Ein versionierter binärer lokaler Spielstand (Format 11, ältere Formate
+1–10 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
@@ -662,7 +669,8 @@ Inventar und Stückzahlen für einen solchen Generator fehlen weiterhin.
    und Startfelder ändern. Andere Clients sehen den Namen und warten; das Portal zeigt den Plan live.
 5. Palette unten: **Ecke** (zwei benachbarte Wände), **Ohne Wand**, **Gang** (zwei gegenüberliegende
    Wände), **Tür** auf einer Seite, **Kerker**, **Brunnen**, **Portal** über genau zwei Rasterfelder.
-   Ausgangsausrichtung Ecke Nord/Ost, Gang Nord/Süd und Tür Nord. Vier 90°-Drehungen.
+   Ausgangsausrichtung der Grafik Ecke Nord/West (Bewegungsprüfung seit 0.13.0 angeglichen),
+   Gang Nord/Süd und Tür Nord. Vier 90°-Drehungen.
    Friedhof und einzelnes gerades Wandstück bleiben späteres Inventar, keine zusätzlich erfundenen
    Palettenelemente. Mengen-/Magnet-/Maßbegrenzungen sind noch nicht bekannt.
 6. Kacheln mit Maus oder Touch aus der Palette ziehen. Ein farbiger Vorschauumriss zeigt Ziel
@@ -1192,7 +1200,8 @@ Offizielle Quellen, am **27.10.2026** geprüft und frei auf Deutsch zusammengefa
 Bestehende Porträts/eigene SVGs ergänzt um drei neue **KI-Szenen**, keine offiziellen Serienfotos,
 keine heruntergeladenen Fremdbilder. Offline unter `app/src/main/assets/portraits/`:
 `doctor-scene.jpg`, `dalek-scene.jpg`, `weeping-angel-scene.jpg`, je 1000×667.
-Bildhinweise im Dossier. Integrierte Bildgenerierung verwendet, keine CLI/API-Ausweichlösung.
+Bildherkunft nur hier dokumentiert; keine Bildhinweise im Dossier (neuer Wunsch Abschnitt 8m).
+Integrierte Bildgenerierung verwendet, keine CLI/API-Ausweichlösung.
 Finale Prompts:
 
 - `doctor-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape photograph-like illustration in a German Doctor Who tabletop character dossier. A close-up of a sonic screwdriver with softly glowing pale green emitter resting on a worn dark teal TARDIS console, brass circular controls and a glimpse of a blue police box door behind, rich cinematic photographic detail. Landscape 3:2 composition. No people, no letters, no text, no logo, no watermark. Elegantly complement parchment, petrol and brass UI. Original fan-art interpretation, not a reproduction of a TV still.
@@ -1238,7 +1247,8 @@ in einer separaten Auswahl ebenfalls ausdrücklich bestätigt. Keine Originalfot
 - Sontaraner wird allgemein geführt. Die Ähnlichkeit zu Strax reicht nicht, um eine konkrete
   Serienperson zwingend festzuschreiben. Doctor-Inkarnation weiterhin nicht verbindlich bestimmt.
 - Neue fünf Typen erhalten große Porträts, zusätzliche Szenen, Beschreibungen und vollständige
-  scrollbare Dossiers mit früher Bedienung, Herkunft/Spezies und getrenntem Serienwissen.
+  scrollbare Dossiers mit früher Bedienung und Herkunft/Spezies aus Sicht der Spielwelt
+  (aktuelle Textvorgabe Abschnitt 8m).
   Fez/Schleife des Adipose greifen die Miniatur auf und sind kein Bonus.
 - Doppelminiaturen teilen Hintergrund/Porträt ihres `archetype`, behalten aber eigenen Namen,
   Besitzer, Position und Gegnerstatus. Auch native Avatare sowie Dalek-Stimme nutzen den Typ.
@@ -1306,7 +1316,8 @@ Je ein neues Porträt und eine neue Szene für Sontaraner, Cyberman, Schneemann,
 unter `app/src/main/assets/portraits/`. Insgesamt zehn lokale JPEGs aus integrierter Bildgenerierung,
 keine CLI/API-Ausweichlösung und keine offiziellen Serienfotos. Originale als PNG erzeugt, für
 Offline-App proportional verkleinert und als JPEG gespeichert. Keine ursprünglichen Bilder ersetzen.
-Dossiers kennzeichnen freie KI-Illustrationen; Quellen aufklappbar. Finale Prompts:
+Recherche und Bildherkunft nur in der Entwicklungsdokumentation; der frühere aufklappbare
+Quellen-/Bildhinweisbereich ist entfernt (Abschnitt 8m). Finale Prompts:
 
 - `sontaran.jpg`: Use case: photorealistic-natural. Asset type: offline character dossier portrait in Doctor Who tabletop Android game. A recognizable Doctor Who Sontaran, short stocky adult alien clone warrior, bulbous wrinkled ochre potato-shaped bald head, stern expressive face, dark blue-purple segmented military armour, helmet removed, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, petrol-blue shadows and warm brass edge light, softly blurred alien military corridor. Vertical 3:4 composition. One character only. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
 - `sontaran-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape image for a Doctor Who tabletop archive dossier. A recognizable Doctor Who Sontaran, short stocky adult alien clone warrior, bulbous wrinkled ochre potato-shaped bald head, stern expressive face, dark blue-purple segmented military armour, helmet removed, complete full-body centered portrait with generous space around head and feet, cinematic photographic realism, petrol-blue shadows and warm brass edge light, softly blurred alien military corridor. Recompose as a distinct wide environmental scene with the subject at one side and more of the setting visible, landscape 3:2, entire character visible. No text, no captions, no watermark, no interface, no logos. Original fan-art illustration, not a reproduction of a TV frame.
@@ -1326,7 +1337,109 @@ Private Originalaudios bleiben bytegleich. Bekannte Android-/Hotspot-/Audio-/nat
 nicht durch Browserprüfungen als erledigt behaupten.
 
 
-## 9. Technische Grundlage 0.12.0
+## 8m. Immersive Dossiers ab 0.13.0
+
+**Bestätigter Nutzerwunsch vom 27.10.2026, im Quellstand umgesetzt:** Figuren so beschreiben,
+als existierten sie wirklich. Keine Formulierungen wie „in der Serie“, keine Referenzen und
+keine Rubriken für Serienhinweise oder Bildhinweise in Steckbriefen/Dossiers.
+
+- Alle acht Hintergrunddossiers überarbeitet: Herkunft, Spezies, Geschichte und Eigenheiten
+  sind Aktenwissen aus dem Universum. Ungeklärte Herkunft bleibt ein Geheimnis; keine Heimat
+  erfinden. Strax wird als eigenständiger Sontaraner erwähnt, nicht als Identität der Spielerfigur.
+- Bildunterschriften beschreiben Motive/Orte; keine KI-, Fanart- oder Produktionshinweise.
+  Früheren Quellen-/Bildhinweisbereich samt Links, Daten und ungenutztem CSS entfernt.
+- Auch kurze Auswahl-/Spiel-Steckbriefe aus dem gemeinsamen Charakterkatalog enthalten keine
+  „Serienwissen“-Vorsätze oder Kommentare über Miniaturen. Aussagekräftige Bildalternativtexte.
+- Früh zugängliche Bedienanleitung, aktuelle Aktionssperren, Go/W6, Richtung/Abbruch und ehrlicher
+  Hinweis auf noch nicht ausgeführte Wirkungen bleiben erhalten. Die erzählte Biologie/Geschichte
+  schaltet keine neue Fähigkeit frei. Werte, Reichweiten und Kosten nicht neu festgelegt.
+- Recherchequellen und Bildgenerierungsnachweise bleiben nur in dieser Entwicklungsdokumentation
+  (8k/8l), ohne Quellenrubrik in der Spieloberfläche. Historische Texte zu deren Anzeige sind durch
+  diesen neuesten Nutzerwunsch ersetzt. Bilder, Scrollen, Großansicht und Gelesen-Gate unverändert.
+- Bestandteil von 0.13.0. Version, Update und Tests stehen in Abschnitt 8n/11.
+
+## 8n. Zielabstimmung, Portalwürfel und Eckkachelkorrektur ab 0.13.0
+
+Verbindlich bestätigt am **27.10.2026**: **Portal wartet auf den Spielerwürfel.**
+**Abstimmung: Mehrheit, bei Gleichstand Los.** Bei **Zufall** zieht der Host die eigene Stimme
+zufällig aus den beiden angebotenen Zielen. Keine neue Kampf-, Kosten- oder Siegfeldregel erfunden.
+
+### Neue Partie: Abstimmung zuerst
+
+- Nach Start am Portal zunächst Phase `voting`, vor Raummeistersuche und Aufbau.
+  Frage **Ziel des Spiels**, Optionen unverändert:
+  1. Wer als erstes vor dem Portal steht gewinnt.
+  2. Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt.
+- Jedes Spielerhandy erhält verpflichtendes Pop-up mit Auswahl und **OK** oder **Zufall**.
+  Auswahl vor dem Senden veränderbar, über Polling/Reload erhalten. Erst Bestätigung zählt.
+  Nach verlorener Antwort dieselbe eingefrorene Stimme/Anfrage erneut senden. Bereits gespeicherte
+  eigene Stimme im Snapshot löst eine verlorene Bestätigung ebenfalls auf. Kein zweites Stimmenlos.
+- Portal zeigt die Frage und beide Ziele als große weiße Schrift vor der privaten Vollbild-
+  `portal_blue.mp4`, dazu Anzahl und Namen/Charaktere fehlender Stimmen. Keine fremden Einzelstimmen
+  öffentlich im Snapshot; jeder sieht die eigene gespeicherte Stimme und die Liste der Fertigen.
+- Alle aktuellen Spieler müssen abstimmen, kein stiller Timeout/automatische Ersatzstimme für
+  Offline-Spieler. Host kann wie bisher einen abwesenden Spieler entfernen; dessen Stimme entfällt.
+  Wenn damit alle verbleibenden Spieler abgestimmt haben, auswerten. Nach Ergebnis keine Neuwertung
+  durch spätere Spielerentfernung. Letzter Spieler weg: Lobby, kein Ziel/keine Stimmen.
+- Mehrheit zählt abgegebene Stimmen; Gleichstand entscheidet genau ein Host-Los. Ergebnis mit
+  Hinweis auf Mehrheit bzw. Gleichstand drei Sekunden (`voteResult`), dann bisherige drei Sekunden
+  Raummeister-Flug und normale Auswahl. Bestätigte Stimmen, Ziel und Losergebnis atomisch speichern.
+  Reine parallele Stimmabgaben dürfen sich nicht allein durch unterschiedliche Revisionen blockieren.
+- Neustart/Spiel speichern/laden erhalten Phase und Stimmen. Bewusstes Laden erneuert wie bisher
+  Sitzung/Tokens; gespeicherte Spielerplätze einmal mit Namen übernehmen. Neue Partie stimmt neu ab.
+  Raumumbau und Fortsetzungen bereits laufender alter Partien erzwingen keine neue Abstimmung.
+- Das Ziel ist gewählt und gespeichert; die **automatische Siegprüfung fehlt weiterhin**.
+  „Vor dem Portal“ als konkrete Teilzelle, Finder/Träger bei späterem Tausch und Finalphasentrigger
+  sind noch gemeinsam festzulegen. Keine anderen Spieler zu Gegnern machen.
+
+### Portal deckt nach dem Spielerwürfel auf
+
+- W6 weiterhin einmal am Host speichern; Client animiert denselben Wert 2,6 Sekunden.
+  Erst nach diesem Ende und zwei Browser-Zeichenframes für die sichtbare Endfläche sendet ausschließlich der betroffene Spieler `ackRoll` mit stabiler Wurf-ID.
+- Portal erhält bis dahin keinen anzuzeigenden Zahlenwert (`die=0`) und bleibt im drehenden
+  Wartezustand. Keine Ergebniszeile/Story am Portal vor Freigabe. Danach kurzer 650-ms-Abschluss
+  statt der bisherigen unabhängig gestarteten 2,6 Sekunden. Es wird nicht nochmals gewürfelt.
+- Aufdeckungsstatus ist gespeichert. ACK ist kosmetisch, erhöht keine Spielrevision, verbraucht
+  keine Bewegung und invalidiert keinen gleichzeitig gesendeten Zug. Falscher Spieler/falsches
+  Ereignis abweisen. Kein alter Wurf darf einen neueren freigeben.
+- Bei verlorener ACK-Antwort identischer separater Retry über Polling, ohne normale Züge zu blockieren.
+  Eine gültige anschließende Bewegung/Bewegungswahl/Aktion bestätigt ebenfalls das Aufdecken,
+  da diese Bedienelemente erst nach der Spieleranimation frei sind. So bleibt kein altes Portal-
+  Warten stehen, wenn der Spieler seinen Zug bereits beendet hat. Kein willkürlicher Zeit-Timeout.
+- Ausfall vor der Aufdeckung: Portal wartet, Spieler lädt sein gespeichertes Ereignis erneut.
+  Alter Format-10-Wurf gilt als bereits aufgedeckt, damit ein Update keine nachträgliche ACK verlangt.
+  Reduzierte Animationen bleiben statisch; Freigabereihenfolge wird dennoch eingehalten.
+
+### Eckkacheln und Schlüssel
+
+- **Fehler gefunden:** Grafik zeigte bei Drehung 0 Nord/West, Regellogik sperrte Nord/Ost.
+  Bewegungsprüfung an die bereits gezeigte/physisch aufgebaute Kachel angepasst. Drehung 0
+  also Nord/West, Drehung 1 Nord/Ost, Drehung 2 Ost/Süd, Drehung 3 Süd/West.
+- Keine gespeicherte Kachel drehen/verschieben, kein Reset erforderlich. Auch geladene Vorlagen
+  verwenden ihre sichtbare Wandlage. Beide Bewegungsrichtungen prüfen dieselbe Kante.
+- A1/B1/A2/B2 innerhalb einer Eckkachel bleiben untereinander orthogonal begehbar; nur äußere
+  rote Wände sperren den Wechsel zur Nachbarkachel. Figurenbelegung bleibt ein Hindernis.
+- Der versteckte Portalschlüssel **blockiert kein Feld**. Betreten sammelt ihn atomar ein,
+  einschließlich Retry/Popup/Tasche wie bisher. Keine Bewegungssperre wegen des Schlüssels ergänzt.
+
+### Private Animation und Technik
+
+- `PortalVideo` spielt die bereitgestellte MP4 lokal, stumm und in Schleife während `voting`/
+  `voteResult`. Vollbild passend beschnitten, dunkler Kontrast über dem Video, große Texte.
+  Weder Videoende noch Schleife führen Aktionen aus. Hintergrund/Phasenende gibt MediaPlayer frei.
+  Abspielfehler lässt dunklen lesbaren Hintergrund stehen. Finale weiterhin nicht implementiert.
+- Original unter `app/src/privateAssets/video/portal_blue.mp4`, Git-ignoriert und unverändert.
+  SHA-256 `e160ac9eadc8b27007cf577def1d9643e755320fede2fe5a4d83cc213c6ecade`,
+  43.388.010 Bytes. `verifyPortalVideo` prüft vor Stempel/Build; MP4 wie OGG unkomprimiert im APK.
+  Wiederherstellung aus gleichnamiger persönlicher Datei; niemals privat bereitgestellte Medien
+  oder Signierschlüssel öffentlich hochladen. Noch keine Videobearbeitung/Finalziel-Logik.
+- App **0.13.0 / Code 20**, **API-Protokoll 8**, **Spielstandformat 11**, Formate **1–10** lesbar.
+  Format 11 ergänzt Aufdeckungsstatus, Stimmen, Ziel und Gleichstandsmerker. Raumformat **1** bleibt.
+  Übliches Update ab 0.5.0 ohne Deinstallation; Spielerwebseiten neu laden. Neue Abstimmung erscheint
+  beim **nächsten neuen Spiel**, bestehende laufende Partie wird nicht zurückgesetzt.
+
+
+## 9. Technische Grundlage 0.13.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1374,42 +1487,13 @@ nicht durch Browserprüfungen als erledigt behaupten.
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
-### Geplant: Abstimmung vor jedem neuen Spiel
+### Zielabstimmung – seit 0.13.0 umgesetzt
 
-**Verbindlicher neuer Wunsch vom 27.10.2026, noch nicht umgesetzt; weitere Abstimmungsregeln
-liefert der Nutzer später. Kein neuer Build durch diese Vormerkung.**
-
-1. Nach Beitritt/Figurenwahl und Start am Portal **zuerst über Spielinhalt, Ziel und Regeln
-   abstimmen**. Die Abstimmung kommt vor der bisher direkt folgenden Raummeisterwahl und dem
-   Aufbau. Erst anschließend die bestehenden Startphasen fortsetzen. Geladene Fortsetzungen
-   nicht ungefragt als neues Spiel behandeln oder bereits festgelegte Regeln neu auslosen.
-2. Portal stellt die jeweilige Frage vor seiner **Vollbild-Portalanimation** und zeigt,
-   **welche Charaktere noch abstimmen müssen**. Die bereitgestellte `portal_blue.mp4` ist
-   dafür als Hintergrund vorgesehen; bisher nur für später dokumentiert, nicht eingebaut.
-3. Jeder Client erhält ein **Abstimmungs-Pop-up mit auswählbaren Optionen** und den Tasten
-   **OK** oder **Zufall**. Erst die verbindliche Bestätigung zählt als Stimme. Auswahl,
-   Bestätigung und öffentlicher Status müssen später eindeutig unterscheidbar bleiben.
-4. Erste Frage: **Ziel des Spiels**. Die beiden vom Nutzer festgelegten Optionen lauten:
-
-   | Option | Wortlaut des Spielziels |
-   | --- | --- |
-   | 1 | Wer als erstes vor dem Portal steht gewinnt. |
-   | 2 | Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt. |
-
-5. Weitere Fragen/Regeln später ergänzen. **Noch offen:** Auswertung/Mehrheit, Gleichstand,
-   genaue Bedeutung von Zufall (zufällige eigene Stimme oder anderes Losverfahren), Umgang
-   mit fehlenden/offline Spielern, Änderbarkeit und Abschluss der Abstimmung. Nichts davon
-   als bereits vereinbarte Regel voraussetzen. Host entscheidet verbindlichen Spielzufall;
-   spätere Retrys/Polling dürfen keine neue Stimme oder erneute Auslosung erzeugen.
-
-**Bei der späteren Ausarbeitung gemeinsam klären:** „vor dem Portal“ als konkretes Ziel-/
-Eingangsfeld; bei Option 2 Finder versus aktueller Schlüsselträger, falls später Übergabe
-möglich wird; Verhältnis der persönlichen Siegziele zur bisherigen Partner-/Gegnerzuordnung.
-Die Zieloptionen ermöglichen einen einzelnen Sieger, machen andere beigetretene Spieler aber
-nicht automatisch zu Gegnerfiguren. Der frühere kooperative Missionsvorschlag bleibt ein
-Vorschlag, nicht die verbindliche Abstimmungsentscheidung. Den Start der Finalphase pro
-gewähltem Ziel definieren; Ziel 1 löst nicht schon wegen fehlender weiterer Aufgaben sofort
-zu Spielbeginn die komplette Finalphase aus.
+Zwei bestätigte Zieloptionen, Mehrheit und einmaliges Gleichstands-Los sowie Zufall als eigene
+zufällige Stimme sind umgesetzt (Abschnitt 8n). Weitere Fragen folgen nach Vorgaben des Nutzers.
+Offen: genaue Ziel-/Eingangszelle „vor dem Portal“, Finder versus aktueller Schlüsselträger,
+automatische Siegprüfung und objektivspezifischer Finalphasentrigger. Die persönliche Siegbedingung
+macht beigetretene Spieler nicht zu Gegnern; Partner-/Gegnerzuordnung bleibt unverändert.
 
 **Spätere Atmosphäre und Erzählung – merken und zur passenden Entwicklungsphase ansprechen
 (Nutzerwunsch vom 27.10.2026, noch nicht umgesetzt):**
@@ -1427,16 +1511,19 @@ zu Spielbeginn die komplette Finalphase aus.
   Beispiel: hilfreichen Gegenstand erhalten und dafür Ausdauer oder Kraft abgeben.
   Absender, Geheimhaltung, Werte, Kosten, Häufigkeit, Folgen und Balancing sind noch offen.
   Keine Zahlen, automatischen Abzüge, Spielziele oder neue Gegenstände vorweg implementieren.
-- **Erinnerungsauslöser:** Mario daran erinnern, sobald die Entwicklung zur konkreten Festlegung
+- **Erinnerung einmal erfolgt am 27.10.2026:** Mit der verbindlichen Festlegung der
+  Abstimmungs-/Szenarioregeln wurde Mario an alle drei Punkte erinnert. Die zugehörige Aufgabe
+  `6ae0259330a48191a9dc04941777cbf8` wurde danach pausiert. **Nicht erneut erinnern.**
+  Idee bleibt offen, nicht implementieren. Ursprünglicher Auslöser war: sobald die Entwicklung zur konkreten Festlegung
   von Ausdauer, Kraft, Gegenstandswirkungen und Ereignis-/Szenarioregeln kommt, bevor Angebote
-  oder öffentlich/private Ereignisansichten umgesetzt werden. Diese Idee auch beim nächsten
-  entsprechenden Entwicklungsgespräch aktiv aufgreifen, nicht nur in einer Dateiliste verstecken.
+  oder öffentlich/private Ereignisansichten umgesetzt werden. Weitere Ausarbeitung nur im passenden Entwicklungsgespräch; die einmalige Erinnerung ist erledigt.
 - Nur als spätere Planung speichern. Dieser Wunsch löst weder Implementierung noch neuen
   APK-Build aus; die damals verschobene Startaufstellung ist inzwischen in 0.11.0 umgesetzt (Abschnitt 8k).
 
 ### Spätere Finalphase: bereitgestellte Portalanimation
 
-Nutzerdatei und Gestaltungswunsch vom 27.10.2026, **geprüft und vorgemerkt, noch nicht eingebaut**:
+Nutzerdatei und Gestaltungswunsch vom 27.10.2026: **Finalphase noch vorgemerkt**. Dieselbe
+Originaldatei läuft seit 0.13.0 bereits während der Zielabstimmung; der folgende Finaltrigger bleibt offen:
 
 - Wenn kurz vor dem Ende alle übrigen Zielbedingungen erfüllt sind und nur noch der passende
   Spieler das Portal erreichen muss, soll **portal_blue.mp4** als durchgehender Hintergrund
@@ -1455,10 +1542,10 @@ Nutzerdatei und Gestaltungswunsch vom 27.10.2026, **geprüft und vorgemerkt, noc
   später am Gerät prüfen. Noch keine nahtlose Schleife oder fertige Siegbedingung behaupten.
 - **Original unverändert als persönliche Datei vorhanden:** `portal_blue.mp4`. Für eine spätere
   Integration daraus wiederherstellen; wie die Audios nicht ins öffentliche GitHub-Repository
-  hochladen. Eine private Build-Kopie erst bei tatsächlicher Integration unter
-  `app/src/privateAssets/video/portal_blue.mp4` ablegen und passenden lokalen Player ergänzen.
-  Bei Bedarf effiziente Wiedergabekopie erstellen, Original behalten. Aktuell keine App-Assets,
-  Buildregeln, APK oder Quellhashprüfung geändert.
+  hochladen. Private Build-Kopie seit 0.13.0 unter
+  `app/src/privateAssets/video/portal_blue.mp4`, lokaler Player für Abstimmung vorhanden.
+  Bei Bedarf effiziente Wiedergabekopie erstellen, Original behalten. Noch kein
+  Finalphasentrigger ergänzt; Video-/Buildintegration der Abstimmung siehe 8n.
 
 | Merkmal | Geprüftes Original |
 | --- | --- |
@@ -1493,6 +1580,49 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.13.0 am 27.10.2026:
+
+- **719 Kern-/HTTP-Prüfungen bestanden** (658 bisherige + 61 neue): echte Startabstimmung,
+  parallele Revisionen, eigene/fremde Stimmen, Mehrheits-/Gleichstandsergebnis und Zufall am Host,
+  identische Retrys/Neustart ohne neues Los, Speicherausfälle, Entfernen fehlender/letzter Spieler,
+  Ergebnis vor Raummeister, Aufdeckung nur vom richtigen Wurfbesitzer, ACK bei Schreibfehler,
+  identische Spielrevision trotz kosmetischer Bestätigung, ACK-Recovery durch Folgeschritt,
+  laufenden Format-10-Spielstand ohne nachträgliche Abstimmung lesen, alle Eckkachel-Drehungen
+  mit beiden Kantenrichtungen und frei begehbaren inneren Teilfeldern. Schlüssel-Fund weiter bestanden.
+- **317 DOM-/Grafikprüfungen bestanden** (301 angepasste bisherige + 16 neue): elf immersive
+  Dossiers ohne Referenzen/Serien-/Bildhinweise, Abstimmungspopup, Auswahl/Polling/Fokus/Escape,
+  zufällige Stimme, verlorene Antwort mit identischer Anfrage, Ergebnis und Reihenfolge,
+  kein ACK vor Ende der Spieleranimation, ACK-Retry ohne blockierten Spielzug.
+- Alle vier bisherigen mobilen Browserabläufe weiterhin bestanden. Neuer echter Zwei-Client-
+  Ablauf: verpflichtende Abstimmung vor Suche, Auswahl über Polling/Reload erhalten, erfolgreiche
+  Stimmantwort absichtlich verloren, Host-Neustart mit Teilstimmen und mit Ergebnis, Gleichstands-
+  Los und Zufall, Ergebnis vor Raummeister/normalem Aufbau. 320×568-Abstimmung mit beiden Optionen
+  und OK/Zufall ohne internes Scrollen, Screenshot geprüft. Erster W6: Portalwert vor Ende der
+  2,6-s-Animation verborgen; Freigabe erst nach Endbild-Zeichenframes. Danach sechs Augen unverändert.
+  Tatsächliche Bewegung über offene Ostkante durch B1/A1/A2/B2 der Eckkachel bestanden.
+- Android `updateOnboardingStamp :core:smokeTest :app:clean :app:assembleDebug :app:lintDebug`:
+  **BUILD SUCCESSFUL**, 719 Kernprüfungen, Lint **0 Fehler / 19 Warnungen**. Nach letzter Prüfung
+  finale Texte/Endbild-Bestätigung erneut stempeln und `:app:clean :app:assembleDebug` ausführen.
+  App 0.13.0 / Code 20; finale Anleitung sowie alle 30 lokalen Client-/Grafik-/Audio-/Videoassets
+  vor Ausgabe bytegleich mit APK prüfen, beide OGGs und MP4 unkomprimiert. Signatur muss dem
+  bisherigen Zertifikat seit 0.5.0 entsprechen. Private Video-Prüfung hat einen unvollständigen
+  Build-Input tatsächlich zurückgewiesen; Original vollständig wiederhergestellt und verifiziert.
+- **Weiter offen:** reale Android-Telefone/Hotspot, native Videowiedergabe/Portal-Endanimation,
+  Audiofokus und Lesbarkeit aus allen Sitzrichtungen. Browserprüfungen ersetzen diese nicht.
+  Automatische Siegprüfung und konkrete Zielzelle vor dem Portal bleiben unimplementiert.
+
+
+Vorabprüfung nur der immersiven Textüberarbeitung am 27.10.2026 (historischer Zwischenstand vor obigem vollständigem 0.13.0-Test):
+
+- `npm test`: **301 DOM-/Grafikprüfungen bestanden**. Bisherige Quellenlink-Prüfung durch
+  Prüfung aller elf Figuren ersetzt: keine Referenzlinks, Quellen-/Bildhinweisrubrik oder
+  Serien-/Illustrationskommentare im gerenderten Dossier einschließlich Bildalternativtexten.
+- `node --check app/src/main/assets/character-dossiers.js` und `git diff --check` bestanden.
+- Ausschließlich Texte, Quellenrubrik und deren Styling geändert; keine Regellogik/Migration.
+  Neue Kern-, Android-, native und Hardwaretests nicht durchgeführt. Folgende 0.12.0-Buildwerte
+  gehören zur bereits ausgelieferten APK, nicht zu dieser nachfolgenden Quelländerung.
+
 
 Für 0.12.0 am 27.10.2026:
 
@@ -1887,6 +2017,8 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 27.10.2026 | 0.11.0 | Scrollbare illustrierte Charakterdossiers während Aufbau, frühe Bedienung/persönliche Fähigkeiten und offizielle Hintergrundquellen, persistentes Gelesen-Gate vor Startfilm/Go, kurze ausblendende Portal-Fakten, neue automatische Startplätze mit Portalabstand; Format 10 / Protokoll 6 |
 
 | 27.10.2026 | 0.12.0 | Bestätigte acht Typen/elf Miniaturen mit eigenen Auswahl-IDs und neuen Offline-Porträts/Dossiers, undefinierte Aktionen gesperrt; dauerhafte benannte Raumvorlagen direkt beim Raummeister, editierbare Datum-Zeit_Charaktername-Vorgabe, bestätigtes Laden und persistente Retrys; Protokoll 7, Spielstandformat 10 unverändert, Raumformat 1 |
+
+| 27.10.2026 | 0.13.0 | Immersive Dossiers ohne Serien-/Bildhinweise, Zielabstimmung mit Mehrheit/Gleichstands-Los und privater Vollbildanimation, Portalwürfel nach Clientaufdeckung, Eckwände an sichtbare Grafik angepasst; Format 11/Protokoll 8 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

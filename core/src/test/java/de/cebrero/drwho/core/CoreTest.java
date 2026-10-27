@@ -78,7 +78,7 @@ public final class CoreTest {
     static void advance(GameEngine e)throws Exception{finishReading(e);testClocks.get(e).time+=3000;e.tick();}
     /** Baseline rule tests use an actual saved, open 6×6 plan through the new setup API. */
     static void start(GameEngine e)throws Exception{
-        e.startDemo();advance(e);Map<String,String> tokens=tokens(e);String any=tokens.values().iterator().next();
+        startVoted(e);advance(e);Map<String,String> tokens=tokens(e);String any=tokens.values().iterator().next();
         String master=tokens.get(text(e.snapshot(any),"candidate"));cmd(e,master,"roomYes","");
         for(int y=0;y<6;y++)for(int x=0;x<6;x++)cmd(e,master,"tilePlace",x+","+y+",floor,0");
         int index=0;for(String player:tokens.keySet())cmd(e,master,"setSpawn",player+","+(index++)+",0");
@@ -86,8 +86,13 @@ public final class CoreTest {
         // Setup has its own random draw; historical helper checks count only the gameplay phase.
         java.lang.reflect.Field field=GameEngine.class.getDeclaredField("random");field.setAccessible(true);SecureRandom rng=(SecureRandom)field.get(e);if(rng instanceof Dice){((Dice)rng).helperDraws=0;((Dice)rng).rolls=0;}
     }
+    static void startVoted(GameEngine e)throws Exception{
+        e.startDemo();if(!e.portalState().setupStage.equals("voting"))return;
+        for(String token:tokens(e).values())cmd(e,token,"vote","1");
+        advance(e); // Result presentation, then the existing roommaster-selection phase.
+    }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); RoomLibraryTest.run(); CharacterInventoryTest.run(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); RoomLibraryTest.run(); CharacterInventoryTest.run(); VoteAndRevealTest.run(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {
@@ -261,6 +266,7 @@ public final class CoreTest {
         begin(e,token);
         String request=id();long before=revision(e.snapshot(token));e.command(token,request,before,"roll","");
         check(!e.sessionId().equals(engine(new MemoryStore()).sessionId()),"fresh installation has different party identity even with same app version");
+        cmd(e,token,"ackRoll",e.portalState().rollId );
         GameEngine.PortalState rolled=e.portalState();
         check(!rolled.rollId.isEmpty()&&rolled.die==5&&rolled.rollPlayer.equals("Alice"),"portal receives stable committed die event");
         check(e.snapshot(token).contains("\"rollEvent\":{\"id\":"+GameEngine.quote(rolled.rollId)),"authenticated clients receive same dice event");
@@ -272,7 +278,7 @@ public final class CoreTest {
         check(e.portalState().rollId.equals(rolled.rollId),"movement does not replay dice event");
         for(int i=0;i<4;i++)e.command(token,id(),revision(e.snapshot(token)),"move","S");
         begin(e,token);e.command(token,id(),revision(e.snapshot(token)),"roll","");
-        check(e.portalState().die==5&&!e.portalState().rollId.equals(rolled.rollId),"equal consecutive dice values still have different events");
+        check(e.snapshot(token).contains("\"value\":5")&&!e.portalState().rollId.equals(rolled.rollId),"equal consecutive dice values still have different events");
     }
     static void turnStartAndStory() throws Exception {
         MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=5;
@@ -344,7 +350,7 @@ public final class CoreTest {
     static void roomSetupAndBoard() throws Exception {
         MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=engine(store,dice);
         String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek"),c=ready(e,"Cora","weeping-angel");
-        e.startDemo();String selecting=e.snapshot(a);check(selecting.contains("\"stage\":\"selecting\"")&&!e.playing(),"Start enters selection rather than first turn");
+        startVoted(e);String selecting=e.snapshot(a);check(selecting.contains("\"stage\":\"selecting\"")&&!e.playing(),"Start enters selection rather than first turn");
         check(e.portalState().preparing&&e.portalState().setupTitle.equals("der Raummeister wird gerade ausgewählt..."),"host gets exact large selection title");
         rejects(IllegalArgumentException.class,()->join(e,"Late"));rejects(IllegalArgumentException.class,()->e.chooseCharacter(a,id(),"doctor"));rejects(IllegalArgumentException.class,()->e.addEnemy("doctor"));
         rejects(IllegalArgumentException.class,()->cmd(e,a,"beginTurn",""));rejects(IllegalArgumentException.class,()->cmd(e,a,"roomYes",""));
@@ -383,16 +389,16 @@ public final class CoreTest {
         GameEngine launchRestored=engine(store,dice,CharacterProfile.known(),testClocks.get(e),new Random());check(launchRestored.snapshot(a).equals(launch),"launch and full map survive restart");advance(launchRestored);check(launchRestored.playing()&&launchRestored.portalState().awaitingGo,"first turn begins only after launch, with Go");
         rejects(IllegalArgumentException.class,()->cmd(launchRestored,master,"tileRotate","4,4"));
         // Independent acceptance branch and minimal board use the real workflow too.
-        MemoryStore acceptedStore=new MemoryStore();GameEngine yes=engine(acceptedStore,new Dice());String y=ready(yes,"Builder","doctor");yes.startDemo();advance(yes);
+        MemoryStore acceptedStore=new MemoryStore();GameEngine yes=engine(acceptedStore,new Dice());String y=ready(yes,"Builder","doctor");startVoted(yes);advance(yes);
         String yesReq=id();long yesRev=revision(yes.snapshot(y));yes.command(y,yesReq,yesRev,"roomYes","");String accepted=yes.snapshot(y);yes.command(y,yesReq,yesRev,"roomYes","");check(accepted.equals(yes.snapshot(y))&&!accepted.contains("\"forced\":true"),"volunteer accepted exactly once");
         for(String kind:Arrays.asList("corner","floor","parallel","door","dungeon","well","portal")){
             BoardPlan board=new BoardPlan();board.place(10,10,kind,0);for(int i=0;i<4;i++){check(board.at(10,10).rotation==i,"all tile types rotate through four orientations");board.rotate(10,10);}check(board.at(10,10).rotation==0,"four taps restore original orientation");
         }
-        BoardPlan walls=new BoardPlan(false);walls.place(1,1,"corner",0);walls.place(2,1,"floor",0);walls.place(1,2,"door",0);walls.place(0,1,"parallel",0);
-        check(!walls.canStep(1,1,2,1)&&!walls.canStep(2,1,1,1),"corner wall blocks both directions");check(walls.canStep(1,1,1,2),"door is provisional passage");check(walls.canStep(1,1,0,1),"unwalled side is open");check(!walls.canStep(1,1,1,0)&&!walls.canStep(1,1,2,2),"missing fields and diagonals never exist");
+        BoardPlan walls=new BoardPlan(false);walls.place(1,1,"corner",0);walls.place(0,1,"floor",0);walls.place(1,2,"door",0);walls.place(2,1,"parallel",0);
+        check(!walls.canStep(1,1,0,1)&&!walls.canStep(0,1,1,1),"corner wall blocks both directions");check(walls.canStep(1,1,1,2),"door is provisional passage");check(walls.canStep(1,1,2,1),"unwalled side is open");check(!walls.canStep(1,1,1,0)&&!walls.canStep(1,1,2,2),"missing fields and diagonals never exist");
         BoardPlan portal=new BoardPlan(false);portal.place(0,0,"portal",0);check(portal.cells()==2&&portal.canStep(0,0,1,0),"portal has exactly two connected cells");portal.rotate(1,0);check(!portal.exists(1,0)&&portal.exists(0,1),"portal rotation updates occupied cells");
         // Production move rejection on sparse plans, with no loss of rolled distance.
-        cmd(yes,y,"tilePlace","10,10,floor,0");cmd(yes,y,"tilePlace","11,10,corner,0");cmd(yes,y,"tilePlace","11,9,floor,0");cmd(yes,y,"setSpawn",text(yes.snapshot(y),"you")+",21,20");cmd(yes,y,"boardSave","");advance(yes);begin(yes,y);cmd(yes,y,"roll","");
+        cmd(yes,y,"tilePlace","10,10,floor,0");cmd(yes,y,"tilePlace","11,10,corner,1");cmd(yes,y,"tilePlace","11,9,floor,0");cmd(yes,y,"setSpawn",text(yes.snapshot(y),"you")+",21,20");cmd(yes,y,"boardSave","");advance(yes);begin(yes,y);cmd(yes,y,"roll","");
         String beforeMove=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","N"));check(beforeMove.equals(yes.snapshot(y)),"missing field rejected without consuming movement");cmd(yes,y,"move","E");String inside=yes.snapshot(y);rejects(IllegalArgumentException.class,()->cmd(yes,y,"move","N"));check(inside.equals(yes.snapshot(y)),"actual wall between existing neighbors does not consume distance");
         String boardJson=portal.json();check(boardJson.contains("\"size\":20"),"serialized board includes explicit size");
         int round=yes.portalState().round;String roll=yes.portalState().rollId;yes.rebuildBoard();check(!yes.playing()&&yes.portalState().tiles.size()==3,"host-confirmed rebuild retains plan and pauses game");
@@ -407,7 +413,7 @@ public final class CoreTest {
         check(q.fieldName(1,1).equals("B2"),"every movement field has a simple global coordinate");check(q.fieldName(0,0).equals("A1")&&q.fieldName(1,0).equals("B1")&&q.fieldName(0,1).equals("A2"),"top left tile uses A1 B1 A2 B2");check(q.fieldName(25,39).equals("Z40")&&q.fieldName(26,39).equals("AA40")&&q.fieldName(39,39).equals("AN40"),"global columns continue beyond Z");check(q.tileName(0,0).equals("A1–B2"),"tile is described by movement-coordinate range");q.place(1,0,"single",3);check(!q.canStep(1,0,2,0)&&!q.canStep(2,0,1,0),"outer red wall blocks both ways");check(q.canStep(2,0,3,0),"outer wall does not divide a tile internally");
         BoardPlan dungeon=new BoardPlan();dungeon.place(0,0,"dungeon",0);dungeon.place(1,0,"floor",0);check(!dungeon.canStep(1,0,2,0),"closed dungeon blocks boundary");dungeon.toggleDungeon(0,0);check(dungeon.canStep(1,0,2,0),"open dungeon allows boundary");dungeon.rotate(0,0);check(!dungeon.at(0,0).closed,"rotation preserves dungeon condition");
         for(String kind:Arrays.asList("floor","corner","single","parallel","dungeon","cemetery","compass","lava","lava-stone","well")){BoardPlan b=new BoardPlan();b.place(19,19,kind,3);check(b.cells()==4&&b.exists(39,39),"new tile available at outermost subfield: "+kind);}
-        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");e.startDemo();advance(e);Map<String,String> ts=tokens(e);String master=ts.get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();dice.face=6;GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.addEnemy("weeping-angel");startVoted(e);advance(e);Map<String,String> ts=tokens(e);String master=ts.get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");
         cmd(e,master,"tilePlace","4,4,floor,0");cmd(e,master,"tilePlace","5,4,lava-stone,2");cmd(e,master,"tilePlace","4,5,dungeon,1");cmd(e,master,"setSpawn","enemy:weeping-angel,10,8");
         cmd(e,master,"setSpawn",text(e.snapshot(a),"you")+",8,8");cmd(e,master,"setSpawn",text(e.snapshot(b),"you")+",9,8");cmd(e,master,"boardSave","");advance(e);begin(e,a);cmd(e,a,"roll","");cmd(e,a,"action","E");
         String snapshot=e.snapshot(b);byte[] saved=e.exportGame();check(snapshot.contains("\"x\":10,\"y\":8")&&snapshot.contains("\"closed\":true"),"save contains enemy position and dungeon state");String id=e.sessionId();int entries=e.portalState().events.size();
@@ -443,7 +449,7 @@ public final class CoreTest {
         for(String t:new String[]{p,q}){begin(fight,t);cmd(fight,t,"roll","");cmd(fight,t,"action","E");}fight.removePlayer(text(fight.snapshot(r),"you"));check(fight.snapshot(p).contains("\"phase\":\"enemies\""),"removing last active human enters scheduled enemy phase");
         fight.requestEnemyMovement();fight.removePlayer(text(fight.snapshot(q),"you"));check(fight.snapshot(p).contains("\"helperId\":\"\""),"removed enemy helper cannot block phase");check(fight.requestEnemyMovement().equals("P"),"remaining player can receive enemy movement");cmd(fight,p,"confirmMovement","");fight.reportAttack(text(fight.snapshot(p),"you"),"Testangriff");fight.removePlayer(text(fight.snapshot(p),"you"));check(!fight.playing()&&!fight.preparing()&&fight.playersForHost().isEmpty(),"last player removal returns to empty lobby");check(engine(enemies).lobbyStatus().contains("\"occupied\":0"),"cleared enemy attack and empty lobby survive restart");
 
-        MemoryStore setup=new MemoryStore();GameEngine board=engine(setup,dice);String i=ready(board,"I","doctor"),j=ready(board,"J","dalek"),k=ready(board,"K","weeping-angel");board.startDemo();advance(board);board.removePlayer(text(board.snapshot(k),"you"));check(text(board.snapshot(i),"candidate").equals(text(board.snapshot(j),"you")),"removed roommaster candidate is replaced");cmd(board,j,"roomYes","");cmd(board,j,"tilePlace","0,0,floor,0");board.removePlayer(text(board.snapshot(j),"you"));check(board.portalState().tiles.size()==1&&text(board.snapshot(i),"candidate").equals(text(board.snapshot(i),"you")),"lost roommaster preserves draft and offers remaining player");cmd(board,i,"roomYes","");cmd(board,i,"boardSave","");board.removePlayer(text(board.snapshot(i),"you"));check(!board.preparing()&&board.portalState().tiles.size()==1,"last player removed during launch preserves physical draft");check(engine(setup).playersForHost().isEmpty(),"empty draft remains loadable");
+        MemoryStore setup=new MemoryStore();GameEngine board=engine(setup,dice);String i=ready(board,"I","doctor"),j=ready(board,"J","dalek"),k=ready(board,"K","weeping-angel");startVoted(board);advance(board);board.removePlayer(text(board.snapshot(k),"you"));check(text(board.snapshot(i),"candidate").equals(text(board.snapshot(j),"you")),"removed roommaster candidate is replaced");cmd(board,j,"roomYes","");cmd(board,j,"tilePlace","0,0,floor,0");board.removePlayer(text(board.snapshot(j),"you"));check(board.portalState().tiles.size()==1&&text(board.snapshot(i),"candidate").equals(text(board.snapshot(i),"you")),"lost roommaster preserves draft and offers remaining player");cmd(board,i,"roomYes","");cmd(board,i,"boardSave","");board.removePlayer(text(board.snapshot(i),"you"));check(!board.preparing()&&board.portalState().tiles.size()==1,"last player removed during launch preserves physical draft");check(engine(setup).playersForHost().isEmpty(),"empty draft remains loadable");
     }
 
     static void actualFormatSeven()throws Exception{
@@ -461,7 +467,7 @@ public final class CoreTest {
         e.chooseCharacter(a,id(),"doctor");check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"portrait selection does not replay join");String aid=text(e.snapshot(a),"you");e.removePlayer(aid);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"removal is silent");String b=ready(e,"Bob","doctor");check(sound(cues,e)==PortalAudioEvents.Cue.JOIN,"replacement at same player count is still a new arrival");
         PortalAudioEvents recreated=new PortalAudioEvents(e.sessionId(),"lobby",audioIds(e));check(sound(recreated,e)==PortalAudioEvents.Cue.NONE,"reopening portal does not greet old seats");
         store.fail=true;rejects(IOException.class,e::startDemo);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"failed durable start cannot play theme");store.fail=false;
-        e.startDemo();check(sound(cues,e)==PortalAudioEvents.Cue.THEME,"successful adventure start plays theme once");e.startDemo();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"repeated start/poll does not restart music");advance(e);cmd(e,b,"roomYes","");cmd(e,b,"tilePlace","0,0,floor,0");cmd(e,b,"boardSave","");advance(e);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"building and launch do not replay theme");
+        startVoted(e);check(sound(cues,e)==PortalAudioEvents.Cue.THEME,"successful adventure start plays theme once");startVoted(e);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"repeated start/poll does not restart music");advance(e);cmd(e,b,"roomYes","");cmd(e,b,"tilePlace","0,0,floor,0");cmd(e,b,"boardSave","");advance(e);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"building and launch do not replay theme");
         e.rebuildBoard();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"editing physical board is not a fresh game start");byte[] save=e.exportGame();e.loadGame(save);check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"loaded game is silent baseline");
         e.resetGame();check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"reset does not play anything");e.joinLocal("New",id());check(sound(cues,e)==PortalAudioEvents.Cue.JOIN,"new game can greet new players");
         e.joinLocal("Background",id());cues.reset(e.sessionId(),"lobby",audioIds(e));check(sound(cues,e)==PortalAudioEvents.Cue.NONE,"return from background skips old missed greetings");
@@ -469,22 +475,22 @@ public final class CoreTest {
     }
 
     static void portalKey()throws Exception{
-        MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");e.startDemo();advance(e);String master=tokens(e).get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");cmd(e,master,"tilePlace","0,0,floor,0");cmd(e,master,"tilePlace","4,0,portal,0");cmd(e,master,"tilePlace","3,3,dungeon,0");cmd(e,master,"setSpawn",text(e.snapshot(a),"you")+",0,0");cmd(e,master,"setSpawn",text(e.snapshot(b),"you")+",1,0");cmd(e,master,"boardSave","");advance(e);
+        MemoryStore store=new MemoryStore();Dice dice=new Dice();GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");startVoted(e);advance(e);String master=tokens(e).get(text(e.snapshot(a),"candidate"));cmd(e,master,"roomYes","");cmd(e,master,"tilePlace","0,0,floor,0");cmd(e,master,"tilePlace","4,0,portal,0");cmd(e,master,"tilePlace","3,3,dungeon,0");cmd(e,master,"setSpawn",text(e.snapshot(a),"you")+",0,0");cmd(e,master,"setSpawn",text(e.snapshot(b),"you")+",1,0");cmd(e,master,"boardSave","");advance(e);
         String hidden=e.snapshot(a);byte[] hiddenSave=e.exportGame();check(hidden.contains("\"bag\":[]")&&!hidden.contains("keyX")&&!hidden.contains("keyY")&&!hidden.contains("Portalschlüssel"),"hidden key has no marker, item or location in player snapshot");check(e.portalState().keyEvent.isEmpty()&&!e.hostText().contains("Portalschlüssel"),"host presentation also keeps hiding place secret");check(engine(store,dice).snapshot(a).equals(hidden),"hidden location survives restart without reroll");
-        byte[] eight=Arrays.copyOf(hiddenSave,hiddenSave.length-21-(18+38*4));java.nio.ByteBuffer.wrap(eight).putInt(4,8);MemoryStore oldStore=new MemoryStore();oldStore.data=eight;GameEngine old=engine(oldStore,dice);check(old.playing()&&old.snapshot(a).contains("\"bag\":[]"),"format 8 saves still load without adding a surprise key mid-game");
+        byte[] eight=Arrays.copyOf(hiddenSave,hiddenSave.length-10-42*2-21-(18+38*4));java.nio.ByteBuffer.wrap(eight).putInt(4,8);MemoryStore oldStore=new MemoryStore();oldStore.data=eight;GameEngine old=engine(oldStore,dice);check(old.playing()&&old.snapshot(a).contains("\"bag\":[]"),"format 8 saves still load without adding a surprise key mid-game");
         begin(e,a);cmd(e,a,"roll","");cmd(e,a,"move","S");String before=e.snapshot(a),request=id();long rev=revision(before);store.fail=true;rejects(IOException.class,()->e.command(a,request,rev,"move","E"));check(before.equals(e.snapshot(a)),"failed pickup write moves nothing and gives no item");store.fail=false;
         String found=e.command(a,request,rev,"move","E");String event=e.portalState().keyEvent;check(found.contains("\"bag\":[{\"id\":\"portal-key\"")&&found.contains("\"pending\":true,\"field\":\"B2\""),"walking across reachable hidden field gives key and pending finder popup");check(e.snapshot(b).contains("\"bag\":[]")&&e.snapshot(b).contains("\"keyPickup\":{\"id\":\"\",\"pending\":false"),"another player's bag and popup stay empty");check(!event.isEmpty()&&e.portalState().notices.get(e.portalState().notices.size()-1).id.equals(event),"one saved portal animation event names the finder");int stories=e.portalState().events.size();check(e.command(a,request,rev,"move","E").equals(found)&&e.portalState().events.size()==stories,"retried step cannot duplicate key, story or animation");rejects(IllegalArgumentException.class,()->cmd(e,b,"ackKey",""));
         byte[] owned=e.exportGame();e.loadGame(owned);String a2=text(e.joinLocal("Alice",id()),"token"),b2=text(e.joinLocal("Bob",id()),"token");check(e.snapshot(a2).contains("\"portal-key\"")&&e.portalState().keyEvent.equals(event)&&e.snapshot(a2).contains("\"pending\":true,\"field\":\"B2\""),"save/load preserves item, exact event and unacknowledged popup");
         String ack=cmd(e,a2,"ackKey","");check(ack.contains("\"pending\":false,\"field\":\"B2\"")&&ack.contains("\"remaining\":2"),"acknowledgement consumes no move and keeps item");check(engine(store,dice).snapshot(a2).equals(ack),"acknowledged bag survives restart without popup replay");e.removePlayer(text(e.snapshot(a2),"you"));begin(e,b2);cmd(e,b2,"roll","");cmd(e,b2,"move","S");check(e.snapshot(b2).contains("\"portal-key\"")&&!e.portalState().keyEvent.equals(event),"removed holder leaves key at last field for another finder");
         e.resetGame();check(e.playersForHost().isEmpty()&&e.portalState().keyEvent.isEmpty(),"reset clears bag and key notification");
-        GameEngine packed=fourCharacterFixture(new MemoryStore(),new Dice());String one=ready(packed,"1","doctor");ready(packed,"2","dalek");ready(packed,"3","weeping-angel");ready(packed,"4","test-only");packed.startDemo();advance(packed);String pm=tokens(packed).get(text(packed.snapshot(one),"candidate"));cmd(packed,pm,"roomYes","");cmd(packed,pm,"tilePlace","0,0,floor,0");rejects(IllegalArgumentException.class,()->cmd(packed,pm,"boardSave",""));check(packed.portalState().setupStage.equals("building"),"full starting tile asks for a free reachable key field");cmd(packed,pm,"tilePlace","1,0,portal,0");cmd(packed,pm,"boardSave","");check(packed.portalState().tiles.size()==2,"two-tile portal supplies eight movement fields in new plan");
+        GameEngine packed=fourCharacterFixture(new MemoryStore(),new Dice());String one=ready(packed,"1","doctor");ready(packed,"2","dalek");ready(packed,"3","weeping-angel");ready(packed,"4","test-only");startVoted(packed);advance(packed);String pm=tokens(packed).get(text(packed.snapshot(one),"candidate"));cmd(packed,pm,"roomYes","");cmd(packed,pm,"tilePlace","0,0,floor,0");rejects(IllegalArgumentException.class,()->cmd(packed,pm,"boardSave",""));check(packed.portalState().setupStage.equals("building"),"full starting tile asks for a free reachable key field");cmd(packed,pm,"tilePlace","1,0,portal,0");cmd(packed,pm,"boardSave","");check(packed.portalState().tiles.size()==2,"two-tile portal supplies eight movement fields in new plan");
     }
 
 
     static void dossierGate()throws Exception{
         MemoryStore store=new MemoryStore();GameEngine e=engine(store);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");
         rejects(IllegalArgumentException.class,()->cmd(e,a,"readDossier",""));
-        e.startDemo();rejects(IllegalArgumentException.class,()->cmd(e,a,"readDossier",""));advance(e);
+        startVoted(e);rejects(IllegalArgumentException.class,()->cmd(e,a,"readDossier",""));advance(e);
         String master=tokens(e).get(text(e.snapshot(a),"candidate")),reader=master.equals(a)?b:a;
         cmd(e,master,"roomYes","");rejects(IllegalArgumentException.class,()->cmd(e,master,"readDossier",""));
         String before=e.snapshot(reader),readRequest=id();long rev=revision(before);store.fail=true;
@@ -510,13 +516,13 @@ public final class CoreTest {
         String launch=e.snapshot(master);e.command(master,lastRequest,lastRev,"readDossier","");check(e.snapshot(master).equals(launch),"last acknowledgement retry does not restart animation");
         testClocks.get(e).time+=2999;e.tick();check(!e.playing(),"launch animation still lasts three seconds");testClocks.get(e).time++;e.tick();check(e.playing()&&e.portalState().awaitingGo,"all readers reach the ordinary first Go");
         e.resetGame();check(e.snapshot(text(e.joinLocal("Next",id()),"token")).contains("\"readBy\":[]"),"new game clears read confirmations");
-        MemoryStore removal=new MemoryStore();GameEngine r=engine(removal);String one=ready(r,"One","doctor"),two=ready(r,"Two","dalek");r.startDemo();advance(r);String builder=tokens(r).get(text(r.snapshot(one),"candidate")),other=builder.equals(one)?two:one;
+        MemoryStore removal=new MemoryStore();GameEngine r=engine(removal);String one=ready(r,"One","doctor"),two=ready(r,"Two","dalek");startVoted(r);advance(r);String builder=tokens(r).get(text(r.snapshot(one),"candidate")),other=builder.equals(one)?two:one;
         cmd(r,builder,"roomYes","");cmd(r,builder,"tilePlace","0,0,floor,0");cmd(r,builder,"boardSave","");cmd(r,builder,"readDossier","");r.removePlayer(text(r.snapshot(other),"you"));
         check(r.portalState().setupStage.equals("launching"),"removing last outstanding reader cannot deadlock start");
         check(engine(removal).portalState().setupStage.equals("launching"),"reader removal persists consistently");
     }
     static void portalDistantSpawns()throws Exception{
-        MemoryStore store=new MemoryStore();GameEngine e=engine(store);String a=ready(e,"Walker","doctor");e.startDemo();advance(e);cmd(e,a,"roomYes","");
+        MemoryStore store=new MemoryStore();GameEngine e=engine(store);String a=ready(e,"Walker","doctor");startVoted(e);advance(e);cmd(e,a,"roomYes","");
         for(int x=0;x<5;x++)cmd(e,a,"tilePlace",x+",0,floor,0");cmd(e,a,"tilePlace","5,0,portal,0");
         check(e.snapshot(a).contains("\"x\":0,\"y\":0}"),"new automatic start chooses farthest walkable field after portal placement");
         String player=text(e.snapshot(a),"you");cmd(e,a,"setSpawn",player+",8,0");cmd(e,a,"tilePlace","0,1,floor,0");
@@ -554,7 +560,7 @@ public final class CoreTest {
             check(call(server,"/",null,null,false).body.contains("Dr_Who"),"player page served");
             check(call(server,"/api/lobby",null,null,false).body.equals("{\"occupied\":0,\"capacity\":4}"),"public lobby exposes only empty occupancy");
             Response info=call(server,"/api/info",null,null,false);
-            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":7,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
+            check(info.status==200&&info.body.equals("{\"appVersion\":\"0.5.1\",\"protocolVersion\":8,\"sessionId\":"+GameEngine.quote(e.sessionId())+"}"),"public info exposes only version, protocol and non-secret party identity");
             check(call(server,"/api/info","",null,true).status==404,"metadata endpoint is read only");
             check(call(server,"/api/state",null,null,false).status==401,"unauthenticated state blocked");
             check(call(server,"/api/admin",null,null,false).status==404,"no remote host endpoint");

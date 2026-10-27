@@ -13,7 +13,7 @@ public final class GameEngine {
         public InvalidPortalCodeException(){super("Portalcode falsch.");}
     }
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 10, MAGIC = 0x4457484f;
+    private static final int FORMAT = 11, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private final Clock clock;
@@ -63,6 +63,9 @@ public final class GameEngine {
         String turnStage = "roll";
         int turnRoll, remaining;
         String rollEventId = "", rollPlayerId = "";
+        boolean rollPresented=true;
+        Map<String,Integer> votes=new LinkedHashMap<>();
+        int objective; boolean voteTied;
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
@@ -105,7 +108,8 @@ public final class GameEngine {
         public String sessionId, rollId, rollPlayer, headline, detail;
         public int round, die, subdivisions;
         public String setupStage, setupTitle, keyEvent="";
-        public boolean preparing, boardSaved, legacyBoard;
+        public boolean preparing, boardSaved, legacyBoard, rollPresented;
+        public String voteStatus="", objectiveText="";
         public List<BoardPlan.Tile> tiles;
         public List<PortalNotice> notices;
         public List<String[]> boardPlayers;
@@ -117,6 +121,9 @@ public final class GameEngine {
     }
     public synchronized PortalState portalState() {
         PortalState view = new PortalState();
+        view.rollPresented=state.rollPresented;view.objectiveText=objectiveText(state.objective);
+        if(state.setupStage.equals("voteResult"))view.voteStatus=state.voteTied?"Gleichstand · Das Portal hat ausgelost.":"Die Mehrheit hat entschieden.";
+        if(state.setupStage.equals("voting")){StringJoiner waiting=new StringJoiner("\n");for(Player p:state.players)if(!state.votes.containsKey(p.id))waiting.add(p.name+" · "+characterName(p.characterId));view.voteStatus="Abgestimmt: "+state.votes.size()+" / "+state.players.size()+"\nEs fehlen noch:\n"+waiting;}
         view.keyEvent=state.keyState.equals("owned")?state.keyEvent:"";view.setupStage=state.setupStage;view.preparing=state.started&&!state.setupStage.equals("play");
         view.subdivisions=state.board.scale();view.boardSaved=state.boardSaved;view.legacyBoard=state.legacyBoard;view.tiles=state.board.tiles();
         view.notices=new ArrayList<>(state.notices);view.boardPlayers=new ArrayList<>();
@@ -127,7 +134,7 @@ public final class GameEngine {
         }
         for(Player p:state.players)view.boardPlayers.add(new String[]{p.name,p.characterId,String.valueOf(p.x),String.valueOf(p.y)});
         for(String enemy:state.enemies){int[] at=state.enemyPositions.getOrDefault(enemy,new int[]{-1,-1});view.boardPlayers.add(new String[]{characterName(enemy),enemy,String.valueOf(at[0]),String.valueOf(at[1])});}
-        view.setupTitle=state.setupStage.equals("selecting")?"der Raummeister wird gerade ausgewählt...":
+        view.setupTitle=state.setupStage.equals("voting")?"Ziel des Spiels":state.setupStage.equals("voteResult")?"Euer Spielziel steht fest!":state.setupStage.equals("selecting")?"der Raummeister wird gerade ausgewählt...":
             state.setupStage.equals("offering")?playerName(state.candidate)+", möchtest du das Raumgefüge wiederherstellen?":
             state.setupStage.equals("building")?playerName(state.roomMaster)+" stellt das Raumgefüge wieder her…":
             state.setupStage.equals("briefing")?"Das Raumgefüge steht. Lernt eure Charaktere kennen!":
@@ -144,6 +151,9 @@ public final class GameEngine {
         }else{
             view.headline=characterName(state.enemies.get(state.enemyIndex))+" · Gegnerzug";
             view.detail=state.attackPending?"Angriff auf "+playerName(state.attackTarget)+": "+state.attackText:!state.helperId.isEmpty()?playerName(state.helperId)+" bewegt die Gegnerfigur.":"Gegneraktion an der Spielleitung festlegen.";
+        }
+        if(!state.rollPresented&&!state.rollEventId.isEmpty()){
+            view.die=0;view.detail="Wartet auf den Würfel am Spielerhandy.";
         }
         return view;
     }
@@ -214,7 +224,7 @@ public final class GameEngine {
         State next=decode(bytes); // Validate before touching current state or durable storage.
         next.id=UUID.randomUUID().toString();next.revision=state.revision;
         for(Player p:next.players){p.token=UUID.randomUUID().toString()+UUID.randomUUID();p.joinRequest="";p.reclaimable=true;}
-        if(next.setupStage.equals("selecting")||next.setupStage.equals("launching"))next.setupDeadline=clock.millis()+3000;
+        if(next.setupStage.equals("selecting")||next.setupStage.equals("launching")||next.setupStage.equals("voteResult"))next.setupDeadline=clock.millis()+3000;
         commit(next);
     }
     public synchronized void resetGame()throws IOException{
@@ -231,15 +241,15 @@ public final class GameEngine {
         if(next.keyOwner.equals(playerId)){next.keyState=next.board.exists(removed.x,removed.y)?"hidden":"pending";next.keyX=next.keyState.equals("hidden")?removed.x:-1;next.keyY=next.keyState.equals("hidden")?removed.y:-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;addLog(next,"Der Portalschlüssel bleibt auf Feld "+next.board.fieldName(removed.x,removed.y)+" zurück.");}
         if(next.current>index)next.current--;if(next.current>=next.players.size())next.current=0;
         next.asked.remove(playerId);next.receipts.removeIf(r->r.startsWith(playerId+":"));
-        next.dossierRead.remove(playerId);next.manualSpawns.remove(playerId);
+        next.votes.remove(playerId);next.dossierRead.remove(playerId);next.manualSpawns.remove(playerId);
         if(next.helperId.equals(playerId)){next.helperId="";next.movementDone=false;}
         if(next.attackTarget.equals(playerId)){next.attackId="";next.attackEnemy="";next.attackTarget="";next.attackText="";next.attackPending=false;}
-        if(next.rollPlayerId.equals(playerId)){next.rollPlayerId="";next.rollEventId="";next.lastRoll=0;}
+        if(next.rollPlayerId.equals(playerId)){next.rollPlayerId="";next.rollEventId="";next.lastRoll=0;next.rollPresented=true;}
         boolean lostMaster=next.roomMaster.equals(playerId),lostCandidate=next.candidate.equals(playerId);
         if(lostMaster)next.roomMaster="";if(lostCandidate)next.candidate="";
         if(next.players.isEmpty()){
             next.keyState="pending";next.keyX=-1;next.keyY=-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;
-            next.started=false;next.setupStage="lobby";next.setupId="";next.setupDeadline=0;
+            next.votes.clear();next.objective=0;next.voteTied=false;next.started=false;next.setupStage="lobby";next.setupId="";next.setupDeadline=0;
             next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
             next.dossierRequired=false;next.freshSetup=false;next.dossierRead.clear();next.manualSpawns.clear();
             next.phase="players";next.enemyIndex=0;next.helperId="";next.movementDone=false;
@@ -247,6 +257,7 @@ public final class GameEngine {
         }else if((lostCandidate&&next.setupStage.equals("offering"))||(lostMaster&&Arrays.asList("building","briefing","launching").contains(next.setupStage))){
             next.setupId=UUID.randomUUID().toString();next.forcedRoomMaster=false;next.boardSaved=false;offerNext(next);
         }
+        if(next.setupStage.equals("voting")&&next.votes.size()==next.players.size())resolveVote(next);
         if(next.setupStage.equals("briefing")&&next.dossierRead.size()==next.players.size())launchOrBrief(next);
         addLog(next,removed.name+" wurde am Portal aus der Partie entfernt.");commit(next);
     }
@@ -259,10 +270,10 @@ public final class GameEngine {
         if (state.players.isEmpty()) throw new IllegalArgumentException("Zuerst mindestens einen Spieler anmelden.");
         if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
         if (state.started) return;
-        State next = copy(); next.started = true;next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
+        State next = copy(); next.started = true;next.setupStage="voting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=0;next.votes.clear();next.objective=0;next.voteTied=false;
         next.dossierRequired=true;next.freshSetup=true;next.dossierRead.clear();next.manualSpawns.clear();
         for(Player p:next.players){p.x=-1;p.y=-1;}
-        addLog(next,"Das Portal sucht den Raummeister. Das Spiel wartet auf den gespeicherten Aufbau.");
+        addLog(next,"Das Portal fragt nach eurem Spielziel. Jeder stimmt am eigenen Handy ab.");
         commit(next);
     }
     /** Host-only: preserve an existing adventure while recording or correcting its physical plan. */
@@ -285,10 +296,12 @@ public final class GameEngine {
             .append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard)
             .append(",\"dossierRequired\":").append(state.dossierRequired).append(",\"readBy\":[");
         int readIndex=0;for(String id:state.dossierRead){if(readIndex++>0)b.append(',');b.append(quote(id));}
-        b.append("]}")
+        b.append("]}");
+        b.append(",\"vote\":{\"choice\":").append(state.votes.getOrDefault(self.id,0)).append(",\"objective\":").append(state.objective).append(",\"tied\":").append(state.voteTied).append(",\"votedBy\":[");
+        int voteIndex=0;for(String voter:state.votes.keySet()){if(voteIndex++>0)b.append(',');b.append(quote(voter));}b.append("]}")
             .append(",\"board\":").append(state.board.json())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
-            .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append("}")
+            .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append(",\"presented\":").append(state.rollPresented).append("}")
             .append(",\"turn\":{\"stage\":").append(quote(state.turnStage)).append(",\"roll\":").append(state.turnRoll)
             .append(",\"remaining\":").append(state.remaining).append(",\"accepted\":").append(state.turnAccepted).append("}")
             .append(",\"you\":").append(quote(self.id)).append(",\"phase\":").append(quote(state.phase))
@@ -347,13 +360,25 @@ public final class GameEngine {
         requireRequest(requestId);
         String receipt = actor.id + ":" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token); // Retry never rerolls or moves twice.
-        boolean setupIntent=Arrays.asList("readDossier","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave","roomSave","roomLoad").contains(action);
+        if("ackRoll".equals(action)){
+            if(!actor.id.equals(state.rollPlayerId)||!state.rollEventId.equals(direction)||state.rollEventId.isEmpty())throw new IllegalArgumentException("Dieser Wurf gehört nicht zu dir.");
+            if(!state.rollPresented){State next=copy();next.rollPresented=true;store.save(encode(next));state=next;}
+            return snapshot(token);
+        }
+        boolean setupIntent=Arrays.asList("vote","readDossier","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave","roomSave","roomLoad").contains(action);
         // The room file itself is the durable receipt. A save retry must not capture a later board.
         if("roomSave".equals(action)&&rooms.saved(state.id+":"+receipt,direction))return snapshot(token);
         // Reading does not invalidate the roommaster's current board or another reader's intent.
         // Any actual setup/role change still invalidates older requests.
         if (revision != state.revision&&!(setupIntent&&revision>=state.lastInteractionRevision&&revision<state.revision))
             throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
+        if("vote".equals(action)){
+            if(!state.setupStage.equals("voting")||state.votes.containsKey(actor.id))throw new IllegalArgumentException("Deine Abstimmung ist bereits abgeschlossen.");
+            if(!Arrays.asList("1","2","random").contains(direction))throw new IllegalArgumentException("Wähle ein Spielziel.");
+            State next=copy();next.votes.put(actor.id,direction.equals("random")?random.nextInt(2)+1:Integer.parseInt(direction));
+            if(next.votes.size()==next.players.size())resolveVote(next);
+            remember(next,receipt);commit(next,next.setupStage.equals("voting"));return snapshot(token);
+        }
         if("roomSave".equals(action)){
             requireRoomMaster(actor);rooms.save(state.id+":"+receipt,direction,state.board,clock.millis());return snapshot(token);
         }
@@ -431,7 +456,7 @@ public final class GameEngine {
             case "roll":
                 if (!next.turnStage.equals("roll")) throw new IllegalArgumentException("Du hast in diesem Zug bereits gewürfelt.");
                 next.lastRoll = random.nextInt(6) + 1;
-                next.rollEventId = UUID.randomUUID().toString(); next.rollPlayerId = p.id;
+                next.rollEventId = UUID.randomUUID().toString(); next.rollPlayerId = p.id;next.rollPresented=false;
                 next.turnRoll = next.lastRoll; next.remaining = next.turnRoll;
                 next.turnStage = next.turnRoll >= 5 ? "choice" : "move";
                 addSpeech(next, p.name + " würfelt " + next.turnRoll + (next.turnRoll >= 5 && profile(p.characterId).actionAvailable ? ": Bewegung oder Aktion wählen." : ": genau so viele Felder ziehen."),
@@ -456,6 +481,8 @@ public final class GameEngine {
                 break;
             default: throw new IllegalArgumentException("Unbekannte Aktion.");
         }
+        // These UI actions are enabled only after the player's die landed. They also recover a lost cosmetic ACK.
+        if(Arrays.asList("move","chooseMove","action").contains(action)&&actor.id.equals(next.rollPlayerId))next.rollPresented=true;
         remember(next, receipt);
         if (finished) endPlayerTurn(next);
         commit(next);
@@ -463,12 +490,20 @@ public final class GameEngine {
     }
     /** Progress only host-clock presentation stages; the committed choice is never rerolled by polling. */
     public synchronized void tick() throws IOException {
-        if((state.setupStage.equals("selecting")||state.setupStage.equals("launching"))&&clock.millis()>=state.setupDeadline){
+        if((state.setupStage.equals("selecting")||state.setupStage.equals("launching")||state.setupStage.equals("voteResult"))&&clock.millis()>=state.setupDeadline){
             State next=copy();
-            if(next.setupStage.equals("selecting"))offerNext(next);
+            if(next.setupStage.equals("voteResult")){next.setupStage="selecting";next.setupDeadline=clock.millis()+3000;}
+            else if(next.setupStage.equals("selecting"))offerNext(next);
             else{next.setupStage="play";next.setupDeadline=0;addLog(next,"Das Abenteuer beginnt. Bestätige deinen Zug mit Go.");}
             commit(next);
         }
+    }
+    public static String objectiveText(int objective){return objective==1?"Wer als erstes vor dem Portal steht gewinnt.":objective==2?"Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt.":"Noch kein Spielziel gewählt.";}
+    private void resolveVote(State next){
+        int first=0,second=0;for(int vote:next.votes.values()){if(vote==1)first++;else second++;}
+        next.voteTied=first==second;next.objective=next.voteTied?random.nextInt(2)+1:first>second?1:2;
+        next.setupStage="voteResult";next.setupDeadline=clock.millis()+3000;
+        addLog(next,(next.voteTied?"Gleichstand. Das Portal hat ausgelost. ":"Die Mehrheit hat entschieden. ")+objectiveText(next.objective));
     }
     public synchronized boolean preparing(){return state.started&&!state.setupStage.equals("play");}
     private void launchOrBrief(State next){
@@ -593,11 +628,11 @@ public final class GameEngine {
         return fields;
     }
     private static void validateSetup(State s,Set<String> ids)throws IOException{
-        if(s.lastInteractionRevision<0||s.lastInteractionRevision>s.revision||!Arrays.asList("lobby","selecting","offering","building","briefing","launching","play").contains(s.setupStage)||
+        if(s.lastInteractionRevision<0||s.lastInteractionRevision>s.revision||!Arrays.asList("lobby","voting","voteResult","selecting","offering","building","briefing","launching","play").contains(s.setupStage)||
             (!s.started)!=s.setupStage.equals("lobby")||s.setupDeadline<0||
             (!s.setupId.isEmpty()&&!s.setupId.matches("[a-f0-9-]{36}"))||
             (!s.candidate.isEmpty()&&!s.setupStage.equals("offering"))||
-            (Arrays.asList("selecting","launching").contains(s.setupStage)!=(s.setupDeadline>0))||
+            (Arrays.asList("voteResult","selecting","launching").contains(s.setupStage)!=(s.setupDeadline>0))||
             (!s.roomMaster.isEmpty()&&!ids.contains(s.roomMaster))||(!s.candidate.isEmpty()&&!ids.contains(s.candidate))||
             new HashSet<>(s.asked).size()!=s.asked.size()||!ids.containsAll(s.asked)||
             (s.setupStage.equals("offering")&&(s.candidate.isEmpty()||!s.asked.contains(s.candidate)))||
@@ -607,6 +642,10 @@ public final class GameEngine {
             (s.setupStage.equals("briefing")&&(!s.dossierRequired||!s.boardSaved||s.dossierRead.size()==s.players.size()))||
             (s.dossierRequired&&Arrays.asList("launching","play").contains(s.setupStage)&&s.dossierRead.size()!=s.players.size())||
             (s.setupStage.equals("play")&&!s.legacyBoard&&!s.boardSaved))throw new IOException("Ungültiger Aufbauzustand.");
+        if(s.objective<0||s.objective>2||!ids.containsAll(s.votes.keySet())||s.votes.values().stream().anyMatch(v->v!=1&&v!=2)||
+            (s.setupStage.equals("voting")&&(s.objective!=0||s.votes.size()>=s.players.size()))||
+            (s.setupStage.equals("voteResult")&&(s.objective==0||s.votes.size()!=s.players.size()))||
+            (!s.started&&(!s.votes.isEmpty()||s.objective!=0||s.voteTied)))throw new IOException("Ungültige Abstimmung.");
         Set<String> occupied=new HashSet<>();
         for(Player p:s.players){
             if(p.x>=0&&!occupied.add(p.x+","+p.y))throw new IOException("Doppelte Figurenposition.");
@@ -771,6 +810,8 @@ public final class GameEngine {
         out.writeInt(s.dossierRead.size());for(String id:s.dossierRead)out.writeUTF(id);
         out.writeInt(s.manualSpawns.size());for(String id:s.manualSpawns)out.writeUTF(id);
         out.writeLong(s.lastInteractionRevision);
+        out.writeBoolean(s.rollPresented);out.writeInt(s.objective);out.writeBoolean(s.voteTied);
+        out.writeInt(s.votes.size());for(Map.Entry<String,Integer> vote:s.votes.entrySet()){out.writeUTF(vote.getKey());out.writeInt(vote.getValue());}
         out.flush();if(bytes.size()>8*1024*1024)throw new IOException("Spielstand zu groß. Bitte sichern und neue Partie beginnen.");return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -834,6 +875,7 @@ public final class GameEngine {
             s.dossierRequired=s.started&&Arrays.asList("selecting","offering","building").contains(s.setupStage);
             for(Player p:s.players)if(p.x>=0)s.manualSpawns.add(p.id); // Preserve all old placements.
         }
+        if(format>=11){s.rollPresented=in.readBoolean();s.objective=in.readInt();s.voteTied=in.readBoolean();int votes=count(in,4);for(int i=0;i<votes;i++)if(s.votes.put(in.readUTF(),in.readInt())!=null)throw new IOException("Doppelte Stimme.");}
         Set<String> spots=new HashSet<>();for(Player p:s.players)if(p.x>=0)spots.add(p.x+","+p.y);for(int[] a:s.enemyPositions.values())if(!s.board.exists(a[0],a[1])||!spots.add(a[0]+","+a[1]))throw new IOException("Ungültige Figurenposition.");
         if((!s.turnAccepted&&!s.turnStage.equals("roll"))||(s.phase.equals("enemies")&&s.turnAccepted))throw new IOException("Ungültige Zugbestätigung.");
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
@@ -841,6 +883,7 @@ public final class GameEngine {
             s.turnStage.equals("move") && s.turnRoll >= 1 && s.turnRoll <= 6 && s.remaining >= 1 && s.remaining <= s.turnRoll;
         if (!validTurn || s.phase.equals("enemies") && !s.turnStage.equals("roll")) throw new IOException("Ungültiger Würfel-/Bewegungszustand.");
         Set<String> playerIds = new HashSet<>(); for (Player p : s.players) playerIds.add(p.id);
+        if(!s.rollPresented&&s.rollEventId.isEmpty())throw new IOException("Ungültige Würfelaufdeckung.");
         if ((!s.rollEventId.isEmpty() && (!s.rollEventId.matches("[a-f0-9-]{36}") || !playerIds.contains(s.rollPlayerId) || s.lastRoll < 1)) ||
             (s.rollEventId.isEmpty() && !s.rollPlayerId.isEmpty())) throw new IOException("Ungültiges Würfelereignis.");
         if(!Arrays.asList("pending","legacy","hidden","owned").contains(s.keyState))throw new IOException("Ungültiger Schlüsselzustand.");

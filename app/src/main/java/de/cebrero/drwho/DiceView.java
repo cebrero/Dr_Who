@@ -16,17 +16,28 @@ final class DiceView extends View {
     private final Shader flashLight=new RadialGradient(0,0,105,new int[]{Color.rgb(255,255,238),Color.TRANSPARENT},null,Shader.TileMode.CLAMP);
     private String eventId="";
     private int result;
+    private boolean holding;
     private float progress=1;
     private ValueAnimator animator;
     DiceView(Context context){super(context);setLayerType(View.LAYER_TYPE_SOFTWARE,null);setContentDescription("W6 noch nicht gewürfelt");}
-    boolean isAnimating(){return animator!=null&&animator.isRunning();}
+    boolean isAnimating(){return holding||animator!=null&&animator.isRunning();}
+    void waitForPlayer(String id){
+        if(id.equals(eventId)&&holding)return;
+        if(animator!=null){animator.removeAllListeners();animator.cancel();}
+        eventId=id;holding=true;result=0;progress=.3f;setContentDescription("W6 wartet auf das Spielerhandy. Ergebnis noch verborgen.");
+        if(ValueAnimator.areAnimatorsEnabled()){
+            animator=ValueAnimator.ofFloat(0,.8f);animator.setDuration(1600);animator.setRepeatCount(ValueAnimator.INFINITE);
+            animator.setInterpolator(new android.view.animation.LinearInterpolator());animator.addUpdateListener(a->{progress=(float)a.getAnimatedValue();invalidate();});animator.start();
+        }else invalidate();
+    }
     void showRoll(String id,int value,boolean animate,Runnable complete){
-        if(id.equals(eventId))return;
+        if(id.equals(eventId)&&!holding)return;
+        boolean release=holding;holding=false;
         if(animator!=null){animator.removeAllListeners();animator.cancel();}
         eventId=id;result=value;progress=1;
         if(animate&&value>0&&ValueAnimator.areAnimatorsEnabled()){
             progress=0;setContentDescription("W6 wird gewürfelt. Ergebnis folgt.");
-            animator=ValueAnimator.ofFloat(0,1);animator.setDuration(2600);
+            animator=ValueAnimator.ofFloat(0,1);animator.setDuration(release?650:2600);
             animator.setInterpolator(new android.view.animation.LinearInterpolator());
             animator.addUpdateListener(a->{progress=(float)a.getAnimatedValue();invalidate();});
             animator.addListener(new AnimatorListenerAdapter(){@Override public void onAnimationEnd(Animator a){progress=1;setContentDescription("W6-Ergebnis: "+result);invalidate();complete.run();}});

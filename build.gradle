@@ -31,8 +31,16 @@ tasks.register('verifyAudioAssets') {
         }
     }
 }
+tasks.register('verifyPortalVideo') {
+    group = 'verification'
+    doLast {
+        def video = file('app/src/privateAssets/video/portal_blue.mp4')
+        if (!video.isFile() || java.security.MessageDigest.getInstance('SHA-256').digest(video.bytes).encodeHex().toString() != 'e160ac9eadc8b27007cf577def1d9643e755320fede2fe5a4d83cc213c6ecade')
+            throw new GradleException('Private Portalanimation fehlt oder wurde verändert. ONBOARDING.md Abschnitt 8n prüfen.')
+    }
+}
 tasks.register('updateOnboardingStamp') {
-    dependsOn tasks.named('verifyAudioAssets')
+    dependsOn tasks.named('verifyAudioAssets'), tasks.named('verifyPortalVideo')
     group = 'documentation'
     description = 'After reviewing/updating ONBOARDING.md, record the current source hash.'
     doLast {
@@ -43,7 +51,7 @@ tasks.register('updateOnboardingStamp') {
     }
 }
 tasks.register('verifyOnboarding') {
-    dependsOn tasks.named('verifyAudioAssets')
+    dependsOn tasks.named('verifyAudioAssets'), tasks.named('verifyPortalVideo')
     group = 'verification'
     description = 'Reject stale onboarding versions or unreviewed production-source changes.'
     doLast {

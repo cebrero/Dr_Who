@@ -7,7 +7,7 @@ let current={sessionId:'briefing',revision:1,started:true,ready:true,selectedCou
 let posts=[],offline=false,lostReply=false,expired=false;
 function page(){return new JSDOM(html,{url:'http://192.168.4.1/',runScripts:'dangerously',beforeParse(w){w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'token',sessionId:'briefing',northSetup:'briefing:setup'}));w.fetch=async(path,opts)=>{
  if(expired&&path==='/api/state')return{ok:false,status:401,json:async()=>({error:'Entfernt'})};
- if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.12.0',protocolVersion:7,sessionId:'briefing'})};
+ if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.13.0',protocolVersion:8,sessionId:'briefing'})};
  if(path==='/api/command'){
   const form=new URLSearchParams(opts.body);posts.push(form);if(offline)throw Error('offline');
   if(form.get('action')==='readDossier'){if(!current.setup.readBy.includes(current.you))current.setup.readBy.push(current.you);current.revision++;if(lostReply){lostReply=false;throw Error('reply lost')}}
@@ -24,7 +24,8 @@ function page(){return new JSDOM(html,{url:'http://192.168.4.1/',runScripts:'dan
  check($('dossierScroll').querySelector('.archive-ability').textContent.includes('noch keine Tür'),'unimplemented abilities stay honest');
  check($('dossierScroll').textContent.includes('Gallifrey')&&$('dossierScroll').textContent.includes('Timeless Child'),'researched Doctor origins include nuance');
  check($('dossierScroll').querySelectorAll('.archive-scene img').length===1&&$('dossierScroll').querySelectorAll('.archive-sketch').length===2,'extra scene and alternating sketches');
- check(Array.from($('dossierScroll').querySelectorAll('a')).every(a=>a.hostname==='www.doctorwho.tv'),'official sources recorded');
+ const cast=['doctor','dalek','weeping-angel','sontaran','cyberman','snowman','adipose','zygon','dalek-2','weeping-angel-2','cyberman-2'];
+ check(cast.every(id=>{const archetype=id.replace(/-2$/,''),article=w.CharacterDossiers.render({id,archetype,name:id,portrait:'/portraits/'+archetype+'.jpg',endurance:'Noch festzulegen',strength:'Noch festzulegen',actionAvailable:['doctor','dalek','weeping-angel'].includes(archetype)},()=>{});return !article.querySelector('a,details,.archive-sources')&&!/Serie|Bildhinweis|Quellen|Referenzen|KI-Illustration|Miniatur|Tabletop|The Snowmen|Partners in Crime/i.test(article.textContent)&&Array.from(article.querySelectorAll('img')).every(img=>!/Serie|KI-|Illustration/i.test(img.alt));}),'all eleven dossiers stay in-world without references or image notices');
  const content=$('dossierScroll').firstChild;$('dossierScroll').scrollTop=230;await w.eval('poll()');
  check($('dossierScroll').firstChild===content&&$('dossierScroll').scrollTop===230,'poll preserves dossier DOM and scroll');
  $('dossierScroll').dispatchEvent(new w.Event('scroll'));check(posts.length===0,'scrolling does not silently confirm');

@@ -37,6 +37,9 @@ public class MainActivity extends Activity {
     private TardisView setupFlight,noticeFlight;
     private KeyView noticeKey;
     private BoardView setupBoard;
+    private PortalVideo setupVideo;
+    private TextView setupVote;
+    private LinearLayout setupLayout;
     private TextView setupHeading,setupHint,setupTeam,setupTrivia,noticeText;
     private long triviaStarted;
     private int triviaIndex=-1;
@@ -148,10 +151,12 @@ public class MainActivity extends Activity {
     }
     private void buildSetup(){
         setupScreen=new FrameLayout(this);setupScreen.setBackgroundColor(INK);root.addView(setupScreen,new FrameLayout.LayoutParams(-1,-1));setupScreen.setVisibility(View.GONE);
-        LinearLayout layout=column();layout.setGravity(Gravity.CENTER);layout.setPadding(dp(18),dp(20),dp(18),dp(20));setupScreen.addView(layout,new FrameLayout.LayoutParams(-1,-1));
+        setupVideo=new PortalVideo(this);setupScreen.addView(setupVideo,new FrameLayout.LayoutParams(-1,-1));
+        LinearLayout layout=column();setupLayout=layout;layout.setGravity(Gravity.CENTER);layout.setPadding(dp(18),dp(20),dp(18),dp(20));setupScreen.addView(layout,new FrameLayout.LayoutParams(-1,-1));
         TextView kicker=text("DR WHO · DAS RAUMGEFÜGE",12,CYAN);kicker.setGravity(Gravity.CENTER);layout.addView(kicker);
         setupHeading=text("",30,WHITE);setupHeading.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));setupHeading.setGravity(Gravity.CENTER);layout.addView(setupHeading);
         FrameLayout visual=new FrameLayout(this);layout.addView(visual,new LinearLayout.LayoutParams(-1,0,1));
+        setupVote=text("",27,Color.WHITE);setupVote.setGravity(Gravity.CENTER);setupVote.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));setupVote.setPadding(dp(12),dp(12),dp(12),dp(12));visual.addView(setupVote,new FrameLayout.LayoutParams(-1,-1));
         setupFlight=new TardisView(this,true);visual.addView(setupFlight,new FrameLayout.LayoutParams(-1,-1));setupBoard=new BoardView(this);visual.addView(setupBoard,new FrameLayout.LayoutParams(-1,-1));
         setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);
         setupTrivia=text("",24,Color.WHITE);setupTrivia.setGravity(Gravity.CENTER);setupTrivia.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));setupTrivia.setPadding(dp(12),dp(10),dp(12),dp(10));
@@ -164,17 +169,19 @@ public class MainActivity extends Activity {
     }
     private void updateSetup(GameEngine.PortalState info){
         setupScreen.setVisibility(info.preparing?View.VISIBLE:View.GONE);
+        boolean voting=info.setupStage.equals("voting")||info.setupStage.equals("voteResult");setupVideo.show(voting&&foreground);setupLayout.setBackgroundColor(voting?0x9907111e:Color.TRANSPARENT);
+        setupVote.setVisibility(voting?View.VISIBLE:View.GONE);setupVote.setText(info.setupStage.equals("voteResult")?info.objectiveText:"1 · Wer als erstes vor dem Portal steht gewinnt.\n\n2 · Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt.");
         if(info.preparing){
             lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.GONE);
-            setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building"),briefing=info.setupStage.equals("briefing"),showBoard=building||briefing;setupFlight.setVisibility(showBoard?View.GONE:View.VISIBLE);setupBoard.setVisibility(showBoard?View.VISIBLE:View.GONE);
+            setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building"),briefing=info.setupStage.equals("briefing"),showBoard=building||briefing;setupFlight.setVisibility(showBoard||voting?View.GONE:View.VISIBLE);setupBoard.setVisibility(showBoard?View.VISIBLE:View.GONE);
             if(showBoard)setupBoard.setPlan(info.tiles,info.boardPlayers,info.subdivisions);
             StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);if(team.length()>0)team.append("\n");team.append(i+1).append(" · ").append(p[0]);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x>=0)team.append(" · ").append(engine.fieldName(x,y));}
-            setupTeam.setText(briefing?info.dossierStatus:team.toString());setupTeam.setVisibility(showBoard?View.VISIBLE:View.GONE);
-            setupHint.setText(building?"↑ NORDEN · PORTAL · Live-Aufbau":briefing?"Alle bestätigen Gelesen am eigenen Handy.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
+            setupTeam.setText(voting?info.voteStatus:briefing?info.dossierStatus:team.toString());setupTeam.setGravity(voting?Gravity.CENTER:Gravity.START);setupTeam.setVisibility(showBoard||voting?View.VISIBLE:View.GONE);
+            setupHint.setText(voting?(info.setupStage.equals("voting")?"Die Mehrheit entscheidet · bei Gleichstand lost das Portal.":"Danach sucht das Portal den Raummeister."):building?"↑ NORDEN · PORTAL · Live-Aufbau":briefing?"Alle bestätigen Gelesen am eigenen Handy.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
         }
         updateTrivia(info.preparing&&info.setupStage.equals("building"),info.sessionId+":"+info.setupStage);
         boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){if(engine.playing()){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}else showLobby();}
-        if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")){
+        if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")&&!voting){
             String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
             for(int i=0;i<info.notices.size();i++)if(info.notices.get(i).id.equals(seen))next=i+1;
             if(next<info.notices.size()){
@@ -236,10 +243,11 @@ public class MainActivity extends Activity {
         }
         if(play.getVisibility()==View.VISIBLE&&!info.awaitingGo){
             String seenKey="seen-roll-"+info.sessionId;
-            playDice.showRoll(info.rollId.isEmpty()?"legacy-"+info.die:info.rollId,info.die,!info.rollId.isEmpty()&&!prefs.getString(seenKey,"").equals(info.rollId),()->{prefs.edit().putString(seenKey,info.rollId).apply();updatePortal();});
+            if(!info.rollPresented&&!info.rollId.isEmpty())playDice.waitForPlayer(info.rollId);
+            else playDice.showRoll(info.rollId.isEmpty()?"legacy-"+info.die:info.rollId,info.die,!info.rollId.isEmpty()&&!prefs.getString(seenKey,"").equals(info.rollId),()->{prefs.edit().putString(seenKey,info.rollId).apply();updatePortal();});
         }
-        boolean revealing=!info.awaitingGo&&playDice.isAnimating();playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
-        playDiceLabel.setText(info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
+        boolean revealing=!info.awaitingGo&&(!info.rollPresented||playDice.isAnimating());playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
+        playDiceLabel.setText(revealing?info.rollPlayer+" würfelt …":info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
         StringBuilder events=new StringBuilder();
         if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");
         else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-1);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
@@ -347,7 +355,7 @@ public class MainActivity extends Activity {
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onStop(){foreground=false;if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
+    @Override protected void onStop(){foreground=false;if(setupVideo!=null)setupVideo.show(false);if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
     @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}

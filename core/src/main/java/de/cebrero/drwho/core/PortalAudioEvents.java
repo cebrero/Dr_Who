@@ -12,7 +12,7 @@ public final class PortalAudioEvents {
     public Cue observe(String session,String stage,Collection<String> players){
         if(!this.session.equals(session)){reset(session,stage,players);return Cue.NONE;}
         boolean joined=false;for(String id:players)joined|=seen.add(id);
-        boolean starting=this.stage.equals("lobby")&&stage.equals("selecting");this.stage=stage;
+        boolean starting=this.stage.equals("lobby")&&(stage.equals("voting")||stage.equals("selecting"));this.stage=stage;
         return starting?Cue.THEME:joined&&stage.equals("lobby")?Cue.JOIN:Cue.NONE;
     }
 }

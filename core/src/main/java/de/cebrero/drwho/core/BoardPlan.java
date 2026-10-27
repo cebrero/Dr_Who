@@ -12,7 +12,7 @@ public final class BoardPlan {
   Tile(int x,int y,String kind,int rotation){this.x=x;this.y=y;this.kind=kind;this.rotation=rotation;closed=kind.equals("dungeon");}
   public int endX(){return x+(kind.equals("portal")&&rotation%2==0?1:0);}public int endY(){return y+(kind.equals("portal")&&rotation%2==1?1:0);}
   public boolean covers(int cx,int cy){return cx==x&&cy==y||cx==endX()&&cy==endY();}
-  public boolean wall(int d){int e=(d-rotation+4)%4;return kind.equals("corner")&&(e==0||e==1)||kind.equals("single")&&e==0||kind.equals("parallel")&&(e==0||e==2)||kind.equals("dungeon")&&closed;}
+  public boolean wall(int d){int e=(d-rotation+4)%4;return kind.equals("corner")&&(e==0||e==3)||kind.equals("single")&&e==0||kind.equals("parallel")&&(e==0||e==2)||kind.equals("dungeon")&&closed;}
  }
  private final List<Tile> tiles=new ArrayList<>();
  public List<Tile> tiles(){return Collections.unmodifiableList(tiles);}public Tile at(int x,int y){for(Tile t:tiles)if(t.covers(x,y))return t;return null;}
