@@ -1151,6 +1151,43 @@ Verbindliche Wünsche vom 27.10.2026, umgesetzt:
 
 ### Nächster konkreter Schritt mit dem Nutzer
 
+### Geplant: Abstimmung vor jedem neuen Spiel
+
+**Verbindlicher neuer Wunsch vom 27.10.2026, noch nicht umgesetzt; weitere Abstimmungsregeln
+liefert der Nutzer später. Kein neuer Build durch diese Vormerkung.**
+
+1. Nach Beitritt/Figurenwahl und Start am Portal **zuerst über Spielinhalt, Ziel und Regeln
+   abstimmen**. Die Abstimmung kommt vor der bisher direkt folgenden Raummeisterwahl und dem
+   Aufbau. Erst anschließend die bestehenden Startphasen fortsetzen. Geladene Fortsetzungen
+   nicht ungefragt als neues Spiel behandeln oder bereits festgelegte Regeln neu auslosen.
+2. Portal stellt die jeweilige Frage vor seiner **Vollbild-Portalanimation** und zeigt,
+   **welche Charaktere noch abstimmen müssen**. Die bereitgestellte `portal_blue.mp4` ist
+   dafür als Hintergrund vorgesehen; bisher nur für später dokumentiert, nicht eingebaut.
+3. Jeder Client erhält ein **Abstimmungs-Pop-up mit auswählbaren Optionen** und den Tasten
+   **OK** oder **Zufall**. Erst die verbindliche Bestätigung zählt als Stimme. Auswahl,
+   Bestätigung und öffentlicher Status müssen später eindeutig unterscheidbar bleiben.
+4. Erste Frage: **Ziel des Spiels**. Die beiden vom Nutzer festgelegten Optionen lauten:
+
+   | Option | Wortlaut des Spielziels |
+   | --- | --- |
+   | 1 | Wer als erstes vor dem Portal steht gewinnt. |
+   | 2 | Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt. |
+
+5. Weitere Fragen/Regeln später ergänzen. **Noch offen:** Auswertung/Mehrheit, Gleichstand,
+   genaue Bedeutung von Zufall (zufällige eigene Stimme oder anderes Losverfahren), Umgang
+   mit fehlenden/offline Spielern, Änderbarkeit und Abschluss der Abstimmung. Nichts davon
+   als bereits vereinbarte Regel voraussetzen. Host entscheidet verbindlichen Spielzufall;
+   spätere Retrys/Polling dürfen keine neue Stimme oder erneute Auslosung erzeugen.
+
+**Bei der späteren Ausarbeitung gemeinsam klären:** „vor dem Portal“ als konkretes Ziel-/
+Eingangsfeld; bei Option 2 Finder versus aktueller Schlüsselträger, falls später Übergabe
+möglich wird; Verhältnis der persönlichen Siegziele zur bisherigen Partner-/Gegnerzuordnung.
+Die Zieloptionen ermöglichen einen einzelnen Sieger, machen andere beigetretene Spieler aber
+nicht automatisch zu Gegnerfiguren. Der frühere kooperative Missionsvorschlag bleibt ein
+Vorschlag, nicht die verbindliche Abstimmungsentscheidung. Den Start der Finalphase pro
+gewähltem Ziel definieren; Ziel 1 löst nicht schon wegen fehlender weiterer Aufgaben sofort
+zu Spielbeginn die komplette Finalphase aus.
+
 **Spätere Atmosphäre und Erzählung – merken und zur passenden Entwicklungsphase ansprechen
 (Nutzerwunsch vom 27.10.2026, noch nicht umgesetzt):**
 
