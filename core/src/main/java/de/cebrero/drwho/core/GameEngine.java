@@ -114,7 +114,9 @@ public final class GameEngine {
         public List<PortalNotice> notices;
         public List<String[]> boardPlayers;
         public String dossierStatus="";
-        public boolean awaitingGo;
+        public boolean awaitingGo, enemyTurn, currentRoll;
+        public String field="", turnStage="roll", eventId="", eventText="", eventSpeaker="";
+        public int remaining, turnRoll;
         public String activePlayerName="";
         public CharacterProfile activeCharacter;
         public List<String> events = new ArrayList<>(), positions = new ArrayList<>();
@@ -140,16 +142,20 @@ public final class GameEngine {
             state.setupStage.equals("briefing")?"Das Raumgefüge steht. Lernt eure Charaktere kennen!":
             state.setupStage.equals("launching")?"Das Raumgefüge steht. Das Abenteuer beginnt!":"";
         view.sessionId=state.id;view.rollId=state.rollEventId;view.rollPlayer=playerName(state.rollPlayerId);
+        if(!state.story.isEmpty()){StoryEntry e=state.story.get(state.story.size()-1);view.eventId=e.id;view.eventText=e.text;view.eventSpeaker=e.speaker;}
+        view.turnStage=state.turnStage;view.remaining=state.remaining;view.turnRoll=state.turnRoll;
         view.round=state.round;view.die=state.lastRoll;for(StoryEntry entry:state.story)view.events.add(entry.display());
         for(Player p:state.players)view.positions.add(p.name+" · "+characterName(p.characterId)+" · Feld "+cell(p));
         if(!playing()){view.headline="Dein Team sammelt sich";view.detail="Charaktere wählen und Abenteuer starten.";}
         else if(state.phase.equals("players")){
-            Player p=state.players.get(state.current);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
+            Player p=state.players.get(state.current);view.field=cell(p);view.currentRoll=state.turnRoll>0&&state.rollPlayerId.equals(p.id);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
             for(CharacterProfile c:catalogue)if(c.id.equals(p.characterId))view.activeCharacter=c;
             view.headline=view.awaitingGo?p.name+" ist dran…":p.name+" · "+characterName(p.characterId);
             view.detail=view.awaitingGo?"Wartet auf Go am Spielerhandy.":"Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?(profile(p.characterId).actionAvailable?"Bewegung oder Charakteraktion wählen.":"Bewegung wählen; Spezialaktion noch offen."):"Noch "+state.remaining+" Felder ziehen.");
         }else{
-            view.headline=characterName(state.enemies.get(state.enemyIndex))+" · Gegnerzug";
+            String enemy=state.enemies.get(state.enemyIndex);view.enemyTurn=true;view.activePlayerName=characterName(enemy);view.activeCharacter=profile(enemy);
+            int[] at=state.enemyPositions.get(enemy);view.field=at==null?"noch nicht aufgestellt":fieldName(at[0],at[1]);
+            view.headline=characterName(enemy)+" · Gegnerzug";
             view.detail=state.attackPending?"Angriff auf "+playerName(state.attackTarget)+": "+state.attackText:!state.helperId.isEmpty()?playerName(state.helperId)+" bewegt die Gegnerfigur.":"Gegneraktion an der Spielleitung festlegen.";
         }
         if(!state.rollPresented&&!state.rollEventId.isEmpty()){

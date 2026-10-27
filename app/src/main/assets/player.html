@@ -121,7 +121,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <link rel="stylesheet" href="/board-art.css">
 <link rel="stylesheet" href="/character-dossiers.css">
 <link rel="stylesheet" href="/room-library.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.13.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.14.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -194,7 +194,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.13.0',PROTOCOL_VERSION=8;
+const CLIENT_VERSION='0.14.0',PROTOCOL_VERSION=8;
 let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';

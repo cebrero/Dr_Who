@@ -8,9 +8,14 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.13.0
+## Stand 0.14.0
 
-Neu in 0.13.0: Zielabstimmung vor der Raummeisterwahl mit Mehrheit und einmaligem Los bei
+Neu in 0.14.0: Portal-Spielansicht als animierte Zeitreise-Bühne mit Energieringen,
+großer aktiver Figur, räumlichem Würfel nach Clientfreigabe, deutlicher Bewegung X→Y und
+kompakter Teamleiste. Verwaltung über ⋮. Keine alten Würfel vor dem aktuellen Wurf und
+keine Platzhalterwerte in der gemeinsamen Spielansicht. Details Abschnitt 8o.
+
+Seit 0.13.0: Zielabstimmung vor der Raummeisterwahl mit Mehrheit und einmaligem Los bei
 Gleichstand. Zufall ist eine zufällige eigene Stimme. Das Portal zeigt die bereitgestellte
 Vollbildanimation und fehlende Stimmen. Der Portalwürfel deckt erst nach dem Spielerwürfel auf.
 Eckkachel-Wandprüfung folgt der sichtbaren Nord-/West-Grafik. Alle Dossiers erzählen aus der
@@ -114,7 +119,7 @@ Cybermen, Schneemann, Adipose und Zygon. Mehrfachfiguren sind einzeln auswählba
 Vier Personen können aus dem bestätigten Bestand wählen. Lokale KI-Porträts und Dossiers sind
 vorhanden; Ausdauer und Kraft bleiben ausdrücklich offen.
 
-Validiert: 719 Kern-/HTTP-Prüfungen und 317 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
+Validiert: 734 Kern-/HTTP-Prüfungen und 342 DOM-/Grafikprüfungen bestanden. Aktuellen Android-Build-
 und Lint-Status sowie bekannte Grenzen siehe [ONBOARDING.md](ONBOARDING.md).
 Ein realer Vier-Spieler-Hotspottest steht noch aus.
 
@@ -156,7 +161,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.13.0
+## Installationshinweis 0.14.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:

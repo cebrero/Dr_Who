@@ -92,7 +92,7 @@ public final class CoreTest {
         advance(e); // Result presentation, then the existing roommaster-selection phase.
     }
     public static void main(String[] args) throws Exception {
-        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); RoomLibraryTest.run(); CharacterInventoryTest.run(); VoteAndRevealTest.run(); http(); connections();
+        lobbyAndTurns(); diceRules(); persistence(); concurrentRetry(); characterRace(); enemyPhase(); migration(); presentation(); turnStartAndStory(); directedActions(); roomSetupAndBoard(); completeSaveAndQuartered(); actualFormatSeven(); playerRemoval(); portalAudio(); portalKey(); sharedAssets(); dossierGate(); portalDistantSpawns(); actualFormatNine(); RoomLibraryTest.run(); CharacterInventoryTest.run(); VoteAndRevealTest.run(); PortalSceneTest.run(); http(); connections();
         System.out.println("PASS: " + checks + " checks (characters, enemies, migration, persistence, retries, HTTP)");
     }
     static void lobbyAndTurns() throws Exception {

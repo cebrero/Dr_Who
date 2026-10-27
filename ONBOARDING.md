@@ -1,9 +1,14 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **27.10.2026 · Version 0.13.0 · Spielziel-Abstimmung, Spielerwürfel zuerst und Eckkacheln**
-<!-- app-version: 0.13.0 -->
-<!-- reviewed-source-sha256: 3ba759fa2b1da7444029ee7b9230649ec98d6815b9c52679c761d555c0defd87 -->
+Stand: **27.10.2026 · Version 0.14.0 · Inszenierte Portal-Spielansicht**
+<!-- app-version: 0.14.0 -->
+<!-- reviewed-source-sha256: 6055146fcf68117f77765ed984d27b1be6199809f9bc8df918c82c39d96c1483 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
+
+**Neu in 0.14.0:** Portal-Spielansicht als lebendige Zeitreise-Bühne statt großer Textkarten:
+leuchtende bewegte Energieringe/Sternenhimmel, große Charakterdarstellung bei Go, inszenierter
+W6 mit bestehender Client-Freigabe, klare Bewegung X → Y, verbleibende Schritte und kompakte
+Teamleiste. Verwaltung im Portal-Menü oben rechts. Details Abschnitt 8o, Tests Abschnitt 11.
 
 **Neu in 0.13.0:** Immersive Dossiers ohne Serien-/Bildhinweise; Zielabstimmung vor der
 Raummeisterwahl (Mehrheit, bei Gleichstand Host-Los), private Vollbild-Portalanimation während
@@ -115,7 +120,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.13.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.14.0
 
 ### Vor der Partie
 
@@ -148,7 +153,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.13.0 |
+| Schritt | Regel | Umsetzung 0.14.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host speichert verbindlich. Client animiert 2,6 s und bestätigt Aufdeckung; Portal deckt erst danach auf. Kein erneutes Würfeln bei Retry |
@@ -618,6 +623,14 @@ Installation hat eine neue Partie-ID. Gleiche App-Version bedeutet nicht dieselb
 - API-Protokoll ist jetzt **2**, App-Version **0.7.0 / Code 9**. Alte Seiten bekommen den bereits
   vorhandenen Neuladen-Hinweis. Browser-Anmeldung und Spielstand bleiben bei normalem APK-Update
   erhalten. Die private Signierung von 0.5.0 wird wiederverwendet, nicht deinstallieren.
+
+### Weiterer Verbindungstest des Nutzers (27.10.2026), ungelöst
+
+Zwei Spielerhandys sind im WLAN verbunden. Eines öffnet die Spielseite per IP, das andere lädt
+endlos ohne sichtbaren Fehler. `drwho.local` funktioniert weiterhin nicht. Angefragter Vergleich
+`http://<tatsächliche-IP>:<Port>/api/info` am betroffenen Handy noch ohne Ergebnis; Modell/Browser
+und tatsächliche URL fehlen. Ursache nicht als bestätigt oder behoben behaupten. Der UI-Ausbau
+0.14.0 enthält keinen Netzwerkfix. QR-/IP-Ausweichweg bleibt erhalten.
 
 ### Beobachtung drwho.local am Portal-Handy (26.10.2026)
 
@@ -1439,7 +1452,66 @@ zufällig aus den beiden angebotenen Zielen. Keine neue Kampf-, Kosten- oder Sie
   beim **nächsten neuen Spiel**, bestehende laufende Partie wird nicht zurückgesetzt.
 
 
-## 9. Technische Grundlage 0.13.0
+## 8o. Portal-Spielbühne ab 0.14.0
+
+**Nutzerwunsch vom 27.10.2026:** Die drei eingereichten Portal-Screenshots wirken trocken und
+wie ein Verwaltungsformular. Mehr Spielgefühl, Grafik und Bewegung statt großer Textkästen und
+unbenutzter Fläche. Bestätigter Portalstil A (Dunkelblau/Cyan) bleibt, ergänzt um warme Messinglichter.
+Keine weitere Designauswahl verlangt; bestehende Spielregeln nicht verändern.
+
+### Darstellung
+
+- Vollflächige lokale Sternen-/Nebelszene mit langsam wandernden Lichtbahnen, umlaufenden
+  Energieringen und abstrakten Ornamenten. CSS/Vektorgeometrie und vorhandene Porträts, keine
+  neue Medienquelle, kein Download während der Partie und kein zusätzlicher Sound.
+- Go: Spielername, Charakter und großes vollständiges Porträt im Portal, bis der Client Go
+  bestätigt. Kurze Einladung statt langer Attribut-/Wartekarte. Nicht festgelegte Ausdauer/Kraft
+  werden auf der gemeinsamen Spielbühne nicht als Platzhalter ausgebreitet; Dossiers bleiben.
+- Nach Go zunächst Einladung zum Würfeln am eigenen Handy. **Kein alter W6 aus einem früheren
+  Zug** in dieser Phase. Neue native Projektion kennt aktuelles Feld, aktuelle Zugphase und
+  ob der Wurf zum laufenden Zug gehört. Zweite Figuren nutzen ihr kanonisches Bild.
+- Während des Wurfs dreht sich ein großer räumlicher W6 im Energiering. Zahlen, Restschritte
+  und Ergebnis-Story bleiben bis zur vorhandenen Client-ACK verborgen; auch die an den Renderer
+  gegebene Projektion enthält dort keine Restschritte/Ergebniszahl. Danach 650-ms-Landung auf
+  einer von sechs festen nummerierten Seiten; gespeicherter Wert, kein neuer Zufall.
+- Aktuelle Bewegung als große Koordinaten X → Y; verbleibende gewürfelte Schritte als Text
+  und leuchtende Teilstrecke. Letzter abgeschlossener Schritt bleibt auch beim anschließenden
+  Go des nächsten Spielers sichtbar. Der vollständige gespeicherte Storyverlauf wird nicht gekürzt.
+- Aktionsauswahl ohne implementierte Wirkung bleibt **Aktion vorgemerkt · Wirkung noch offen**,
+  kein erfundener Treffer, Schaden oder Erfolg. Zusätzliche kurze Portaltexte sind feste kosmetische
+  Inszenierung, verbrauchen keinen Spielzufall und behaupten keine neuen Ereignisse.
+- Gegnerphase mit eigener warmer Alarmfarbe, richtigem Gegnerporträt und gespeichertem Auftrag.
+  Team unten als kompakte Bild-/Namens-/Koordinatenleiste, aktiver Charakter hervorgehoben.
+- Drei große graue Verwaltungsbuttons entfallen aus der Spielbühne. Native Taste **⋮** oben
+  rechts öffnet **Portal-Menü**: Raumgefüge & Team, Portal-Lobby, Einstellungen, Spielleitung.
+  Bestehende Save/Load-/Reset-/Gegnerfunktionen bleiben über diese Wege erhalten.
+- Unverändertes Polling baut Porträt/Team nicht neu auf und startet Wurf/Einblendung nicht neu.
+  Übergänge nur bei neuer gespeicherter Ereignis-/Wurfidentität. Reduzierte Systembewegung:
+  statische Ringe, Fragezeichen während Warten und direktes echtes Ergebnis erst nach ACK.
+  Bei Hintergrund/ausgeblendeter Spielansicht dekorative Bewegung pausieren.
+
+### Technik und Grenzen
+
+- `PortalScene` ist eine reine Projektion des vorhandenen Hostzustands, keine zweite Spiellogik.
+  Neue Felder ausschließlich in `PortalState` für die lokale Darstellung, nicht in privaten
+  Binärdateien oder dem Spieler-API. Spielstandformat **11**, Raumformat **1**, Protokoll **8** bleiben.
+- `PortalPlayView` ist eine lokale, lesende WebView ohne JavaScript-Bridge, Content-Zugriff oder
+  Netzwerklasten. Native Activity liefert JSON; ausschließlich feste gebündelte Stage-HTML/JS/CSS
+  und streng begrenzte lokale JPEG-Porträtpfade freigeben. Navigation blockieren, Texte ausschließlich
+  als Text setzen. Die drei Stage-Dateien werden **nicht über Spieler-HTTP veröffentlicht**.
+- Native Activity liest nur die abgeschlossene Wurf-ID aus dem Renderer zurück, prüft die aktuelle
+  Identität und merkt sie wie bisher in ihren privaten Anzeigepräferenzen. Keine Spieleraktion,
+  Zufallszahl oder Speicher-/Administrationsfunktion ist aus der WebView aufrufbar.
+- Das bestehende native `DiceView` bleibt im Quellbestand, wird in der neuen Spielbühne durch den
+  testbaren lokalen Würfelrenderer ersetzt. Sechs feste Seiten und endgültige Orientierung prüfen.
+- App **0.14.0 / Code 21**. Normal über APK ab 0.5.0 installieren, nicht deinstallieren; Clients
+  wegen der Versionsprüfung neu laden. Keine neue Partie für diese Darstellung erforderlich.
+  Aufbau-Livekarte, Portal-Fakten, Abstimmungsvideo und vorhandene Schlüssel-/Angriffshinweise
+  bleiben eigenständige Phasen. Das geplante Finale und persönliche Angebote bleiben unimplementiert.
+- Keine Behauptung eines echten Android-WebView-/Telefon-/Hotspot-/Sitzrichtungs-/Leistungstests.
+  Native Menübedienung, Pause/Resume und Anzeige in der gedruckten Halterung bleiben Gerätetests.
+
+## 9. Technische Grundlage 0.14.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1580,6 +1652,29 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.14.0 am 27.10.2026:
+
+- **734 Kern-/HTTP-Prüfungen bestanden** (719 bisherige + 15 neue): reine Portalprojektion ohne
+  Zustandsänderung, echte Go-/Wurf-/Bewegungs-/Gegnerphasen, kanonische Doppelbilder, Ergebnis
+  einschließlich Reststrecke vor ACK verborgen, kein alter Würfel vor neuem Wurf, wirkliche
+  Ausgangs-/Zielkoordinaten, letzter Schritt während nächstem Go und keine erfundenen Treffer.
+- **342 DOM-/Grafikprüfungen bestanden** (317 bisherige + 25 neue Stageprüfungen): feste sechs
+  Seiten, gespeicherte Landung/identische Polls, Ergebnis-Story erst nach Landung, sichere Namen,
+  blockierte externe Bilder, Bewegungsgrafik, reduzierte Bewegung und Sitzungswechsel.
+- Alle **sechs mobilen Browserabläufe bestanden**: die fünf bestehenden Abläufe und die neue
+  lokale Stage bei **390×844, 320×568, 691×1477 und 844×390** (Hoch-/Querformat), geladene
+  Porträts/Team, kein abgeschnittener Seitenfuß in Go und Bewegung, Screenshot-Sichtprüfung,
+  Warten/ACK-Landung und Reduced Motion. Die per echter 3D-Matrix ermittelte vorderste
+  Würfelseite entspricht für alle Augen 1–6 dem gespeicherten Wert.
+- Android-Debug-APK **0.14.0 / Code 21** mit JDK 17 / Gradle 8.13 / SDK 36 gebaut;
+  `:core:smokeTest`, `:app:assembleDebug` und `:app:lintDebug` bestanden, keine Lintfehler.
+  **33 gebündelte Quellassets** und eingebettete aktuelle ONBOARDING.md bytegleich;
+  zwei Nutzer-OGGs und Portalfilm unverändert und unkomprimiert. Signaturzertifikat weiter
+  `2940936793e828d87a8e2178dc62223c24bd9ebc66ab114241c71f52d1231b40`, normales APK-Update.
+- Reale Android-WebView-/Menü-/Lebenszyklus-/Performanceprüfung bleibt offen. Browserprüfungen
+  sind kein Test des nativen Geräts; insbesondere keine bestätigte Hotspot-/mDNS-Reparatur.
+
 
 Für 0.13.0 am 27.10.2026:
 
@@ -2017,6 +2112,8 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 27.10.2026 | 0.11.0 | Scrollbare illustrierte Charakterdossiers während Aufbau, frühe Bedienung/persönliche Fähigkeiten und offizielle Hintergrundquellen, persistentes Gelesen-Gate vor Startfilm/Go, kurze ausblendende Portal-Fakten, neue automatische Startplätze mit Portalabstand; Format 10 / Protokoll 6 |
 
 | 27.10.2026 | 0.12.0 | Bestätigte acht Typen/elf Miniaturen mit eigenen Auswahl-IDs und neuen Offline-Porträts/Dossiers, undefinierte Aktionen gesperrt; dauerhafte benannte Raumvorlagen direkt beim Raummeister, editierbare Datum-Zeit_Charaktername-Vorgabe, bestätigtes Laden und persistente Retrys; Protokoll 7, Spielstandformat 10 unverändert, Raumformat 1 |
+
+| 27.10.2026 | 0.14.0 | Portal-Spielbühne mit Energieringen, großer Figur, W6 nach Clientfreigabe, Bewegungsgrafik, Teamleiste und kleinem Portal-Menü; Darstellung ersetzt Formularansicht, Formate/Protokoll unverändert |
 
 | 27.10.2026 | 0.13.0 | Immersive Dossiers ohne Serien-/Bildhinweise, Zielabstimmung mit Mehrheit/Gleichstands-Los und privater Vollbildanimation, Portalwürfel nach Clientaufdeckung, Eckwände an sichtbare Grafik angepasst; Format 11/Protokoll 8 |
 

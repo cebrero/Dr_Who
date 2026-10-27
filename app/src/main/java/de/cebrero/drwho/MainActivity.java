@@ -49,13 +49,9 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
     private String activeNotice="";
     private final Runnable finishNotice=()->{if(!activeNotice.isEmpty()){prefs.edit().putString("seen-notice-"+engine.sessionId(),activeNotice).apply();activeNotice="";}noticeScreen.setVisibility(View.GONE);updatePortal();};
-    private ScrollView lobby,director,play;
-    private TextView playRound,playActor,playDetail,playEvents,playPositions,playDiceLabel;
-    private DiceView playDice;
-    private LinearLayout goCard;
-    private ImageView goPortrait;
-    private TextView goCharacter,goDescription,goStats,goAbilities;
-    private String goCharacterId="";
+    private ScrollView lobby,director;
+    private PortalPlayView portalPlay;
+    private FrameLayout play;
     private ImageView lobbyBackground;
     private LinearLayout playerRows;
     private TextView countBadge,playerCount,wifiName,wifiPassword,wifiStatus,website,fallback,gameStatus,stageStatus;
@@ -128,18 +124,13 @@ public class MainActivity extends Activity {
         content.addView(button("Speichern / Laden / Zurücksetzen",this::settingsDialog));
     }
     private void buildPlay(){
-        LinearLayout content=padded();play=screen(content);play.setVisibility(View.GONE);
-        LinearLayout top=row();top.addView(text("Dr WHO",27,WHITE),new LinearLayout.LayoutParams(0,-2,1));playRound=text("RUNDE 1",17,CYAN);top.addView(playRound);content.addView(top);
-        LinearLayout turn=card(content);turn.addView(text("JETZT AM ZUG",11,MUTED));playActor=text("",25,WHITE);turn.addView(playActor);playDetail=text("",17,CYAN);turn.addView(playDetail);
-        goCard=column();turn.addView(goCard);goPortrait=new ImageView(this);goPortrait.setScaleType(ImageView.ScaleType.FIT_CENTER);goPortrait.setAdjustViewBounds(true);goCard.addView(goPortrait,new LinearLayout.LayoutParams(-1,dp(140)));
-        goCharacter=text("",23,CYAN);goDescription=text("",15,WHITE);goStats=text("",15,CYAN);goAbilities=text("",14,MUTED);
-        goCard.addView(goCharacter);goDescription.setVisibility(View.GONE);goCard.addView(goDescription);goCard.addView(goStats);goAbilities.setVisibility(View.GONE);goCard.addView(goAbilities);goCard.setVisibility(View.GONE);
-        playDiceLabel=text("Noch kein Wurf",14,MUTED);playDiceLabel.setGravity(Gravity.CENTER);turn.addView(playDiceLabel);
-        playDice=new DiceView(this);turn.addView(playDice,new LinearLayout.LayoutParams(-1,dp(150)));
-        LinearLayout events=card(content);events.addView(text("STORY",13,CYAN));playEvents=text("",19,WHITE);playEvents.setLineSpacing(dp(3),1);playEvents.setMaxLines(4);playEvents.setEllipsize(android.text.TextUtils.TruncateAt.END);events.addView(playEvents);
-        LinearLayout positions=card(content);positions.addView(text("DEIN TEAM AUF DEM SPIELFELD",12,CYAN));playPositions=text("",15,WHITE);positions.addView(playPositions);
-        LinearLayout actions=row();actions.addView(button("Aufbau",this::showBoard),new LinearLayout.LayoutParams(0,-2,1));
-        actions.addView(button("Portal-Lobby",this::showLobby),new LinearLayout.LayoutParams(0,-2,1));actions.addView(button("Einstellungen",this::settingsDialog),new LinearLayout.LayoutParams(0,-2,1));content.addView(actions);
+        play=new FrameLayout(this);root.addView(play,new FrameLayout.LayoutParams(-1,-1));play.setVisibility(View.GONE);
+        portalPlay=new PortalPlayView(this);play.addView(portalPlay,new FrameLayout.LayoutParams(-1,-1));
+        Button menu=button("⋮",this::portalMenu);menu.setTextSize(28);menu.setContentDescription("Portal-Menü öffnen");menu.setMinWidth(0);menu.setMinimumWidth(0);menu.setPadding(0,0,0,0);menu.setBackgroundColor(Color.TRANSPARENT);
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.END);lp.topMargin=dp(15);lp.setMarginEnd(dp(10));play.addView(menu,lp);
+    }
+    private void portalMenu(){
+        new AlertDialog.Builder(this).setTitle("Portal-Menü").setItems(new String[]{"Raumgefüge & Team","Portal-Lobby","Einstellungen","Spielleitung"},(dialog,which)->{switch(which){case 0:showBoard();break;case 1:showLobby();break;case 2:settingsDialog();break;case 3:showDirector();break;}}).setNegativeButton("Zurück ins Abenteuer",null).show();
     }
     private void showPlay(){lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);play.setVisibility(View.VISIBLE);updatePortal();}
     private void buildStage(){
@@ -233,26 +224,14 @@ public class MainActivity extends Activity {
         startButton.setEnabled(engine.readyForPlay());startButton.setText(engine.playing()?"Spielansicht öffnen":engine.preparing()?"Aufbau läuft…":"Abenteuer starten");
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
         GameEngine.PortalState info=engine.portalState();updateSetup(info);updateAudio(info,players);
-        playRound.setText("RUNDE "+info.round);playActor.setText(info.headline);
-        goCard.setVisibility(info.awaitingGo?View.VISIBLE:View.GONE);playDice.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);playDiceLabel.setVisibility(info.awaitingGo?View.GONE:View.VISIBLE);
-        if(info.awaitingGo&&info.activeCharacter!=null){
-            CharacterProfile c=info.activeCharacter;goCharacter.setText(c.name);goDescription.setText(c.description);goStats.setText("Ausdauer: "+c.endurance+"  ·  Kraft: "+c.strength);goAbilities.setText(android.text.TextUtils.join("\n",c.abilities));
-            if(!goCharacterId.equals(c.id)){goCharacterId=c.id;goPortrait.setContentDescription(c.name+" · Charakterbild");
-                try(InputStream in=getAssets().open("portraits/"+c.id+".jpg")){goPortrait.setImageBitmap(BitmapFactory.decodeStream(in));}catch(IOException missing){goPortrait.setImageDrawable(null);}
-            }
-        }
-        if(play.getVisibility()==View.VISIBLE&&!info.awaitingGo){
+        boolean visible=foreground&&play.getVisibility()==View.VISIBLE&&!info.preparing;
+        portalPlay.active(visible);
+        if(visible){
             String seenKey="seen-roll-"+info.sessionId;
-            if(!info.rollPresented&&!info.rollId.isEmpty())playDice.waitForPlayer(info.rollId);
-            else playDice.showRoll(info.rollId.isEmpty()?"legacy-"+info.die:info.rollId,info.die,!info.rollId.isEmpty()&&!prefs.getString(seenKey,"").equals(info.rollId),()->{prefs.edit().putString(seenKey,info.rollId).apply();updatePortal();});
+            portalPlay.show(info,prefs.getString(seenKey,"").equals(info.rollId),!android.animation.ValueAnimator.areAnimatorsEnabled(),id->prefs.edit().putString(seenKey,id).apply());
         }
-        boolean revealing=!info.awaitingGo&&(!info.rollPresented||playDice.isAnimating());playDetail.setText(revealing?"Der Wurf entsteht im Zeitwirbel …":info.detail);
-        playDiceLabel.setText(revealing?info.rollPlayer+" würfelt …":info.die==0?"Noch kein Wurf":revealing?info.rollPlayer+" würfelt …":info.rollPlayer+" · letzter Wurf: "+info.die);
-        StringBuilder events=new StringBuilder();
-        if(revealing)events.append(info.rollPlayer).append(" würfelt. Gleich zeigt sich das Ergebnis.");
-        else for(int i=info.events.size()-1;i>=Math.max(0,info.events.size()-1);i--){if(events.length()>0)events.append("\n\n");events.append(info.events.get(i));}
-        playEvents.setText(events.toString());playPositions.setText(android.text.TextUtils.join("\n",info.positions));
     }
+
     private void updateAudio(GameEngine.PortalState info,java.util.List<String[]> players){
         java.util.List<String> ids=new ArrayList<>();for(String[] p:players)ids.add(p[0]);
         if(audioEvents==null){audioEvents=new PortalAudioEvents(info.sessionId,info.setupStage,ids);return;}
@@ -355,7 +334,7 @@ public class MainActivity extends Activity {
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onStop(){foreground=false;if(setupVideo!=null)setupVideo.show(false);if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
+    @Override protected void onStop(){foreground=false;if(portalPlay!=null)portalPlay.active(false);if(setupVideo!=null)setupVideo.show(false);if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
     @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}

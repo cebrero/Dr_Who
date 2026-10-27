@@ -196,3 +196,12 @@
     wiederherstellen und bytegleich/uncompressed im APK prüfen; lokal nur bei Abstimmung abspielen.
 59. Erzählidee am 27.10.2026 einmal erinnert, Automation danach pausiert. Nicht nochmals erinnern;
     Kosten/Geheimhaltung/Balancing weiterhin gemeinsam entwerfen, keine Angebote ungefragt bauen.
+
+60. Ab 0.14.0 lokale Portal-Spielbühne statt Formular-Karten. Stil A, große Figur bis Go,
+    Energieringe, räumlicher W6 erst nach Client-ACK, aktueller Zug ohne alten Würfel, große
+    Bewegung X→Y/Reststrecke, Teamleiste. Portal-Menü ⋮ enthält Verwaltung; Clientdesign bleibt B.
+61. PortalScene ist reine Hostprojektion. PortalPlayView nur gebündelte Stage-Dateien und lokale
+    Porträts, kein Netzwerk/JS-Bridge/Admin-API. Polling darf Darstellung nicht neu starten;
+    gelandete Wurf-ID nativ merken, Hintergrund pausieren. Protokoll 8/Format 11 bleiben gleich.
+62. Netzwerkbeobachtung 27.10.2026: beide im WLAN, einer lädt IP-Seite endlos, anderer kommt hinein;
+    .local weiter unzuverlässig. /api/info-Gegentest noch offen. Nicht als mit UI-Ausbau behoben darstellen.
