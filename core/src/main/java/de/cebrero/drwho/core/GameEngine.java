@@ -13,7 +13,7 @@ public final class GameEngine {
         public InvalidPortalCodeException(){super("Portalcode falsch.");}
     }
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 9, MAGIC = 0x4457484f;
+    private static final int FORMAT = 10, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private final Clock clock;
@@ -40,6 +40,7 @@ public final class GameEngine {
         boolean started;
         int round = 1, current, lastRoll;
         long revision;
+        long lastInteractionRevision;
         List<Player> players = new ArrayList<>();
         List<String> enemies = new ArrayList<>();
         Map<String,int[]> enemyPositions=new LinkedHashMap<>();
@@ -49,6 +50,8 @@ public final class GameEngine {
         String setupStage="lobby", setupId="", roomMaster="", candidate="";
         long setupDeadline;
         boolean forcedRoomMaster, boardSaved, legacyBoard;
+        boolean dossierRequired, freshSetup;
+        Set<String> dossierRead=new LinkedHashSet<>(), manualSpawns=new LinkedHashSet<>();
         List<String> asked=new ArrayList<>();
         BoardPlan board=new BoardPlan();
         List<PortalNotice> notices=new ArrayList<>();
@@ -100,6 +103,7 @@ public final class GameEngine {
         public List<BoardPlan.Tile> tiles;
         public List<PortalNotice> notices;
         public List<String[]> boardPlayers;
+        public String dossierStatus="";
         public boolean awaitingGo;
         public String activePlayerName="";
         public CharacterProfile activeCharacter;
@@ -110,11 +114,17 @@ public final class GameEngine {
         view.keyEvent=state.keyState.equals("owned")?state.keyEvent:"";view.setupStage=state.setupStage;view.preparing=state.started&&!state.setupStage.equals("play");
         view.subdivisions=state.board.scale();view.boardSaved=state.boardSaved;view.legacyBoard=state.legacyBoard;view.tiles=state.board.tiles();
         view.notices=new ArrayList<>(state.notices);view.boardPlayers=new ArrayList<>();
+        if(state.dossierRequired){
+            StringJoiner waiting=new StringJoiner(", ");
+            for(Player p:state.players)if(!state.dossierRead.contains(p.id))waiting.add(p.name+" · "+characterName(p.characterId));
+            view.dossierStatus="Steckbrief gelesen: "+state.dossierRead.size()+" / "+state.players.size()+(waiting.length()>0?"\nLiest noch: "+waiting:"\nAlle sind bereit.");
+        }
         for(Player p:state.players)view.boardPlayers.add(new String[]{p.name,p.characterId,String.valueOf(p.x),String.valueOf(p.y)});
         for(String enemy:state.enemies){int[] at=state.enemyPositions.getOrDefault(enemy,new int[]{-1,-1});view.boardPlayers.add(new String[]{characterName(enemy),enemy,String.valueOf(at[0]),String.valueOf(at[1])});}
         view.setupTitle=state.setupStage.equals("selecting")?"der Raummeister wird gerade ausgewählt...":
             state.setupStage.equals("offering")?playerName(state.candidate)+", möchtest du das Raumgefüge wiederherstellen?":
             state.setupStage.equals("building")?playerName(state.roomMaster)+" stellt das Raumgefüge wieder her…":
+            state.setupStage.equals("briefing")?"Das Raumgefüge steht. Lernt eure Charaktere kennen!":
             state.setupStage.equals("launching")?"Das Raumgefüge steht. Das Abenteuer beginnt!":"";
         view.sessionId=state.id;view.rollId=state.rollEventId;view.rollPlayer=playerName(state.rollPlayerId);
         view.round=state.round;view.die=state.lastRoll;for(StoryEntry entry:state.story)view.events.add(entry.display());
@@ -215,6 +225,7 @@ public final class GameEngine {
         if(next.keyOwner.equals(playerId)){next.keyState=next.board.exists(removed.x,removed.y)?"hidden":"pending";next.keyX=next.keyState.equals("hidden")?removed.x:-1;next.keyY=next.keyState.equals("hidden")?removed.y:-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;addLog(next,"Der Portalschlüssel bleibt auf Feld "+next.board.fieldName(removed.x,removed.y)+" zurück.");}
         if(next.current>index)next.current--;if(next.current>=next.players.size())next.current=0;
         next.asked.remove(playerId);next.receipts.removeIf(r->r.startsWith(playerId+":"));
+        next.dossierRead.remove(playerId);next.manualSpawns.remove(playerId);
         if(next.helperId.equals(playerId)){next.helperId="";next.movementDone=false;}
         if(next.attackTarget.equals(playerId)){next.attackId="";next.attackEnemy="";next.attackTarget="";next.attackText="";next.attackPending=false;}
         if(next.rollPlayerId.equals(playerId)){next.rollPlayerId="";next.rollEventId="";next.lastRoll=0;}
@@ -224,11 +235,13 @@ public final class GameEngine {
             next.keyState="pending";next.keyX=-1;next.keyY=-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;
             next.started=false;next.setupStage="lobby";next.setupId="";next.setupDeadline=0;
             next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
+            next.dossierRequired=false;next.freshSetup=false;next.dossierRead.clear();next.manualSpawns.clear();
             next.phase="players";next.enemyIndex=0;next.helperId="";next.movementDone=false;
             next.turnStage="roll";next.turnRoll=0;next.remaining=0;next.turnAccepted=false;
-        }else if((lostCandidate&&next.setupStage.equals("offering"))||(lostMaster&&Arrays.asList("building","launching").contains(next.setupStage))){
+        }else if((lostCandidate&&next.setupStage.equals("offering"))||(lostMaster&&Arrays.asList("building","briefing","launching").contains(next.setupStage))){
             next.setupId=UUID.randomUUID().toString();next.forcedRoomMaster=false;next.boardSaved=false;offerNext(next);
         }
+        if(next.setupStage.equals("briefing")&&next.dossierRead.size()==next.players.size())launchOrBrief(next);
         addLog(next,removed.name+" wurde am Portal aus der Partie entfernt.");commit(next);
     }
     public synchronized void toggleDungeon(int x,int y)throws IOException{State next=copy();next.board.toggleDungeon(x,y);addLog(next,"Kerker "+next.board.tileName(x,y)+(next.board.at(x,y).closed?" geschlossen.":" geöffnet."));commit(next);}
@@ -241,6 +254,7 @@ public final class GameEngine {
         if (!readyForPlay()) throw new IllegalArgumentException("Alle beigetretenen Spieler müssen zuerst eine Figur wählen.");
         if (state.started) return;
         State next = copy(); next.started = true;next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
+        next.dossierRequired=true;next.freshSetup=true;next.dossierRead.clear();next.manualSpawns.clear();
         for(Player p:next.players){p.x=-1;p.y=-1;}
         addLog(next,"Das Portal sucht den Raummeister. Das Spiel wartet auf den gespeicherten Aufbau.");
         commit(next);
@@ -250,6 +264,7 @@ public final class GameEngine {
         if(!playing())throw new IllegalArgumentException("Zuerst Partie starten oder laufenden Aufbau abschließen.");
         State next=copy();next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
         next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
+        next.dossierRequired=false;next.freshSetup=false;
         if(next.legacyBoard)for(Player p:next.players){p.x=-1;p.y=-1;}
         if(!next.board.subdivided()){next.board.upgrade();for(Player p:next.players)if(p.x>=0){p.x*=2;p.y*=2;}}
         next.legacyBoard=false;addLog(next,"Die Partie pausiert zum Erfassen des Raumgefüges. Runde und Zug bleiben erhalten.");commit(next);
@@ -261,7 +276,10 @@ public final class GameEngine {
             .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
             .append(",\"setup\":{\"stage\":").append(quote(state.setupStage)).append(",\"id\":").append(quote(state.setupId)).append(",\"roomMaster\":").append(quote(state.roomMaster))
             .append(",\"candidate\":").append(quote(state.candidate)).append(",\"forced\":").append(state.forcedRoomMaster)
-            .append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard).append("}")
+            .append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard)
+            .append(",\"dossierRequired\":").append(state.dossierRequired).append(",\"readBy\":[");
+        int readIndex=0;for(String id:state.dossierRead){if(readIndex++>0)b.append(',');b.append(quote(id));}
+        b.append("]}")
             .append(",\"board\":").append(state.board.json())
             .append(",\"round\":").append(state.round).append(",\"lastRoll\":").append(state.lastRoll)
             .append(",\"rollEvent\":{\"id\":").append(quote(state.rollEventId)).append(",\"playerId\":").append(quote(state.rollPlayerId)).append(",\"value\":").append(state.lastRoll).append("}")
@@ -314,7 +332,19 @@ public final class GameEngine {
         requireRequest(requestId);
         String receipt = actor.id + ":" + requestId;
         if (state.receipts.contains(receipt)) return snapshot(token); // Retry never rerolls or moves twice.
-        if (revision != state.revision) throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
+        boolean setupIntent=Arrays.asList("readDossier","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave").contains(action);
+        // Reading does not invalidate the roommaster's current board or another reader's intent.
+        // Any actual setup/role change still invalidates older requests.
+        if (revision != state.revision&&!(setupIntent&&revision>=state.lastInteractionRevision&&revision<state.revision))
+            throw new IllegalArgumentException("Spielstand geändert. Bitte aktualisieren.");
+        if("readDossier".equals(action)){
+            if(!state.dossierRequired||!Arrays.asList("building","briefing").contains(state.setupStage)||
+                state.setupStage.equals("building")&&actor.id.equals(state.roomMaster))
+                throw new IllegalArgumentException("Lies deinen Steckbrief während des Aufbaus oder danach.");
+            State next=copy();next.dossierRead.add(actor.id);
+            if(next.boardSaved)launchOrBrief(next);
+            remember(next,receipt);commit(next,next.setupStage.equals(state.setupStage));return snapshot(token);
+        }
         if("ackKey".equals(action)){
             if(!state.keyState.equals("owned")||!state.keyOwner.equals(actor.id))throw new IllegalArgumentException("Kein Schlüsselfund für dich.");
             State next=copy();next.keyPending=false;remember(next,receipt);commit(next);return snapshot(token);
@@ -420,6 +450,13 @@ public final class GameEngine {
         }
     }
     public synchronized boolean preparing(){return state.started&&!state.setupStage.equals("play");}
+    private void launchOrBrief(State next){
+        if(next.dossierRequired&&next.dossierRead.size()<next.players.size()){
+            next.setupStage="briefing";next.setupDeadline=0;
+        }else{
+            next.setupStage="launching";next.setupDeadline=clock.millis()+3000;
+        }
+    }
     private void offerNext(State next){
         List<Player> choices=new ArrayList<>();for(Player p:next.players)if(!next.asked.contains(p.id))choices.add(p);
         next.setupDeadline=0;
@@ -463,12 +500,12 @@ public final class GameEngine {
                         }
                         if(target==null||!next.board.exists(x,y))throw new IllegalArgumentException("Startfeld muss auf einer Kachel liegen.");
                         for(Player other:next.players)if(other!=target&&other.x==x&&other.y==y)throw new IllegalArgumentException("Dieses Startfeld ist bereits belegt.");
-                        for(int[] at:next.enemyPositions.values())if(at[0]==x&&at[1]==y)throw new IllegalArgumentException("Feld belegt.");target.x=x;target.y=y;break;
+                        for(int[] at:next.enemyPositions.values())if(at[0]==x&&at[1]==y)throw new IllegalArgumentException("Feld belegt.");target.x=x;target.y=y;next.manualSpawns.add(target.id);break;
                     case "boardSave":
                         if(next.board.cells()<next.players.size()+next.enemies.size())throw new IllegalArgumentException("Für jeden Spieler wird mindestens ein eigenes Startfeld benötigt.");
                         repairSpawns(next);
                         for(Player p:next.players)if(!next.board.exists(p.x,p.y))throw new IllegalArgumentException("Zuerst für alle Spieler ein Startfeld platzieren.");
-                        hideKey(next);next.boardSaved=true;next.setupStage="launching";next.setupDeadline=clock.millis()+3000;
+                        hideKey(next);next.boardSaved=true;launchOrBrief(next);
                         addLog(next,actor.name+" hat das Raumgefüge gespeichert: "+next.board.tiles().size()+" Kacheln, "+next.board.cells()+" Felder. Startfiguren wie im Plan aufstellen.");break;
                     default:throw new IllegalArgumentException("Unbekannte Aufbauaktion.");
                 }
@@ -493,19 +530,45 @@ public final class GameEngine {
     private static void repairSpawns(State s){
         Set<String> occupied=new HashSet<>();
         for(Player p:s.players){
+            if(s.freshSetup&&!s.manualSpawns.contains(p.id)){p.x=-1;p.y=-1;}
             if(!s.board.exists(p.x,p.y)||!occupied.add(p.x+","+p.y)){p.x=-1;p.y=-1;}
         }
         for(Map.Entry<String,int[]> entry:s.enemyPositions.entrySet()){int[] a=entry.getValue();if(s.board.exists(a[0],a[1])&&occupied.add(a[0]+","+a[1]))continue;entry.setValue(new int[]{-1,-1});}
+        List<int[]> fields=spawnCandidates(s.board);
         for(Player p:s.players)if(p.x<0){
-            outer:for(int y=0;y<20*s.board.scale();y++)for(int x=0;x<20*s.board.scale();x++)if(s.board.exists(x,y)&&occupied.add(x+","+y)){p.x=x;p.y=y;break outer;}
+            for(int[] at:fields)if(occupied.add(at[0]+","+at[1])){p.x=at[0];p.y=at[1];break;}
         }
         for(String enemy:s.enemies){int[] a=s.enemyPositions.get(enemy);if(a!=null&&a[0]>=0)continue;
             outer:for(int y=0;y<20*s.board.scale();y++)for(int x=0;x<20*s.board.scale();x++)if(s.board.exists(x,y)&&occupied.add(x+","+y)){s.enemyPositions.put(enemy,new int[]{x,y});break outer;}
         }
         s.enemyPositions.entrySet().removeIf(e->e.getValue()[0]<0);
     }
+    /** Prefer long walkable paths to the nearest portal; no invented fixed minimum distance. */
+    private static List<int[]> spawnCandidates(BoardPlan board){
+        int size=20*board.scale();int[][] distance=new int[size][size];
+        for(int[] row:distance)Arrays.fill(row,-1);
+        ArrayDeque<int[]> queue=new ArrayDeque<>();
+        for(int y=0;y<size;y++)for(int x=0;x<size;x++){
+            BoardPlan.Tile tile=board.at(x/board.scale(),y/board.scale());
+            if(tile!=null&&tile.kind.equals("portal")){distance[y][x]=0;queue.add(new int[]{x,y});}
+        }
+        while(!queue.isEmpty()){
+            int[] at=queue.remove();
+            for(int[] d:new int[][]{{0,-1},{1,0},{0,1},{-1,0}}){
+                int x=at[0]+d[0],y=at[1]+d[1];
+                if(x>=0&&y>=0&&x<size&&y<size&&distance[y][x]<0&&board.canStep(at[0],at[1],x,y)){
+                    distance[y][x]=distance[at[1]][at[0]]+1;queue.add(new int[]{x,y});
+                }
+            }
+        }
+        List<int[]> fields=new ArrayList<>();
+        for(int y=0;y<size;y++)for(int x=0;x<size;x++)if(board.exists(x,y))fields.add(new int[]{x,y,distance[y][x]});
+        // Portal cells are the last resort; disconnected non-portal fields precede them.
+        fields.sort((a,b)->Integer.compare(b[2]==0?-1:b[2]<0?0:b[2],a[2]==0?-1:a[2]<0?0:a[2]));
+        return fields;
+    }
     private static void validateSetup(State s,Set<String> ids)throws IOException{
-        if(!Arrays.asList("lobby","selecting","offering","building","launching","play").contains(s.setupStage)||
+        if(s.lastInteractionRevision<0||s.lastInteractionRevision>s.revision||!Arrays.asList("lobby","selecting","offering","building","briefing","launching","play").contains(s.setupStage)||
             (!s.started)!=s.setupStage.equals("lobby")||s.setupDeadline<0||
             (!s.setupId.isEmpty()&&!s.setupId.matches("[a-f0-9-]{36}"))||
             (!s.candidate.isEmpty()&&!s.setupStage.equals("offering"))||
@@ -513,8 +576,11 @@ public final class GameEngine {
             (!s.roomMaster.isEmpty()&&!ids.contains(s.roomMaster))||(!s.candidate.isEmpty()&&!ids.contains(s.candidate))||
             new HashSet<>(s.asked).size()!=s.asked.size()||!ids.containsAll(s.asked)||
             (s.setupStage.equals("offering")&&(s.candidate.isEmpty()||!s.asked.contains(s.candidate)))||
-            (Arrays.asList("building","launching").contains(s.setupStage)&&s.roomMaster.isEmpty())||
-            (s.boardSaved&&(!Arrays.asList("launching","play").contains(s.setupStage)||s.board.cells()<s.players.size()))||
+            (Arrays.asList("building","briefing","launching").contains(s.setupStage)&&s.roomMaster.isEmpty())||
+            (s.boardSaved&&(!Arrays.asList("briefing","launching","play").contains(s.setupStage)||s.board.cells()<s.players.size()))||
+            !ids.containsAll(s.dossierRead)||!ids.containsAll(s.manualSpawns)||
+            (s.setupStage.equals("briefing")&&(!s.dossierRequired||!s.boardSaved||s.dossierRead.size()==s.players.size()))||
+            (s.dossierRequired&&Arrays.asList("launching","play").contains(s.setupStage)&&s.dossierRead.size()!=s.players.size())||
             (s.setupStage.equals("play")&&!s.legacyBoard&&!s.boardSaved))throw new IOException("Ungültiger Aufbauzustand.");
         Set<String> occupied=new HashSet<>();
         for(Player p:s.players){
@@ -643,7 +709,11 @@ public final class GameEngine {
     }
     private State copy() throws IOException { return decode(encode(state)); }
     private void commit(State next) throws IOException {
-        next.revision++; store.save(encode(next)); state = next;
+        commit(next,false);
+    }
+    private void commit(State next,boolean readingOnly) throws IOException {
+        next.revision++;if(!readingOnly)next.lastInteractionRevision=next.revision;
+        store.save(encode(next)); state = next;
     }
     private static byte[] encode(State s) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -672,6 +742,10 @@ public final class GameEngine {
         out.writeInt(s.players.size());for(Player p:s.players)out.writeBoolean(p.reclaimable);
         out.writeInt(s.enemyPositions.size());for(Map.Entry<String,int[]> e:s.enemyPositions.entrySet()){out.writeUTF(e.getKey());out.writeInt(e.getValue()[0]);out.writeInt(e.getValue()[1]);}
         out.writeUTF(s.keyState);out.writeInt(s.keyX);out.writeInt(s.keyY);out.writeUTF(s.keyOwner);out.writeUTF(s.keyEvent);out.writeBoolean(s.keyPending);
+        out.writeBoolean(s.dossierRequired);out.writeBoolean(s.freshSetup);
+        out.writeInt(s.dossierRead.size());for(String id:s.dossierRead)out.writeUTF(id);
+        out.writeInt(s.manualSpawns.size());for(String id:s.manualSpawns)out.writeUTF(id);
+        out.writeLong(s.lastInteractionRevision);
         out.flush();if(bytes.size()>8*1024*1024)throw new IOException("Spielstand zu groß. Bitte sichern und neue Partie beginnen.");return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -725,6 +799,16 @@ public final class GameEngine {
         if(format>=8){int claims=count(in,4);if(claims!=s.players.size())throw new IOException("Ungültige Spielerplätze.");for(Player p:s.players)p.reclaimable=in.readBoolean();int positions=count(in,256);for(int i=0;i<positions;i++){String id=in.readUTF();int x=in.readInt(),y=in.readInt();if(!s.enemies.contains(id)||x<0||y<0||x>=40||y>=40||s.enemyPositions.put(id,new int[]{x,y})!=null)throw new IOException("Ungültige Gegnerposition.");}}
         if(format>=9){s.keyState=in.readUTF();s.keyX=in.readInt();s.keyY=in.readInt();s.keyOwner=in.readUTF();s.keyEvent=in.readUTF();s.keyPending=in.readBoolean();}
         else s.keyState=s.started?"legacy":"pending";
+        if(format>=10){
+            s.dossierRequired=in.readBoolean();s.freshSetup=in.readBoolean();
+            int reads=count(in,4);for(int i=0;i<reads;i++)if(!s.dossierRead.add(in.readUTF()))throw new IOException("Doppelte Lesebestätigung.");
+            int manual=count(in,4);for(int i=0;i<manual;i++)if(!s.manualSpawns.add(in.readUTF()))throw new IOException("Doppeltes Startfeld.");
+            s.lastInteractionRevision=in.readLong();
+        }else{
+            s.lastInteractionRevision=s.revision;
+            s.dossierRequired=s.started&&Arrays.asList("selecting","offering","building").contains(s.setupStage);
+            for(Player p:s.players)if(p.x>=0)s.manualSpawns.add(p.id); // Preserve all old placements.
+        }
         Set<String> spots=new HashSet<>();for(Player p:s.players)if(p.x>=0)spots.add(p.x+","+p.y);for(int[] a:s.enemyPositions.values())if(!s.board.exists(a[0],a[1])||!spots.add(a[0]+","+a[1]))throw new IOException("Ungültige Figurenposition.");
         if((!s.turnAccepted&&!s.turnStage.equals("roll"))||(s.phase.equals("enemies")&&s.turnAccepted))throw new IOException("Ungültige Zugbestätigung.");
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||

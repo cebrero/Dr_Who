@@ -117,7 +117,8 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 @media(prefers-reduced-motion:reduce){.wait-flight .tardis{animation:none}}
 </style>
 <link rel="stylesheet" href="/board-art.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.2</small></header>
+<link rel="stylesheet" href="/character-dossiers.css">
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.11.0</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -128,6 +129,11 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <button class="primary" id="joinButton">Beitreten</button><p id="joinOccupancy" class="muted" role="status" aria-live="polite">Spielerplätze werden geladen …</p></form>
 <section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><button id="waitAgain" type="button" class="wait-again" hidden>Auf die TARDIS warten</button><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
 <section id="setupArea" hidden>
+ <div id="setupDossier" hidden>
+  <div class="briefing-bar"><strong>Dein Charakterdossier</strong><p id="dossierProgress" role="status" aria-live="polite"></p></div>
+  <div id="dossierScroll" tabindex="0" role="region" aria-label="Charakterdossier zum Scrollen"></div>
+  <div class="briefing-footer"><button id="readDossier" type="button" class="primary">Gelesen · ich bin bereit</button><p id="dossierReadStatus" role="status" aria-live="polite"></p></div>
+ </div>
  <div id="setupWait" class="card"><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 id="setupTitle" tabindex="-1"></h2><p id="setupSub"></p></div>
  <section id="boardEditor" tabindex="-1" hidden>
   <div class="setup-heading"><div><small class="setup-kicker">DU BIST RAUMMEISTER</small><h2>Das Raumgefüge</h2></div><button id="saveBoard" class="primary" type="button">Speichern & starten</button></div>
@@ -176,11 +182,12 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <div id="turnDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="yourMoveTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="yourMoveTitle">Your move...</h2><p>Das Portal wartet auf dich.</p><button id="goButton" class="primary" type="button">Go</button><p id="goStatus" role="status" aria-live="polite"></p></div></div>
 <div id="directionDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="directionTitle" tabindex="-1" hidden><div class="modal-surface"><h2 id="directionTitle">Welche Richtung?</h2><p id="directionHint">Wohin soll deine Aktion wirken?</p><div id="actionDirections" class="compass-wheel"><button type="button" data-action-dir="N">↑ Nord</button><button type="button" data-action-dir="W">← West</button><button type="button" data-action-dir="S">↓ Süd</button><button type="button" data-action-dir="E">Ost →</button></div><p id="actionStatus" role="status" aria-live="polite"></p><button id="actionRetry" class="primary" type="button" hidden>Gleiche Aktion erneut senden</button><button id="cancelDirection" class="wide" type="button">Abbrechen</button></div></div>
 <script src="/board-art.js"></script>
+<script src="/character-dossiers.js"></script>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.10.2',PROTOCOL_VERSION=5;
+const CLIENT_VERSION='0.11.0',PROTOCOL_VERSION=6;
 let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
@@ -247,8 +254,9 @@ $('cancelLobbyWait').onclick=cancelLobbyWaiting;
 $('waitAgain').onclick=()=>{if(saved.lobbyWait){saved.lobbyWait.dismissed=false;rememberPresentation()}syncModals()};
 setInterval(()=>{if(shownModal==='lobbyWaitDialog')nextLobbyWaitText()},10000);
 function openPortrait(c){
- if(!state||!isPlaying(state)||!c||!/^\/portraits\/[a-z0-9-]{1,64}\.(jpg|svg)$/.test(c.portrait)||!$('myProfile').querySelector('img'))return;
- $('myProfile').querySelector('.portrait')?.focus();portraitCharacter=c;syncModals();
+ if(!state||(!isPlaying(state)&&!isReadingDossier())||!c||!/^\/portraits\/[a-z0-9-]{1,64}\.(jpg|svg)$/.test(c.portrait))return;
+ (isReadingDossier()?$('dossierScroll').querySelector('.archive-portrait'):$('myProfile').querySelector('.portrait'))?.focus();
+ portraitCharacter=c;syncModals();
 }
 function closePortrait(){portraitCharacter=null;syncModals()}
 $('closePortrait').onclick=closePortrait;
@@ -262,7 +270,7 @@ function syncModals(){
  const forced=setupActive()&&state.setup.stage==='building'&&state.setup.forced&&state.setup.roomMaster===state.you&&saved.roomDecision!==state.setup.id&&!compatibilityBlocked;
  const north=setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&saved.northSetup!==state.sessionId+':'+state.setup.id;
  const keyPickup=state?.keyPickup?.pending&&!compatibilityBlocked;
- const waiting=lobbyWaiting();if(!state||!isPlaying(state)||keyPickup||waitForGo||state.attack.pending&&state.attack.targetId===state.you||state.phase==='enemies'&&state.helperId===state.you)portraitCharacter=null;
+ const waiting=lobbyWaiting();if(!state||(!isPlaying(state)&&!isReadingDossier())||keyPickup||waitForGo||state.attack.pending&&state.attack.targetId===state.you||state.phase==='enemies'&&state.helperId===state.you)portraitCharacter=null;
  if(portraitCharacter){$('portraitTitle').textContent=portraitCharacter.name;$('portraitFull').alt=portraitCharacter.name+' · großes Porträt';if($('portraitFull').getAttribute('src')!==portraitCharacter.portrait){$('portraitFull').hidden=false;$('portraitError').hidden=true;$('portraitFull').src=portraitCharacter.portrait}}
  const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':portraitCharacter?'portraitDialog':waiting?'lobbyWaitDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
  if(modal!==shownModal){
@@ -390,6 +398,7 @@ function presentRoll(s,active){
 function render(s){
  if(compatibilityBlocked)return;
  if(state&&s.sessionId===state.sessionId&&s.revision<state.revision)return;
+ if(pending?.action==='readDossier'&&s.setup?.readBy?.includes(s.you)){pending=null;persist()}
  state=s;$('join').hidden=true;
  const me=s.players.find(p=>p.id===s.you),playing=isPlaying(s);
  const attacked=playing&&s.attack.pending&&s.attack.targetId===s.you;
@@ -447,8 +456,8 @@ function returnToJoin(message){
  $('name').focus();$('name').select();
 }
 function resetJoinPresentation(){
- document.body.classList.remove('in-game','building','editing-board');
- for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog','portraitDialog','lobbyWaitDialog'])$(id).hidden=true;
+ document.body.classList.remove('in-game','building','editing-board','reading-dossier');
+ for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','setupDossier','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog','portraitDialog','lobbyWaitDialog'])$(id).hidden=true;
  shownModal='';previousFocus=null;directionPicking=false;portraitCharacter=null;toolTap=null;$('portraitFull').removeAttribute('src');
  if(drag)finishDrag({pointerId:drag.pointer},true);
  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>{e.inert=false;e.removeAttribute('inert')});
@@ -543,6 +552,26 @@ let palettePage=0,dungeonMode=false;
 let paletteKind='',spawnTarget='',spawnMode=false,boardFit=false,selectedTile=null,drag=null,suppressBoardClick=false,lastTouchHandledAt=-1000;
 function isPlaying(s){return s.started&&s.ready&&(!s.setup||s.setup.stage==='play')}
 function setupActive(){return state&&state.started&&state.setup&&state.setup.stage!=='play'}
+function isReadingDossier(){return !!(setupActive()&&state.setup.dossierRequired&&
+ (state.setup.stage==='briefing'||state.setup.stage==='building'&&state.setup.roomMaster!==state.you))}
+function renderDossier(s){
+ const reading=isReadingDossier(),wasReading=!$('setupDossier').hidden;$('setupDossier').hidden=!reading;document.body.classList.toggle('reading-dossier',reading);if(!reading)return;
+ const me=s.players.find(p=>p.id===s.you),c=s.characters.find(c=>c.id===me?.characterId);
+ const signature=JSON.stringify([s.sessionId,c]);
+ if($('dossierScroll').dataset.signature!==signature){
+  $('dossierScroll').dataset.signature=signature;$('dossierScroll').replaceChildren();
+  if(c)$('dossierScroll').append(CharacterDossiers.render(c,openPortrait));$('dossierScroll').scrollTop=0;
+ }
+ if(!wasReading&&!shownModal)$('dossierScroll').focus({preventScroll:true});
+ const reads=s.setup.readBy||[],done=reads.includes(s.you),waiting=s.players.filter(p=>!reads.includes(p.id));
+ const progress=(s.setup.stage==='building'?(s.players.find(p=>p.id===s.setup.roomMaster)?.name||'Der Raummeister')+' baut das Raumgefüge. ':'Aufbau gespeichert. ')+reads.length+' / '+s.players.length+' haben gelesen.';
+ if($('dossierProgress').textContent!==progress)$('dossierProgress').textContent=progress;
+ const button=$('readDossier');button.disabled=done||busy||!!pending&&pending.action!=='readDossier'||compatibilityBlocked;
+ button.textContent=done?'✓ Gelesen · bestätigt':pending?.action==='readDossier'?'Lesebestätigung erneut senden':'Gelesen · ich bin bereit';
+ const status=busy&&pending?.action==='readDossier'?'Deine Bestätigung wird gespeichert …':pending?.action==='readDossier'?'Bestätigung fehlt. Tippe erneut; sie wird nur einmal gespeichert.':modalError||
+  (done?(waiting.length?'Bereit. Liest noch: '+waiting.map(p=>p.name).join(', ')+'.':'Alle haben gelesen. Das Portal startet gleich.'):'Lies in deinem Tempo. Nach dem Aufbau und allen Bestätigungen geht es los.');
+ if($('dossierReadStatus').textContent!==status)$('dossierReadStatus').textContent=status;
+}
 function canBuild(){return setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&!compatibilityBlocked&&!busy&&!pending}
 const {tileGraphic,fieldName,fieldRange,tileSize,decorateTile}=BoardArt;
 function tileAt(s,x,y){return (s.board?.tiles||[]).find(t=>t.x===x&&t.y===y||t.kind==='portal'&&t.x+(t.rotation%2===0?1:0)===x&&t.y+(t.rotation%2?1:0)===y)}
@@ -564,9 +593,9 @@ function paintBoard(container,s,editable){
  if(focus&&editable)container.querySelector('[data-cell="'+focus+'"]')?.focus({preventScroll:true});
 }
 function renderSetup(s){
- const preparing=setupActive();$('setupArea').hidden=!preparing;document.body.classList.toggle('building',!!preparing);document.body.classList.toggle('editing-board',!!preparing&&s.setup.stage==='building'&&s.setup.roomMaster===s.you);if(!preparing)return;
+ const preparing=setupActive();$('setupArea').hidden=!preparing;document.body.classList.toggle('building',!!preparing);document.body.classList.toggle('editing-board',!!preparing&&s.setup.stage==='building'&&s.setup.roomMaster===s.you);renderDossier(s);if(!preparing)return;
  const setup=s.setup,master=s.players.find(p=>p.id===setup.roomMaster),candidate=s.players.find(p=>p.id===setup.candidate),editing=setup.stage==='building'&&setup.roomMaster===s.you;
- $('boardEditor').hidden=!editing;$('setupWait').hidden=editing;
+ $('boardEditor').hidden=!editing;$('setupWait').hidden=editing||isReadingDossier();
  $('setupTitle').textContent=setup.stage==='selecting'?'der Raummeister wird gerade ausgewählt...':setup.stage==='offering'?(candidate?.name||'Ein Mitreisender')+' wird gerade gefragt…':setup.stage==='launching'?'Das Abenteuer beginnt!':(master?.name||'Der Raummeister')+' stellt das Raumgefüge wieder her…';
  $('setupSub').textContent=setup.stage==='building'?(setup.forced?'Alle haben abgelehnt. Das Portal hat '+(master?.name||'einen Spieler')+' bestimmt.':'Der Raummeister hat zugesagt.')+' Den aktuellen Aufbau siehst du am Portal.':setup.stage==='launching'?'Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.':'Das Portal wählt nur echte Mitspieler. Ihr müsst nichts am Portal bedienen.';
  if(editing){
@@ -643,6 +672,7 @@ document.addEventListener('click',event=>{const button=event.target.closest(boar
 $('northConfirm').onclick=()=>{saved.northSetup=state.sessionId+':'+state.setup.id;persist();syncModals()};
 $('dungeonMode').onclick=()=>{dungeonMode=!dungeonMode;$('dungeonMode').textContent=dungeonMode?'Kerkerzustand ändern':'Kerker öffnen / schließen'};
 $('saveBoard').onclick=()=>{if(canBuild())command('boardSave')};
+$('readDossier').onclick=()=>{if(!isReadingDossier()||busy)return;if(pending?.action==='readDossier')send();else command('readDossier')};
 $('openBoard').onclick=()=>{if(!state?.setup)return;saved.roomDecision=state.setup.id;try{persist();syncModals()}catch(e){saved.roomDecision='';$('forcedStatus').textContent='Bitte Browser-Speicherung erlauben und erneut öffnen.'}};
 $('roomYes').onclick=()=>{if(pending?.action==='roomYes')send();else command('roomYes')};$('roomNo').onclick=()=>{if(pending?.action==='roomNo')send();else command('roomNo')};
 

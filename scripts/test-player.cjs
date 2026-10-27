@@ -14,12 +14,12 @@ const copy=o=>JSON.parse(JSON.stringify(o));
 const tick=()=>new Promise(r=>setImmediate(r));
 async function main(){
  let next=copy(base),requests=[],fail=false,unauthorized=false,networkState=false,revealTimer,revealStarts=0;
- const html=fs.readFileSync('app/src/main/assets/player.html','utf8').replace('<script src="/board-art.js"></script>','<script>'+fs.readFileSync('app/src/main/assets/board-art.js','utf8')+'</script>');
+ const html=fs.readFileSync('app/src/main/assets/player.html','utf8').replace('<script src="/character-dossiers.js"></script>','<script>'+fs.readFileSync('app/src/main/assets/character-dossiers.js','utf8')+'</script>').replace('<script src="/board-art.js"></script>','<script>'+fs.readFileSync('app/src/main/assets/board-art.js','utf8')+'</script>');
  const dom=new JSDOM(html,{url:'http://192.168.4.1:8080/?code=123456',runScripts:'dangerously',beforeParse(w){
   const nativeTimeout=w.setTimeout.bind(w);w.setTimeout=(callback,ms)=>ms===2600?(revealTimer=callback,revealStarts++,999):nativeTimeout(callback,ms);
   w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token'}));w.setInterval=()=>0;
   w.fetch=async(path,options)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.2',protocolVersion:5,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.11.0',protocolVersion:6,sessionId:'session'})};
    if(path!=='/api/state')requests.push({path,body:new URLSearchParams(String(options.body))});
    if(fail&&path!=='/api/state'||networkState&&path==='/api/state')throw new Error('offline');
    if(unauthorized&&path==='/api/command')return {ok:false,status:401,json:async()=>({error:'Bitte mit Portalcode anmelden.'})};
@@ -167,7 +167,7 @@ async function main(){
  const guest=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
   w.setInterval=callback=>{lobbyPoll=callback;return 0};
   w.fetch=async(path)=>{
-   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.2',protocolVersion:5,sessionId:'session'})};
+   if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.11.0',protocolVersion:6,sessionId:'session'})};
    if(path==='/api/join')joins++;
    assert.equal(path,'/api/lobby');
    if(offline)throw new Error('offline');
@@ -193,7 +193,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'obsolete-token',sessionId:'old-session',join:originalJoin,pending:{requestId:'old-move',action:'move'},revealedRoll:'old-roll'}));
    w.setInterval=callback=>{recoveryPoll=callback;return 0};
    w.fetch=async(path,options)=>{
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.2',protocolVersion:5,sessionId:'old-session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.11.0',protocolVersion:6,sessionId:'old-session'})};
     if(path==='/api/state'){
      if(!valid)return await new Promise(resolve=>held.push(resolve));
      return {ok:true,status:200,json:async()=>copy(base)};
@@ -228,7 +228,7 @@ async function main(){
    w.localStorage.setItem('drwho.v1',JSON.stringify({token:'known-token',sessionId:'session',join:{name:'Alice',code:'123456',requestId:'original-join-request-1234'},pending:{requestId:'pending-command',action:'move'}}));w.setInterval=()=>0;
    w.fetch=async(path,options)=>{
     if(options.method==='POST')postRequests++;
-    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.10.3':'0.10.2',protocolVersion:mismatch==='protocol'?6:5,sessionId:mismatch==='party'?'new-party':'session'})};
+    if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:mismatch==='version'?'0.10.3':'0.11.0',protocolVersion:mismatch==='protocol'?7:6,sessionId:mismatch==='party'?'new-party':'session'})};
     if(path==='/api/state')stateRequests++;
     return {ok:true,status:200,json:async()=>({occupied:0,capacity:4})};
    };
@@ -253,7 +253,7 @@ async function main(){
   current.setup={stage:'selecting',id:'selection-one',roomMaster:'',candidate:'',forced:false,saved:false,legacy:false};current.board={size:20,tiles:[]};current.players.forEach(p=>{p.x=-1;p.y=-1});
   const editor=new JSDOM(html,{url:'http://192.168.4.1:8080/',runScripts:'dangerously',beforeParse(w){
    w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'test-token',sessionId:'session'}));
-   w.fetch=async(path,options)=>{if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.10.2',protocolVersion:5,sessionId:'session'})};
+   w.fetch=async(path,options)=>{if(path==='/api/info')return {ok:true,status:200,json:async()=>({appVersion:'0.11.0',protocolVersion:6,sessionId:'session'})};
     if(options.method==='POST'){posts.push(new URLSearchParams(String(options.body)));if(offline)throw new Error('offline');if(bad)return {ok:false,status:400,json:async()=>({error:'Dort liegt bereits eine Kachel.'})};}
     return {ok:true,status:200,json:async()=>copy(current)};};
   }});
@@ -277,10 +277,11 @@ async function main(){
    current.revision++;current.board.tiles[0].rotation=1;$('editorGrid').querySelector('[data-tile]').click();await tick();check(posts.at(-1).get('action')==='tileRotate'&&posts.at(-1).get('direction')==='0,0','tile tap requests exact 90 degree turn');
    const displayed=$('editorGrid').querySelector('[data-tile]');check(displayed.querySelector('g').getAttribute('transform')==='rotate(90 50 50)','rotation uses saved orientation');
    w.render(copy(current));check(displayed===$('editorGrid').querySelector('[data-tile]'),'unchanged polling preserves focused tile DOM');
+   const realTouchClock=w.performance.now.bind(w.performance),touchTime=realTouchClock();w.performance.now=()=>touchTime;
    const beforeTouch=posts.length;current.revision++;current.board.tiles[0].rotation=2;const touchTile=$('editorGrid').querySelector('[data-tile]');
    for(const type of ['pointerdown','pointerup']){const event=new w.MouseEvent(type,{bubbles:true,clientX:10,clientY:10});Object.defineProperties(event,{pointerType:{value:'touch'},pointerId:{value:9}});touchTile.dispatchEvent(event)}await tick();
    check(posts.length===beforeTouch+1&&posts.at(-1).get('action')==='tileRotate','touch pointer tap rotates without waiting for compatibility click');
-   $('editorGrid').querySelector('[data-tile]').dispatchEvent(new w.MouseEvent('click',{bubbles:true,detail:1}));await tick();check(posts.length===beforeTouch+1,'delayed compatibility click cannot rotate twice');
+   w.performance.now=()=>touchTime+100;$('editorGrid').querySelector('[data-tile]').dispatchEvent(new w.MouseEvent('click',{bubbles:true,detail:1}));await tick();check(posts.length===beforeTouch+1,'delayed compatibility click cannot rotate twice');w.performance.now=realTouchClock;
 
    current.revision++;current.board.tiles.push({x:4,y:4,kind:'portal',rotation:1});w.render(copy(current));const portal=$('editorGrid').querySelector('[data-cell="4,4"]');check(portal.style.height.includes('* 2')&&!$('editorGrid').querySelector('[data-cell="4,5"]'),'portal visually occupies two cells and removes covered empty target');
    $('spawnMode').click();check(!$('spawnList').hidden&&$('boardStatus').textContent.includes('Startfeld'),'explicit mode avoids confusing start placement with tile rotation');

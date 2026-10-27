@@ -157,3 +157,13 @@
     Escape, reale Spielhinweise vorrangig. Tasche: brauner Lederbeutel, genau drei Itemkästchen
     pro Reihe, dynamische scrollende Reihen. Unverändertes Polling erhält DOM/Scrollposition;
     keine Benutzen-/Tauschfunktion ohne Vereinbarung. Nur tatsächlich gesammelte eigene Items.
+
+48. Seit 0.11.0 während building lesen andere Spieler ihr scrollbares illustriertes Dossier,
+    Raummeister erst nach Planspeicherung. Persistentes Gelesen für alle vor launching/Go;
+    keine automatische Bestätigung/Timeout. Alte laufende Spiele nicht in Briefing zwingen.
+49. Format 10 / Protokoll 6: Lese-IDs und neue/manuelle Aufstellungsmerker speichern.
+    Reine Lesebestätigungen dürfen parallel abgesendete Bauaktionen nicht invalidieren;
+    echte Plan-/Rollen-/Phasenänderung weiterhin revisionieren. Dossier-Assets explizit erlauben.
+50. Neue automatische Startfelder bevorzugen begehbaren Abstand zum Portal; gültige manuelle
+    sowie alte/laufende Plätze erhalten. Keine Mindestdistanz/Mission erfinden. Portal-Fakten
+    nur kosmetisch während Aufbau; Serienwissen ist keine neue Tabletop-Wirkung.

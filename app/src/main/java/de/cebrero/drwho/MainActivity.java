@@ -37,7 +37,11 @@ public class MainActivity extends Activity {
     private TardisView setupFlight,noticeFlight;
     private KeyView noticeKey;
     private BoardView setupBoard;
-    private TextView setupHeading,setupHint,setupTeam,noticeText;
+    private TextView setupHeading,setupHint,setupTeam,setupTrivia,noticeText;
+    private long triviaStarted;
+    private int triviaIndex=-1;
+    private String triviaSetup="";
+    private final Runnable fadeTrivia=()->{if(setupTrivia!=null&&setupTrivia.getVisibility()==View.VISIBLE)setupTrivia.animate().alpha(0).setDuration(500).start();};
     private boolean wasPreparing;
     private SharedPreferences prefs;
     private String activeNotice="";
@@ -67,7 +71,7 @@ public class MainActivity extends Activity {
         prefs.edit().remove("manualConfirmed").remove("setupPending").remove("ssid").remove("password").apply();
         try{
             engine=new GameEngine(new AndroidStore(new File(getFilesDir(),"session-v1.drw")));
-            byte[] page=asset("player.html");Map<String,byte[]> boardAssets=new HashMap<>();for(String name:new String[]{"board-art.js","board-art.css"})boardAssets.put("/"+name,asset(name));
+            byte[] page=asset("player.html");Map<String,byte[]> boardAssets=new HashMap<>();for(String name:new String[]{"board-art.js","board-art.css","character-dossiers.js","character-dossiers.css"})boardAssets.put("/"+name,asset(name));
             try{server=new LocalServer(engine,page,80,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}catch(IOException unavailable){server=new LocalServer(engine,page,8080,this::portrait,BuildConfig.VERSION_NAME,boardAssets);}
             restartPortalNetwork();
         }catch(IOException error){root.addView(text("Start fehlgeschlagen. Der vorhandene Spielstand bleibt erhalten.\n"+error.getMessage(),18,WHITE));return;}
@@ -149,7 +153,11 @@ public class MainActivity extends Activity {
         setupHeading=text("",30,WHITE);setupHeading.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD));setupHeading.setGravity(Gravity.CENTER);layout.addView(setupHeading);
         FrameLayout visual=new FrameLayout(this);layout.addView(visual,new LinearLayout.LayoutParams(-1,0,1));
         setupFlight=new TardisView(this,true);visual.addView(setupFlight,new FrameLayout.LayoutParams(-1,-1));setupBoard=new BoardView(this);visual.addView(setupBoard,new FrameLayout.LayoutParams(-1,-1));
-        setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);layout.addView(button("Einstellungen",this::settingsDialog));
+        setupTeam=text("",16,CYAN);layout.addView(setupTeam);setupHint=text("",17,MUTED);setupHint.setGravity(Gravity.CENTER);layout.addView(setupHint);
+        setupTrivia=text("",24,Color.WHITE);setupTrivia.setGravity(Gravity.CENTER);setupTrivia.setTypeface(Typeface.create("sans-serif",Typeface.BOLD));setupTrivia.setPadding(dp(12),dp(10),dp(12),dp(10));
+        setupTrivia.setAutoSizeTextTypeUniformWithConfiguration(18,24,2,android.util.TypedValue.COMPLEX_UNIT_SP);setupTrivia.setMaxLines(4);setupTrivia.setTextDirection(View.TEXT_DIRECTION_LOCALE);
+        setupTrivia.setBackgroundColor(0xff143748);layout.addView(setupTrivia,new LinearLayout.LayoutParams(-1,dp(112)));setupTrivia.setVisibility(View.GONE);
+        layout.addView(button("Einstellungen",this::settingsDialog));
         noticeScreen=new FrameLayout(this);noticeScreen.setBackgroundColor(INK);root.addView(noticeScreen,new FrameLayout.LayoutParams(-1,-1));noticeScreen.setVisibility(View.GONE);noticeScreen.setClickable(true);
         noticeFlight=new TardisView(this,true);noticeScreen.addView(noticeFlight,new FrameLayout.LayoutParams(-1,-1));noticeKey=new KeyView(this);noticeScreen.addView(noticeKey,new FrameLayout.LayoutParams(-1,-1));noticeKey.setVisibility(View.GONE);noticeText=text("",32,WHITE);noticeText.setGravity(Gravity.CENTER);noticeText.setAutoSizeTextTypeUniformWithConfiguration(18,32,2,android.util.TypedValue.COMPLEX_UNIT_SP);noticeText.setPadding(dp(25),dp(24),dp(25),dp(24));noticeText.setBackgroundColor(0x4807111e);noticeScreen.addView(noticeText,new FrameLayout.LayoutParams(-1,-1,Gravity.CENTER));
         noticeScreen.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);noticeText.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
@@ -158,12 +166,13 @@ public class MainActivity extends Activity {
         setupScreen.setVisibility(info.preparing?View.VISIBLE:View.GONE);
         if(info.preparing){
             lobby.setVisibility(View.GONE);director.setVisibility(View.GONE);play.setVisibility(View.GONE);stage.setVisibility(View.GONE);
-            setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building");setupFlight.setVisibility(building?View.GONE:View.VISIBLE);setupBoard.setVisibility(building?View.VISIBLE:View.GONE);
-            if(building)setupBoard.setPlan(info.tiles,info.boardPlayers,info.subdivisions);
+            setupHeading.setText(info.setupTitle);boolean building=info.setupStage.equals("building"),briefing=info.setupStage.equals("briefing"),showBoard=building||briefing;setupFlight.setVisibility(showBoard?View.GONE:View.VISIBLE);setupBoard.setVisibility(showBoard?View.VISIBLE:View.GONE);
+            if(showBoard)setupBoard.setPlan(info.tiles,info.boardPlayers,info.subdivisions);
             StringBuilder team=new StringBuilder();for(int i=0;i<info.boardPlayers.size();i++){String[] p=info.boardPlayers.get(i);if(team.length()>0)team.append("\n");team.append(i+1).append(" · ").append(p[0]);int x=Integer.parseInt(p[2]),y=Integer.parseInt(p[3]);if(x>=0)team.append(" · ").append(engine.fieldName(x,y));}
-            setupTeam.setText(team.toString());setupTeam.setVisibility(building?View.VISIBLE:View.GONE);
-            setupHint.setText(building?"↑ NORDEN · PORTAL\nDer gespeicherte Aufbau vom Raummeister-Handy erscheint hier live. Nummern zeigen die Startfelder.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
+            setupTeam.setText(briefing?info.dossierStatus:team.toString());setupTeam.setVisibility(showBoard?View.VISIBLE:View.GONE);
+            setupHint.setText(building?"↑ NORDEN · PORTAL · Live-Aufbau":briefing?"Alle bestätigen Gelesen am eigenen Handy.":info.setupStage.equals("launching")?"Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.":"Die Anfrage erscheint auf dem ausgewählten Spielerhandy.");
         }
+        updateTrivia(info.preparing&&info.setupStage.equals("building"),info.sessionId+":"+info.setupStage);
         boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){if(engine.playing()){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}else showLobby();}
         if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")){
             String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
@@ -171,6 +180,18 @@ public class MainActivity extends Activity {
             if(next<info.notices.size()){
                 GameEngine.PortalNotice notice=info.notices.get(next);activeNotice=notice.id;boolean foundKey=notice.id.equals(info.keyEvent);noticeFlight.setVisibility(foundKey?View.GONE:View.VISIBLE);noticeKey.setVisibility(foundKey?View.VISIBLE:View.GONE);noticeText.setGravity(foundKey?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:Gravity.CENTER);noticeText.setText(notice.text);noticeScreen.setVisibility(View.VISIBLE);noticeScreen.bringToFront();handler.postDelayed(finishNotice,3000);
             }
+        }
+    }
+    private void updateTrivia(boolean building,String identity){
+        if(!building){handler.removeCallbacks(fadeTrivia);setupTrivia.animate().cancel();setupTrivia.setAlpha(1);setupTrivia.setVisibility(View.GONE);triviaSetup="";triviaIndex=-1;return;}
+        long now=SystemClock.elapsedRealtime();
+        if(!identity.equals(triviaSetup)){triviaSetup=identity;triviaStarted=now;triviaIndex=-1;}
+        long age=now-triviaStarted;int index=(int)(age/8000)%PortalTrivia.FACTS.size();
+        setupTrivia.setVisibility(View.VISIBLE);
+        if(triviaIndex!=index){
+            handler.removeCallbacks(fadeTrivia);setupTrivia.animate().cancel();triviaIndex=index;setupTrivia.setText(PortalTrivia.FACTS.get(index));
+            boolean reduced=!android.animation.ValueAnimator.areAnimatorsEnabled();setupTrivia.setAlpha(reduced?1:0);
+            if(!reduced){setupTrivia.animate().alpha(1).setDuration(500).start();handler.postDelayed(fadeTrivia,6500);}
         }
     }
     private void showLobby(){play.setVisibility(View.GONE);lobbyBackground.setVisibility(View.VISIBLE);lobby.setVisibility(View.VISIBLE);director.setVisibility(View.GONE);stage.setVisibility(View.GONE);}
@@ -326,8 +347,8 @@ public class MainActivity extends Activity {
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
     @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onStop(){foreground=false;if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);super.onStop();}
-    @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
+    @Override protected void onStop(){foreground=false;if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
+    @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}
         @Override public byte[] load()throws IOException{try{return file.readFully();}catch(FileNotFoundException missing){return null;}}

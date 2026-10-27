@@ -1,13 +1,14 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **27.10.2026 · Version 0.10.2 · TARDIS-Wartefenster, große Porträts und Inventarraster**
-<!-- app-version: 0.10.2 -->
-<!-- reviewed-source-sha256: 03a4135e2c45861fdcafc20d438472aef71ccb11a8fa9141dd9b682875ce3d1f -->
+Stand: **27.10.2026 · Version 0.11.0 · Charakterdossiers, Lesebestätigung und Portal-Fakten**
+<!-- app-version: 0.11.0 -->
+<!-- reviewed-source-sha256: 3534324a1462afde315aa386cdf7d8077d8f1ac9990ab7a2b7c81b59d88835f5 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
-**Für den nächsten Build vorgemerkt, noch nicht umgesetzt:** Spieler beim Start möglichst
-nicht in der Nähe des Portals positionieren. Umsetzung auf ausdrücklichen Nutzerwunsch
-bis zum nächsten Build zurückgestellt; Details unter Abschnitt 10.
+**Neu umgesetzt:** Während des Aufbaus lesen andere Spieler ihr illustriertes Dossier,
+danach auch der Raummeister. Erst alle „Gelesen“-Bestätigungen erlauben Startfilm und Go.
+Portal-Fakten begleiten den Aufbau; neue automatische Starts bevorzugen Abstand zum Portal.
+Details unter Abschnitt 8k; Werte/Kampf-/Szenarioregeln bleiben offen.
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
 Anforderungen, Entscheidungen, tatsächlichen Stand, Teststatus und nächsten Schritt hier
@@ -108,7 +109,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.2
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.11.0
 
 ### Vor der Partie
 
@@ -124,16 +125,19 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 6. Host drückt Start; der bereitgestellte Themensong spielt einmal. Drei Sekunden TARDIS-Flug, dann zufällige Raummeister-Anfrage an echte
    Spieler. Nein fragt jemand anderen; nach ausschließlich Nein entscheidet das Portal verbindlich.
 7. Raummeister erfasst den tatsächlichen Aufbau per Kachel-Editor (20×20, elf Typen einschließlich Portal über zwei Kacheln, 90°-Drehung,
-   vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live. Erst Speichern,
-   dann drei Sekunden Startanimation und erster Spielerzug. Vorher wird ein Portalschlüssel geheim auf
+   vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live und kurze Serienfakten.
+   Andere Spieler lesen währenddessen ihr Dossier und bestätigen Gelesen. Nach dem Speichern liest
+   auch der Raummeister. Erst alle Bestätigungen erlauben drei Sekunden Startfilm und Go.
+   Automatische neue Plätze bevorzugen Abstand zum Portal, manuelle Plätze bleiben erhalten.
+   Beim Planspeichern wird ein Portalschlüssel geheim auf
    einem freien erreichbaren Feld versteckt. Beim Betreten Fund-Popup, Portalanimation und Tasche.
-   Aktuelle Details siehe Abschnitte 8d–8i.
+   Aktuelle Details siehe Abschnitte 8d–8k.
 8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
    erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.10.2 |
+| Schritt | Regel | Umsetzung 0.11.0 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host würfelt und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -320,15 +324,15 @@ Ein vollständiger späterer Spielstand enthält:
 - Mehrere benannte Partien, Export/Import, Versionsmigration und Wiederaufbauansicht.
   Beim Laden erst Plan und Figurenpositionen anzeigen, dann Fortsetzung bestätigen.
 
-**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 9, ältere Formate
-1–8 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
+**Heute umgesetzt:** Ein versionierter binärer lokaler Spielstand (Format 10, ältere Formate
+1–9 lesbar) mit Spielern und geheimen Tokens, Beitrittscode, Partie-ID, gewählten Charakter-IDs,
 Gegnerliste, Partner-/Gegnerphase, aktuellem Gegner, Bewegungshelfer und Bestätigung, gespeichertem
 Angriffsereignis samt Ziel und Text, Runde, aktiver Person, Rasterkoordinaten, letztem W6,
 Zugphase (würfeln/entscheiden/bewegen), aktuellem Wurf und verbleibenden Schritten,
 Würfelereignis-ID und zugehöriger Spieler-ID, Go-Bestätigung, Zustandsrevision, 60 alte Protokollzeilen
 und vollständige strukturierte Story-Einträge bis zur 8-MiB-Dateigrenze (Zeitstempel, gespeicherte Datumsanzeige, Sprecher, Spieler,
 Aussage, Richtung), Raummeister-Auswahl/-ID/-phase/-deadline, Gefragte/Kandidat,
-vollständigen 20×20-Kachelplan mit Ausrichtung, Teilfeldraster, Kerkerzuständen und Gegnerpositionen, Portalhinweise und die letzten 128 Anfragequittungen. Android `AtomicFile`
+vollständigen 20×20-Kachelplan mit Ausrichtung, Teilfeldraster, Kerkerzuständen und Gegnerpositionen, Portalhinweise, Lesepflicht/-bestätigungen, neue/manuelle Aufstellungsmerker, Interaktionsrevision und die letzten 128 Anfragequittungen. Android `AtomicFile`
 schreibt den Spielstand. Erst nach erfolgreichem Schreiben wird der neue In-Memory-Zustand
 übernommen. Beschädigte/unbekannte Spielstände werden nicht automatisch überschrieben.
 
@@ -1103,7 +1107,107 @@ Verbindliche Wünsche vom 27.10.2026, umgesetzt:
 9. Der Doctor macht noch einen Sicherheitscheck: Tür zu, Begleiter dabei, Universum noch da. Fast fertig. Hab einen Moment Geduld!
 10. Deine Figur ist bereit, die TARDIS fast auch. Falls du dich selbst aus der Zukunft warten siehst: freundlich winken und nichts verraten.
 
-## 9. Technische Grundlage 0.10.2
+## 8k. Charakterdossiers, Lesebestätigung und Portal-Fakten ab 0.11.0
+
+Verbindliche Wünsche vom 27.10.2026, umgesetzt. „Setze alles neue um“ hebt die frühere
+Wartebitte für diesen Ausbau auf. Neueste Präzisierung: **während der Raummeister baut**,
+nicht während seiner Suche. Werte und Spezialwirkungen bleiben weiterhin offen.
+
+### Dossier und Startfreigabe
+
+- In `building` lesen alle anderen Spieler das eigene Dossier; der Raummeister behält den
+  Editor. Großes vollständiges Porträt, Spezies/Herkunft, Ausdauer/Kraft, frühe Bedienanleitung,
+  persönliche Spezialfähigkeit, kurze Hintergrundabschnitte, zusätzliche Szene und links/rechts
+  wechselnde Skizzen. Eigenes Bild auch hier antippbar als Großansicht.
+- Archivdesign B, vertikal scrollbarer Innenbereich und feste Taste **Gelesen · ich bin bereit**.
+  Polling/Bauänderungen erhalten DOM und Leseposition. Keine Mindestlesezeit, keine automatische
+  Bestätigung durch Scrollen. Bestätigung wird nur für den authentisierten eigenen Spieler gespeichert.
+- Anleitung erklärt Go, Würfel antippen, genau gewürfelte Strecke, 5/6 Bewegung ODER Aktion,
+  Kompass/Sitzdrehung, Welt-Norden am Portal, orthogonale Schritte/Richtungswechsel, physische
+  Figurenbewegung, Karte/Zoom, Tasche und Story. Richtungswahl und Abbrechen der Aktion erklärt.
+- Doctor: bekannte Heimat Gallifrey, früheste Herkunft durch Timeless Child komplexer.
+  Dalek: mutierter Kaled in Panzerhülle, Skaro. Engel: Ursprung/Heimat nicht gesichert.
+  Serienwissen bleibt ausdrücklich Hintergrund, keine zusätzliche Tabletop-Regel.
+- Fähigkeitstexte unterscheiden Wunsch und aktuellen Stand: Sonic öffnet noch keine Türen,
+  Dalek berechnet keinen Treffer/Schaden und Engel setzt niemanden aus. Ausdauer/Kraft bleiben
+  „Noch festzulegen“. Keine Heilung durch Regeneration, Blickregel, Panzerungswerte oder Items erfunden.
+- Nach **Speichern & starten** liest auch der Raummeister. Neue Phase `briefing`: gespeicherte
+  Karte, noch kein Zug. Erst **alle Gelesen** starten genau einmal den bisherigen Drei-Sekunden-Film,
+  danach normales Go/W6. Kein Timeout oder stiller Bypass. Nach Bestätigung darf weitergelesen werden,
+  solange der Aufbau/die anderen Bestätigungen noch laufen.
+- Portal zeigt nach Aufbau Karte und **Gelesen N / M** sowie Namen/Charaktere, die noch lesen.
+  Entfernte Teilnehmer zählen nicht mehr; verlorener Raummeister verwendet die bestehende
+  Ersatzauswahl bei erhaltenem Entwurf. Kein neuer Fernverwaltungsendpunkt.
+- Bestätigungen und Zwischenphase über Neustart/benanntes Speichern/Laden erhalten; neue Partie
+  leert sie. Alte laufende Partien werden beim Update nicht unterbrochen. Unfertige alte
+  Auswahl-/Bauphasen erhalten die Lesepflicht. Umbau einer laufenden Partie verlangt kein neues Lesen.
+- Verlorene Antwort: identischer Retry; bestätigter eigener Lesestatus im Snapshot löst Pending
+  ebenfalls auf, damit später Go nicht blockiert. Gleichzeitiges Lesen invalidiert keine Bauaktion
+  oder andere Lesebestätigung. Echte Plan-/Rollen-/Phasenänderung behält die Revisionssperre;
+  zuletzt relevante Interaktionsrevision wird mitgespeichert.
+
+### Kurze Fakten am Portal
+
+- Nur während `building`: zwölf kurze eigene deutsche Fakten mit humorvollen Ergänzungen.
+  Live-Aufbau bleibt sichtbar, darunter kontrastreiche Fläche mit kräftiger zentrierter weißer
+  Schrift (18–24 sp, bis vier Zeilen). Wechsel alle acht Sekunden; 0,5 Sekunden einblenden,
+  nach 6,5 Sekunden 0,5 Sekunden ausblenden. Keine Neustarts durch 500-ms-Aktualisierung.
+- Bei abgeschalteten Systemanimationen statischer Wechsel. Nach Planspeicherung enden Fakten,
+  Lesestatus hat Vorrang. Hintergrund/Ende beendet ausstehende Überblendung. Keine zusätzlichen
+  Pop-ups, Töne, Serienzitate, Spieleraktionen oder Spielzufälle; vollständig offline.
+- Alle zwölf Texte stehen in `core/.../PortalTrivia.java`. Es wird kein Spielzufall verbraucht.
+  Tatsächliche native Lesbarkeit und Sitzrichtungen bleiben am echten Portal-Handy zu prüfen.
+
+### Startplätze mit Abstand zum Portal
+
+Die für den nächsten Build vorgemerkte Anforderung ist jetzt umgesetzt. Bei neuer Aufstellung
+automatische Spielerplätze nach größtem kürzestem begehbaren Abstand zum nächsten Portal
+bevorzugen (BFS mit vorhandenen Teilfeldern/massiven Wänden). Gleichstand: stabile Rasterreihenfolge.
+Keine feste Mindestdistanz vereinbart, kein zusätzliches Los und kein Missionsziel abgeleitet.
+
+Erreichbare entfernte Felder zuerst; sind diese nicht verfügbar, andere vorhandene Nicht-Portal-
+Felder vor Portalplätzen als letztem Ausweichweg. Getrennte Inseln werden nicht automatisch
+verbunden; Raummeister muss sinnvollen Aufbau erfassen. Neue Bauänderungen berechnen automatische
+Vorschläge neu. Gültige **manuelle** Plätze sowie gültige laufende/alte Positionen bleiben erhalten.
+Keine Stapelung, Gegnerplätze bleiben belegt. Entferntes Feld bekommt wie bisher Ersatzvorschlag.
+
+### Quellen und Grafiken
+
+Offizielle Quellen, am **27.10.2026** geprüft und frei auf Deutsch zusammengefasst:
+
+- https://www.doctorwho.tv/news-and-features/what-is-a-time-lord
+- https://www.doctorwho.tv/news-and-features/13-chapters-in-the-history-of-gallifrey
+- https://www.doctorwho.tv/news-and-features/history-of-the-timeless-child
+- https://www.doctorwho.tv/news-and-features/what-is-a-sonic-screwdriver
+- https://www.doctorwho.tv/characters/daleks
+- https://www.doctorwho.tv/characters/davros
+- https://www.doctorwho.tv/characters/weeping-angels
+- https://www.doctorwho.tv/news-and-features/a-brief-history-of-the-weeping-angels
+- https://www.doctorwho.tv/characters/the-tardis
+
+Bestehende Porträts/eigene SVGs ergänzt um drei neue **KI-Szenen**, keine offiziellen Serienfotos,
+keine heruntergeladenen Fremdbilder. Offline unter `app/src/main/assets/portraits/`:
+`doctor-scene.jpg`, `dalek-scene.jpg`, `weeping-angel-scene.jpg`, je 1000×667.
+Bildhinweise im Dossier. Integrierte Bildgenerierung verwendet, keine CLI/API-Ausweichlösung.
+Finale Prompts:
+
+- `doctor-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape photograph-like illustration in a German Doctor Who tabletop character dossier. A close-up of a sonic screwdriver with softly glowing pale green emitter resting on a worn dark teal TARDIS console, brass circular controls and a glimpse of a blue police box door behind, rich cinematic photographic detail. Landscape 3:2 composition. No people, no letters, no text, no logo, no watermark. Elegantly complement parchment, petrol and brass UI. Original fan-art interpretation, not a reproduction of a TV still.
+- `dalek-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape illustration in a Doctor Who tabletop character dossier. A recognizable bronze Dalek in profile in a ruined alien landscape on Skaro, close and complete, eye stalk softly glowing blue, armor hemispheres and ray gun visible, distant decaying futuristic towers and orange dusty sky. Cinematic photographic realism, aged brass, charcoal shadows and warm amber. Landscape 3:2. No letters, no captions, no logo, no watermark. Original fan art, not a reproduction of a TV still.
+- `weeping-angel-scene.jpg`: Use case: photorealistic-natural. Asset type: secondary landscape illustration in a Doctor Who tabletop character dossier. A weathered grey stone Weeping Angel statue with hands covering its face and full wings, standing at the edge of a misty old cemetery at dusk. Side three-quarter view, entire statue visible, damp stone details, quiet eerie atmosphere without gore or threat toward camera. Petrol-blue shadows and faint warm distant lamplight, cinematic photographic realism, landscape 3:2. No letters, no text, no logo, no watermark. Original fan art, not a reproduction of a TV still.
+
+**Technik:** App **0.11.0 / Code 18**, **Format 10 / Protokoll 6**, Formate 1–9 lesbar.
+Neue Lesepflicht/-IDs, Aufstellungs-/manuelle Startmerker und Interaktionsrevision streng validieren.
+`character-dossiers.js/.css` explizit in Asset-Allowlist, keine freie Dateiauslieferung.
+Private Originalaudios und Signierschlüssel unverändert. Normales Update ab 0.5.0; Clientseiten
+anschließend neu laden. Bestehende laufende Partien erhalten ihre Züge/Positionen und beginnen
+nicht ungefragt von vorn. Neue Aufstellungs-/Dossierphase beim nächsten neuen Spiel testen.
+
+**Weiter offen:** Abstimmungs-Auswertung, verbindliche Mission/Sieg-/Finalphasentrigger sowie
+Charakterwerte, Gegenstandswirkungen und Kampfregeln. Vorhandene Wünsche werden hier erklärt,
+keine neuen Werte/Wirkungen festgelegt. Spätere Erzähl-/Angebotsidee bleibt offen.
+
+
+## 9. Technische Grundlage 0.11.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1209,7 +1313,7 @@ zu Spielbeginn die komplette Finalphase aus.
   oder öffentlich/private Ereignisansichten umgesetzt werden. Diese Idee auch beim nächsten
   entsprechenden Entwicklungsgespräch aktiv aufgreifen, nicht nur in einer Dateiliste verstecken.
 - Nur als spätere Planung speichern. Dieser Wunsch löst weder Implementierung noch neuen
-  APK-Build aus; die bereits verschobene Startaufstellung bleibt für den nächsten Build vorgemerkt.
+  APK-Build aus; die damals verschobene Startaufstellung ist inzwischen in 0.11.0 umgesetzt (Abschnitt 8k).
 
 ### Spätere Finalphase: bereitgestellte Portalanimation
 
@@ -1247,17 +1351,11 @@ Nutzerdatei und Gestaltungswunsch vom 27.10.2026, **geprüft und vorgemerkt, noc
 | SHA-256 | e160ac9eadc8b27007cf577def1d9643e755320fede2fe5a4d83cc213c6ecade |
 | Prüfung | Metadaten gelesen, vollständige Videodecodierung ohne Fehler, mehrere Frames visuell betrachtet |
 
-### Nächster Build: Startaufstellung mit Abstand zum Portal
+### Startaufstellung mit Abstand zum Portal – seit 0.11.0 umgesetzt
 
-**Vormerkung vom 27.10.2026 – erst beim nächsten Build umsetzen:**
-
-- Bei der Startaufstellung sollen möglichst keine Spieler in der Nähe des Portals stehen,
-  da dieses im späteren Spiel häufig Bestandteil des Ziels sein wird.
-- Automatische Startfeldvorschläge entsprechend bevorzugen. Ein fester Mindestabstand
-  und die genaue Auswahlstrategie sind noch nicht festgelegt; kein neues Missionsziel ableiten.
-- Noch keine Änderung an Startaufstellung, Spielständen oder App-Code vorgenommen.
-  Der Nutzer hat ausdrücklich gebeten, mit der Umsetzung bis zum nächsten Build zu warten.
-  Diese Dokumentationsvormerkung löst keinen Build aus; aktuelle APK bleibt 0.10.2.
+Die Vormerkung vom 27.10.2026 wurde mit dem nächsten ausdrücklich angeforderten Build umgesetzt.
+Automatische neue Plätze bevorzugen Abstand; manuelle und laufende Positionen bleiben erhalten.
+Auswahlstrategie, Grenzen und weiterhin fehlende feste Mindestdistanz stehen in Abschnitt 8k.
 
 Raummeister und manueller Aufbau sind seit 0.8.0 der nächste Testschwerpunkt: echte Touch-
 Bedienung, Portal-Lesbarkeit und Wiederaufbau am Tisch mit realem Inventar prüfen. Die noch
@@ -1276,6 +1374,25 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.11.0 am 27.10.2026:
+
+- **568 Kern-/HTTP-Prüfungen bestanden**, darunter Lesegate, Speicherausfälle, identische Retrys,
+  parallele Bau-/Lesebestätigungen, letzter Leser, Drei-Sekunden-Start, Entfernen/Wiederbeitritt,
+  manuelle Startplätze/Portalabstand und echte exportierte Format-9-Dateien aus 0.10.2.
+- **271 DOM-/Grafikprüfungen bestanden** (243 bestehende + 28 neue Dossierprüfungen).
+- Bisheriger mobiler Browser-Spiel-/Schlüsselablauf am echten Java-Host bestanden. Neuer
+  Zwei-Client-Test: Dossier parallel zum Editor, Raummeister liest danach, Host-Neustart mit
+  Teilbestätigung und normales Go nach letzter Bestätigung. Echtes Touchscrollen, stabile
+  Leseposition bei Bauänderungen, 390×844, 320×740 und 320×568 sowie größere Schrift geprüft.
+  Alle drei Dossiers visuell mit geladenen Szenenbildern kontrolliert; kurzer Titel und
+  Umbruch verhindern horizontales Abschneiden. Read-Taste bleibt sichtbar.
+- Android `:core:smokeTest :app:clean :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**.
+  Lint **0 Fehler / 19 Warnungen**. Signaturzertifikat identisch seit 0.5.0;
+  Version **0.11.0 / Code 18** bestätigt. Alle 17
+  lokalen Client-/Grafik-/Audioassets samt ONBOARDING bytegleich gegen APK geprüft; beide
+  Original-OGGs unkomprimiert. Finale Dokumentationsfassung anschließend erneut einbetten.
+  Native Faktenanimation, reale Telefon-/Hotspot-/Audio-/Sitzrichtungsprüfung weiterhin offen.
 
 Für 0.10.2 am 27.10.2026:
 
@@ -1624,6 +1741,8 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.10.0 | Private Portal-Musik/Beitrittssound mit einmaligen Cues, geheimer zufälliger erreichbarer Portalschlüssel, Finder-Popup, native Schlüsselanimation, gespeicherte Tasche, Zweikachel-Portal wieder in Palette; Format 9 / Protokoll 5 |
 | 26.10.2026 | 0.10.1 | Mittige fette Teilfeldkoordinaten, neue Kacheln nur per Drag, scrollende Story-Sprechblasen, hohe Bild-Steckbriefkarte mit Infos unten, direkt antippbarer W6 und Kompass daneben, mitlaufender vergrößerter Kartenausschnitt |
 | 27.10.2026 | 0.10.2 | Bestätigte Figurenwahl mit abbrechbarem TARDIS-Wartefenster und zehn wechselnden eigenen Gags, eigenes Porträt als Großansicht, Lederbeutel-Icon und scrollendes Inventar mit drei Spalten |
+
+| 27.10.2026 | 0.11.0 | Scrollbare illustrierte Charakterdossiers während Aufbau, frühe Bedienung/persönliche Fähigkeiten und offizielle Hintergrundquellen, persistentes Gelesen-Gate vor Startfilm/Go, kurze ausblendende Portal-Fakten, neue automatische Startplätze mit Portalabstand; Format 10 / Protokoll 6 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

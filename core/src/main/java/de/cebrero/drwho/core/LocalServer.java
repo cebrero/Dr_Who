@@ -38,7 +38,7 @@ public final class LocalServer implements Closeable {
     }
     public LocalServer(GameEngine engine,byte[] page,int port,Portraits portraits,String appVersion,Map<String,byte[]> assets)throws IOException{
         for(Map.Entry<String,byte[]> asset:assets.entrySet()){
-            if(!Arrays.asList("/board-art.js","/board-art.css").contains(asset.getKey()))throw new IllegalArgumentException("Unbekanntes Karten-Asset.");
+            if(!Arrays.asList("/board-art.js","/board-art.css","/character-dossiers.js","/character-dossiers.css").contains(asset.getKey()))throw new IllegalArgumentException("Unbekanntes Seiten-Asset.");
             boardAssets.put(asset.getKey(),asset.getValue().clone());
         }
         this.appVersion = appVersion;
@@ -97,7 +97,7 @@ public final class LocalServer implements Closeable {
                     json(out, 200, engine.lobbyStatus()); return;
                 }
                 if (method.equals("GET") && path.equals("/api/info")) {
-                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":5,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
+                    json(out, 200, "{\"appVersion\":" + GameEngine.quote(appVersion) + ",\"protocolVersion\":6,\"sessionId\":" + GameEngine.quote(engine.sessionId()) + "}"); return;
                 }
                 String authorization = headers.getOrDefault("authorization", "");
                 String token = authorization.startsWith("Bearer ") ? authorization.substring(7) : "";

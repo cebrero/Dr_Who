@@ -8,9 +8,15 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.10.2
+## Stand 0.11.0
 
-Neu in 0.10.2: TARDIS-Wartefenster nach bestätigter Figurenwahl, zehn wechselnde eigene
+Neu in 0.11.0: Illustrierte scrollbare Charakterdossiers während des Aufbaus, danach auch für
+Raummeister. Frühe Bedienanleitung, persönliche Fähigkeiten, Herkunft und offizielle Quellen.
+Erst alle Gelesen-Bestätigungen geben Startfilm/Go frei. Kurze ein-/ausblendende Portal-Fakten
+und neue automatische Startplätze möglichst mit Abstand zum Portal. Format 10 / Protokoll 6;
+keine neuen Kampfwerte. Details in ONBOARDING.md, Abschnitt 8k.
+
+Seit 0.10.2: TARDIS-Wartefenster nach bestätigter Figurenwahl, zehn wechselnde eigene
 Wartegags und Abbruch zum Figurenwechsel. Steckbriefbild antippbar als Großansicht.
 Lederbeutel-Symbol und scrollbar erweiterbares Inventar mit drei Itemkästchen pro Reihe.
 Details und vollständige Texte in ONBOARDING.md, Abschnitt 8j.
@@ -129,7 +135,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.10.2
+## Installationshinweis 0.11.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
