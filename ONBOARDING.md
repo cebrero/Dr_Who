@@ -5,6 +5,10 @@ Stand: **27.10.2026 · Version 0.10.2 · TARDIS-Wartefenster, große Porträts u
 <!-- reviewed-source-sha256: 03a4135e2c45861fdcafc20d438472aef71ccb11a8fa9141dd9b682875ce3d1f -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
+**Für den nächsten Build vorgemerkt, noch nicht umgesetzt:** Spieler beim Start möglichst
+nicht in der Nähe des Portals positionieren. Umsetzung auf ausdrücklichen Nutzerwunsch
+bis zum nächsten Build zurückgestellt; Details unter Abschnitt 10.
+
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
 Anforderungen, Entscheidungen, tatsächlichen Stand, Teststatus und nächsten Schritt hier
 aktualisieren. Keine parallelen Handoff- oder Statusdateien anlegen.
@@ -1146,6 +1150,16 @@ Verbindliche Wünsche vom 27.10.2026, umgesetzt:
 6. **Atmosphäre:** auf Halterung abgestimmtes Portal, gelieferte Medien, Soundoptionen und Feinschliff.
 
 ### Nächster konkreter Schritt mit dem Nutzer
+
+**Vormerkung vom 27.10.2026 – erst beim nächsten Build umsetzen:**
+
+- Bei der Startaufstellung sollen möglichst keine Spieler in der Nähe des Portals stehen,
+  da dieses im späteren Spiel häufig Bestandteil des Ziels sein wird.
+- Automatische Startfeldvorschläge entsprechend bevorzugen. Ein fester Mindestabstand
+  und die genaue Auswahlstrategie sind noch nicht festgelegt; kein neues Missionsziel ableiten.
+- Noch keine Änderung an Startaufstellung, Spielständen oder App-Code vorgenommen.
+  Der Nutzer hat ausdrücklich gebeten, mit der Umsetzung bis zum nächsten Build zu warten.
+  Diese Dokumentationsvormerkung löst keinen Build aus; aktuelle APK bleibt 0.10.2.
 
 Raummeister und manueller Aufbau sind seit 0.8.0 der nächste Testschwerpunkt: echte Touch-
 Bedienung, Portal-Lesbarkeit und Wiederaufbau am Tisch mit realem Inventar prüfen. Die noch
