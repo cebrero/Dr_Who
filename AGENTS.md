@@ -148,3 +148,12 @@
     Bildkarte, Infos in unterer Hälfte. Aktiver Client nach Go ohne redundante Zugbox; Würfel
     selbst ist Schaltfläche, kein separater Würfeln-Button. Würfel/Kompass nebeneinander,
     mitlaufender vergrößerter Kartenausschnitt darunter, dieselbe lokale Sitzorientierung.
+
+46. Seit 0.10.2 nach bestätigter Lobby-Figurenwahl TARDIS-Wartefenster mit zehn eigenen Gags,
+    alle zehn Sekunden zufällig ohne Wiederholung im Zyklus. Abbruch ist nur Anzeigeabbruch;
+    Figur bleibt reserviert bis bestätigter Wechsel. Polling/Reload dürfen es nicht erneut öffnen,
+    Hoststart beendet es. Texte kosmetisch, keine Filmzitate/Spielregeln daraus erfinden.
+47. Eigenes Steckbriefbild per echter Bildtaste als modale contain-Großansicht; Fokus/Schließen/
+    Escape, reale Spielhinweise vorrangig. Tasche: brauner Lederbeutel, genau drei Itemkästchen
+    pro Reihe, dynamische scrollende Reihen. Unverändertes Polling erhält DOM/Scrollposition;
+    keine Benutzen-/Tauschfunktion ohne Vereinbarung. Nur tatsächlich gesammelte eigene Items.

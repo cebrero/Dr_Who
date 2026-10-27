@@ -1,8 +1,8 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **26.10.2026 · Version 0.10.1 · kompakte Spieleransicht, Story-Sprechblasen und klare Feldlabels**
-<!-- app-version: 0.10.1 -->
-<!-- reviewed-source-sha256: 159171dfae6e3deda37be5b8391e325f131fec602edeca507bbbe6076f2f3295 -->
+Stand: **27.10.2026 · Version 0.10.2 · TARDIS-Wartefenster, große Porträts und Inventarraster**
+<!-- app-version: 0.10.2 -->
+<!-- reviewed-source-sha256: 03a4135e2c45861fdcafc20d438472aef71ccb11a8fa9141dd9b682875ce3d1f -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
 Diese Datei ist die maßgebliche Übergabe an zukünftige Chats. Nach jeder Entwicklungsrunde
@@ -104,7 +104,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.1
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.10.2
 
 ### Vor der Partie
 
@@ -129,7 +129,7 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.10.1 |
+| Schritt | Regel | Umsetzung 0.10.2 |
 | --- | --- | --- |
 | 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host würfelt und speichert verbindlich; kein erneutes Würfeln bei Retry |
@@ -1049,7 +1049,57 @@ Neue verbindliche Wünsche vom 26.10.2026, umgesetzt:
 - **App 0.10.1 / Code 16, Speicherformat 9 / Protokoll 5 unverändert.** Normales Update mit
   bisherigem Signierschlüssel und Clientseiten neu laden. Keine neue Partie für diese UI-Änderungen nötig.
 
-## 9. Technische Grundlage 0.10.1
+## 8j. Abholung, Bildvergrößerung und Inventarraster ab 0.10.2
+
+Verbindliche Wünsche vom 27.10.2026, umgesetzt:
+
+- Nach **hostbestätigter** Figurenwahl vor Spielstart öffnet am Client das Wartefenster
+  **Die TARDIS ist unterwegs!**, mit gewählter Figur, animierter TARDIS und einem von zehn
+  humorvollen Texten. Kein Fenster bei bloßem Klick oder fehlgeschlagener Auswahl.
+- Texte wechseln alle **10 Sekunden** zufällig, alle zehn einmal pro Durchlauf, ohne direkte
+  Wiederholung am Zykluswechsel. Reines Browser-Kosmetiklos; kein Einfluss auf Spielzufall,
+  Reservierung oder Start. Polling würfelt den Text nicht neu. Letzten Text, Restvorrat und
+  Abbruch je Partie/Spieler/Figur im Browser merken; Neuladen erzeugt keine neue Teilnahme.
+- **Abbruch · Figur wechseln** bzw. Escape schließt das Fenster und gibt die Karten frei.
+  Die aktuelle Figur bleibt am Host reserviert, bis eine andere erfolgreich gewählt ist.
+  Keine stille Freigabe/Abmeldung, kein neuer API-Endpunkt. Abbruch bleibt über Polling/Reload
+  erhalten. **Auf die TARDIS warten** öffnet freiwillig wieder. Eine neue bestätigte Figur
+  öffnet erneut. Start am Portal beendet das Warten automatisch für Raummeister-/Go-Ablauf. Der Abbruchknopf
+  bleibt auch in der kompakten Warteansicht sichtbar; lange Texte dürfen intern scrollen.
+- Zehn **eigens formulierte** Wartegags, keine behaupteten Filmzitate. Inspiration: offizielle
+  Serienmotive TARDIS, Raumzeitreise, großer Innenraum, eigenwillige Navigation und defekter
+  Tarnschaltkreis (https://www.doctorwho.tv/characters/the-tardis, geprüft 27.10.2026).
+  Keine neuen Figuren/Regeln aus den Gags ableiten. Vollständiger Wortlaut unten.
+- Im eigenen **Steckbrief** das Bild antippen: große modale Ansicht mit vollständigem Bild
+  (`contain`), Charaktername und **Schließen ×**; auch Escape/Hintergrundtap schließen.
+  Echte Bildtaste mit Tastaturbedienung, Fokus im Dialog und Rückkehr zur Bildtaste. Nur
+  bestehende lokale Porträtpfade. Bildfehler mit verständlichem Hinweis statt kaputtem Bild.
+  Eigenes Go/Angriff/Fund, Gegnerhelfer-Auftrag und Sitzungswechsel haben Vorrang; kein
+  veralteter Bilddialog blockiert.
+- **Tasche** hat am Tab und Titel einen kleinen braunen Lederbeutel als lokale Vektorgrafik.
+  Gesammelte Items in Kästchen mit **genau drei Spalten**, weitere Reihen entstehen dynamisch;
+  der Inventarbereich scrollt nach unten. Name/Bild pro Item; Portalschlüssel erhält vorhandene
+  Schlüsselgrafik. Für noch unbekannte Itembilder nur neutrales Symbol, keine erfundenen Items.
+  Unverändertes Polling behält Kästchen-DOM/Scrollposition. Lange Namen umbrechen.
+- Nur tatsächlich im eigenen Snapshot gesammelte Gegenstände anzeigen. Keine Benutzen-/Tausch-
+  oder Siegfunktion ergänzen. Große Inventare werden ausschließlich mit Test-Fixtures geprüft.
+- **App 0.10.2 / Code 17**, Speicherformat 9 und Protokoll 5 unverändert. Bestehender Signierschlüssel,
+  normales Update und Clientseiten neu laden. Keine neue Partie für diese Oberflächenänderungen.
+
+### Zehn Wartegags (eigene Texte)
+
+1. Du hast die TARDIS gerufen. Sie kommt dich abholen – nur die richtige Minute muss sie noch finden. Bitte etwas Geduld!
+2. Die TARDIS ist innen größer. Leider gilt das auch für den Weg vom Kleiderschrank zur Eingangstür. Dein Abholservice ist unterwegs!
+3. Der Doctor prüft die Raumzeit-Koordinaten. Ein Zahlendreher, und wir starten beim Urknall. Warten ist gerade die angenehmere Option.
+4. Die TARDIS hält noch an einer blauen Polizeibox. Es könnte ihr Spiegelbild sein. Sobald sie das geklärt hat, holt sie dich ab.
+5. Der Schallschraubenzieher summt schon. Jetzt sucht der Doctor nur noch den Knopf, der nichts explodieren lässt. Bitte kurz warten.
+6. Die TARDIS wollte dich pünktlich abholen. Dann hat sie bemerkt, dass Zeit relativ ist. Bleib bereit – sie arbeitet an ihrer Ausrede.
+7. Die Abholung verzögert sich: Im Zeitwirbel ist gerade viel Vergangenheit unterwegs. Bitte nicht vordrängeln, besonders nicht vor dir selbst.
+8. Der Tarnschaltkreis wird getestet. Ergebnis: immer noch blaue Polizeibox. Ein bewährtes Design! Gleich geht die Reise los.
+9. Der Doctor macht noch einen Sicherheitscheck: Tür zu, Begleiter dabei, Universum noch da. Fast fertig. Hab einen Moment Geduld!
+10. Deine Figur ist bereit, die TARDIS fast auch. Falls du dich selbst aus der Zukunft warten siehst: freundlich winken und nichts verraten.
+
+## 9. Technische Grundlage 0.10.2
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1114,6 +1164,27 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.10.2 am 27.10.2026:
+
+- **243 DOM-/Grafikprüfungen bestanden** (213 bestehende + 30 neue). Neu: hostbestätigte Wahl,
+  zehn Texte ohne Wiederholung, stabiles Polling, Abbruch/Reload, fehlgeschlagener Wechsel und
+  identischer Retry, Start/Go-Vorrang, Bildtaste/Großansicht/Fokus/Escape, sichere Itemnamen,
+  30 Inventarkästchen ohne erfundene Aktionen und stabile Ansicht beim Polling, Sitzungsreset,
+  fremder Angriff ohne Unterbrechung des Bilds und eigener Helferauftrag mit Vorrang.
+- **532 Kern-/HTTP-Prüfungen bestanden**; keine Regellogik oder Datenmigration geändert.
+- Zwei mobile Chromium-Kontexte 390×844 / 320×740 am echten Java-HTTP-Host: Wartedialog,
+  Zufallstextwechsel, Abbruch/Polling, tatsächlicher Figurenwechsel und erneute Abholung,
+  Hoststart mit Raummeister-/Go-Vorrang, bisheriger Aufbau/Zoom/Bewegung/Save/Load bestanden.
+- Zusätzlich 320×568: Abbruchknopf sichtbar. In 390×844 eigenes Porträt per echter Touch-Geste
+  groß mit contain und Fokus-Rückgabe; 36 Testitems in exakt drei Spalten, neue Zeile ab viertem Item,
+  Inventar scrollbar ohne Dokument-Seitenlauf. Screenshot-Sichtprüfung durchgeführt. Schlüssel-
+  Fund/Tasche/Save/Load weiterhin bestanden. Testitems werden nicht in den Produktkatalog aufgenommen.
+- Android `:app:clean :app:assembleDebug :app:lintDebug`: **BUILD SUCCESSFUL**, Lint
+  **0 Fehler / 19 Warnungen**. Version **0.10.2 / Code 17**, gleiches Signaturzertifikat
+  seit 0.5.0 bestätigt. Anleitung/Client/Grafikassets und beide unkomprimierten Originalaudios
+  vor Übergabe bytegenau gegen die finale APK abgleichen.
+- Reale Telefon-/Hotspot-/Audio-Prüfung weiterhin offen.
 
 Für 0.10.1 am 26.10.2026:
 
@@ -1440,6 +1511,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 26.10.2026 | 0.9.2 | Kleine/Große Kacheln, identische lokale Vektorgrafiken auf Portal/Client samt Kompassdrehung, globale Koordinaten A1/B1/A2/B2 bis AN40 an jedem Teilfeld, Client-Kartenzoom per Tasten und Zwei-Finger-Geste sowie Sprung zur eigenen Figur, Format/Protokoll kompatibel |
 | 26.10.2026 | 0.10.0 | Private Portal-Musik/Beitrittssound mit einmaligen Cues, geheimer zufälliger erreichbarer Portalschlüssel, Finder-Popup, native Schlüsselanimation, gespeicherte Tasche, Zweikachel-Portal wieder in Palette; Format 9 / Protokoll 5 |
 | 26.10.2026 | 0.10.1 | Mittige fette Teilfeldkoordinaten, neue Kacheln nur per Drag, scrollende Story-Sprechblasen, hohe Bild-Steckbriefkarte mit Infos unten, direkt antippbarer W6 und Kompass daneben, mitlaufender vergrößerter Kartenausschnitt |
+| 27.10.2026 | 0.10.2 | Bestätigte Figurenwahl mit abbrechbarem TARDIS-Wartefenster und zehn wechselnden eigenen Gags, eigenes Porträt als Großansicht, Lederbeutel-Icon und scrollendes Inventar mit drei Spalten |
 
 ## 13. Fortsetzung in einem anderen Chat
 

@@ -94,9 +94,30 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 #log li.own-story{background:#e0ece5;border-radius:14px 14px 3px 14px;margin:0 0 0 8px}#log li.own-story::before{left:auto;right:-7px;background:#e0ece5;border:0;border-right:1px solid #b69b6480;border-top:1px solid #b69b6480}
 #log .story-meta{font-weight:700;font-size:11px;line-height:1.4}#log .story-text{font-size:14px;line-height:1.5;margin-top:7px}
 @media(max-height:650px){.turn-console{min-height:132px}#turnConsole #controls{transform-origin:center}#myProfile .details{padding:9px}#myProfile .details h2{font-size:20px}#myProfile .details p,#myProfile .details li{font-size:12px}}
+
+/* Waiting after a confirmed character choice; cosmetic copy never changes game rules. */
+.wait-surface{text-align:center;display:flex;flex-direction:column;gap:10px;padding:20px;max-height:92svh;overflow:hidden}.wait-surface h2{font-size:clamp(23px,3.5svh,30px);margin:0;flex-shrink:0}.wait-surface>small{font-size:9px;flex-shrink:0}
+#lobbyWaitCharacter{font-size:14px;font-weight:700;margin:0;flex-shrink:0}.wait-flight{height:150px;min-height:80px;flex:0 1 150px}.wait-flight .tardis{top:16px;transform-origin:center;scale:.65}
+#lobbyWaitText{font:clamp(15px,2.2svh,18px)/1.4 Georgia,serif;min-height:0;max-height:25svh;overflow:auto;margin:0;flex:1 1 auto}.wait-note{font-size:11px;line-height:1.4;margin:0;color:var(--muted);flex-shrink:0}#cancelLobbyWait{margin:0;font-size:16px;min-height:44px;padding:10px;flex-shrink:0}
+@media(max-width:350px){.wait-surface{padding:16px;gap:8px}.wait-flight{height:110px;flex-basis:110px}.wait-flight .tardis{top:-4px;scale:.55}}
+.wait-again{min-height:34px;padding:5px 10px;margin:3px 18px;font-size:12px;flex-shrink:0}
+#myProfile .portrait-zoom{padding:0;margin:0;border-radius:0;box-shadow:none;cursor:zoom-in;color:#ead5a8}
+#myProfile .portrait-zoom:not(:disabled):active{transform:none}#myProfile .portrait-zoom:focus-visible{outline-offset:-5px;outline:3px solid #e7c578}
+#portraitDialog{padding:12px}.portrait-surface{width:min(100%,900px);height:94svh;max-height:94svh;padding:12px;display:flex;flex-direction:column;gap:10px;background:#0d292e;color:#f5e8c9}
+.portrait-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}.portrait-toolbar h2{font-size:23px;margin:0;text-align:left}.portrait-toolbar button{min-height:44px;padding:7px 12px;font-size:13px;flex-shrink:0}
+#portraitFull{width:100%;flex:1;min-height:0;object-fit:contain;object-position:center;border-radius:8px}#portraitError{margin:auto}
+/* Small leather pouch in the tab and an extensible three-column inventory. */
+.pouch-icon{display:inline-flex;width:21px;height:23px;flex-shrink:0;vertical-align:middle}.pouch-icon svg{width:100%;height:100%}
+#tabBag{display:flex;align-items:center;justify-content:center;gap:3px}#tabBag .pouch-icon{width:17px;height:20px}
+#bagPanel{overflow:hidden;display:flex;flex-direction:column}.bag-card{height:100%;min-height:0;display:flex;flex-direction:column;padding:14px}
+.bag-card h2{font-size:24px;margin:0 0 12px;flex-shrink:0}#bagItems{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:9px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 3px 10px;scrollbar-width:thin}
+.bag-item{min-width:0;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 5px;border:1px solid #aa834a;border-radius:9px;background:linear-gradient(145deg,#fff9e8,#e6d2a7);box-shadow:inset 0 0 0 3px #fff7df70,0 2px 6px #51371912;text-align:center}
+.item-picture{height:65px;width:100%;display:grid;place-items:center}.bag-item .item-picture svg{height:65px;max-height:65px;width:100%;max-width:110px}.bag-item h3{font:600 11px/1.3 system-ui,sans-serif;margin:5px 0 0;overflow-wrap:anywhere}.unknown-item{font-size:30px;color:#9f772e}.bag-empty{grid-column:1/-1;font-size:14px;text-align:center}
+@media(max-width:350px){#tabBag{gap:1px}#tabBag .pouch-icon{width:14px}.bag-card{padding:10px}#bagItems{gap:6px}.bag-item{min-height:102px}.bag-item h3{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.wait-flight .tardis{animation:none}}
 </style>
 <link rel="stylesheet" href="/board-art.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.1</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.10.2</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -105,7 +126,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <label for="code" hidden>Portalcode</label><input hidden id="code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" required autocomplete="off" aria-describedby="joinError">
 <p id="joinError" role="alert" hidden></p>
 <button class="primary" id="joinButton">Beitreten</button><p id="joinOccupancy" class="muted" role="status" aria-live="polite">Spielerplätze werden geladen …</p></form>
-<section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
+<section id="selection" hidden><div class="card"><small>DEIN TEAM · ALLE SIND PARTNER</small><h2>Wähle deinen Charakter</h2><p id="selectionStatus"></p><p class="muted">Ausgewählte Figuren gehören exklusiv einem Spieler. Ausdauer und Kraft werden noch festgelegt.</p></div><p class="muted swipe-hint">Wische nach links oder rechts durch die Steckbriefe.</p><div class="carousel-nav"><button id="previousCard" type="button" aria-label="Vorheriger Charakter">←</button><p id="cardPosition" role="status" aria-live="polite"></p><button id="nextCard" type="button" aria-label="Nächster Charakter">→</button></div><button id="waitAgain" type="button" class="wait-again" hidden>Auf die TARDIS warten</button><div id="characters" class="characters" role="region" aria-roledescription="Karussell" aria-label="Charakter-Steckbriefe" tabindex="0"></div></section>
 <section id="setupArea" hidden>
  <div id="setupWait" class="card"><div class="flight" aria-label="Fliegende TARDIS"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><h2 id="setupTitle" tabindex="-1"></h2><p id="setupSub"></p></div>
  <section id="boardEditor" tabindex="-1" hidden>
@@ -125,7 +146,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <button id="tabPlay" type="button" role="tab" aria-controls="playPanel" aria-selected="true" data-tab="play">Spiel</button>
 <button id="tabProfile" type="button" role="tab" aria-controls="profilePanel" aria-selected="false" tabindex="-1" data-tab="profile">Steckbrief</button>
 <button id="tabMap" type="button" role="tab" aria-controls="mapPanel" aria-selected="false" tabindex="-1" data-tab="map">Karte</button>
-<button id="tabBag" type="button" role="tab" aria-controls="bagPanel" aria-selected="false" tabindex="-1" data-tab="bag">Tasche</button>
+<button id="tabBag" type="button" role="tab" aria-controls="bagPanel" aria-selected="false" tabindex="-1" data-tab="bag"><span class="pouch-icon" aria-hidden="true"></span><span>Tasche</span></button>
 <button id="tabHistory" type="button" role="tab" aria-controls="historyPanel" aria-selected="false" tabindex="-1" data-tab="history">Story</button>
 </div><div class="compass-tools"><button type="button" id="compassLeft">↶ Kompass</button><span id="compassFacing"></span><button type="button" id="compassRight">Kompass ↷</button></div></div>
 <section id="playPanel" role="tabpanel" aria-labelledby="tabPlay" tabindex="0">
@@ -143,9 +164,11 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
 <section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div class="map-tools"><button type="button" id="mapZoomOut" aria-label="Karte verkleinern">−</button><span id="mapZoomLevel" role="status">100 %</span><button type="button" id="mapZoomIn" aria-label="Karte vergrößern">+</button><button type="button" id="mapFocus" aria-label="Deine Figur auf der Karte anzeigen">Dein Feld</button></div><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
-<section id="bagPanel" role="tabpanel" aria-labelledby="tabBag" tabindex="0" hidden><div class="card bag-card"><h2>Deine Tasche</h2><div id="bagItems"></div></div></section>
+<section id="bagPanel" role="tabpanel" aria-labelledby="tabBag" tabindex="0" hidden><div class="card bag-card"><h2><span class="pouch-icon" aria-hidden="true"></span> Deine Tasche</h2><div id="bagItems" role="list" aria-label="Gesammelte Gegenstände"></div></div></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card" open><summary>Story</summary><ol id="log"></ol></details></section>
 </section>
+<div id="lobbyWaitDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="lobbyWaitTitle" tabindex="-1" hidden><div class="modal-surface wait-surface"><small>DEIN PLATZ IM ABENTEUER IST RESERVIERT</small><h2 id="lobbyWaitTitle">Die TARDIS ist unterwegs!</h2><p id="lobbyWaitCharacter"></p><div class="flight wait-flight" aria-hidden="true"><i class="star"></i><div class="tardis"><i class="lamp"></i><i class="windows"></i><i class="panels"></i></div></div><p id="lobbyWaitText" aria-live="polite" aria-atomic="true"></p><p class="wait-note">Das Abenteuer beginnt, sobald es am Portal gestartet wird.</p><button id="cancelLobbyWait" type="button" class="primary">Abbruch · Figur wechseln</button></div></div>
+<div id="portraitDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="portraitTitle" tabindex="-1" hidden><div class="modal-surface portrait-surface"><div class="portrait-toolbar"><h2 id="portraitTitle"></h2><button id="closePortrait" type="button" aria-label="Großes Charakterbild schließen">Schließen ×</button></div><img id="portraitFull" alt="" hidden><p id="portraitError" hidden>Das Bild konnte gerade nicht geladen werden.</p></div></div>
 <div id="keyDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="keyTitle" tabindex="-1" hidden><div class="modal-surface"><div class="key-art" aria-hidden="true"></div><h2 id="keyTitle">Portalschlüssel gefunden!</h2><p id="keyText"></p><button id="ackKey" type="button" class="primary">In die Tasche · weiter</button><p id="keyStatus" role="status"></p></div></div>
 <div id="northDialog" class="modal-shade" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="northTitle" hidden><div class="modal-surface"><h2 id="northTitle">Das Portal steht im Norden!</h2><p>Lege das Portal an die Nordseite des Tisches. Im Plan ist Norden immer oben.</p><button id="northConfirm" type="button" class="primary">Verstanden · Aufbau öffnen</button></div></div>
 <div id="forcedDialog" class="modal-shade" role="dialog" aria-modal="true" aria-labelledby="forcedTitle" tabindex="-1" hidden><div class="modal-surface"><small>DAS PORTAL HAT ENTSCHIEDEN</small><h2 id="forcedTitle">Du bist Raummeister!</h2><p>Alle haben abgelehnt. Das Portal hat dich zufällig ausgewählt, um das Raumgefüge wiederherzustellen.</p><button id="openBoard" class="primary" type="button">Aufbau öffnen</button><p id="forcedStatus" role="status"></p></div></div>
@@ -157,11 +180,11 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.10.1',PROTOCOL_VERSION=5;
+const CLIENT_VERSION='0.10.2',PROTOCOL_VERSION=5;
 let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
-let directionPicking=false,shownModal='',previousFocus=null,modalError='';
+let directionPicking=false,shownModal='',previousFocus=null,modalError='',portraitCharacter=null;
 try{saved=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
 let token=saved.token||'';pending=saved.pending||null;
 if(token&&saved.join&&!saved.registration)saved.registration={...saved.join};
@@ -187,6 +210,51 @@ function controls(){
  syncModals();
 }
 function ownTurn(){return state&&isPlaying(state)&&state.phase==='players'&&state.current===state.you&&!state.attack.pending&&!compatibilityBlocked}
+const lobbyWaitTexts=[
+ "Du hast die TARDIS gerufen. Sie kommt dich abholen – nur die richtige Minute muss sie noch finden. Bitte etwas Geduld!",
+ "Die TARDIS ist innen größer. Leider gilt das auch für den Weg vom Kleiderschrank zur Eingangstür. Dein Abholservice ist unterwegs!",
+ "Der Doctor prüft die Raumzeit-Koordinaten. Ein Zahlendreher, und wir starten beim Urknall. Warten ist gerade die angenehmere Option.",
+ "Die TARDIS hält noch an einer blauen Polizeibox. Es könnte ihr Spiegelbild sein. Sobald sie das geklärt hat, holt sie dich ab.",
+ "Der Schallschraubenzieher summt schon. Jetzt sucht der Doctor nur noch den Knopf, der nichts explodieren lässt. Bitte kurz warten.",
+ "Die TARDIS wollte dich pünktlich abholen. Dann hat sie bemerkt, dass Zeit relativ ist. Bleib bereit – sie arbeitet an ihrer Ausrede.",
+ "Die Abholung verzögert sich: Im Zeitwirbel ist gerade viel Vergangenheit unterwegs. Bitte nicht vordrängeln, besonders nicht vor dir selbst.",
+ "Der Tarnschaltkreis wird getestet. Ergebnis: immer noch blaue Polizeibox. Ein bewährtes Design! Gleich geht die Reise los.",
+ "Der Doctor macht noch einen Sicherheitscheck: Tür zu, Begleiter dabei, Universum noch da. Fast fertig. Hab einen Moment Geduld!",
+ "Deine Figur ist bereit, die TARDIS fast auch. Falls du dich selbst aus der Zukunft warten siehst: freundlich winken und nichts verraten."
+];
+function rememberPresentation(){try{persist()}catch(e){/* Cosmetic preferences never block play. */}}
+function nextLobbyWaitText(){
+ const entry=saved.lobbyWait;if(!entry)return;
+ let deck=Array.isArray(entry.remaining)?entry.remaining.filter(n=>Number.isInteger(n)&&n>=0&&n<lobbyWaitTexts.length):[];
+ if(!deck.length){
+  deck=Array.from({length:lobbyWaitTexts.length},(_,i)=>i);
+  for(let i=deck.length-1;i>0;i--){const bytes=new Uint32Array(1);crypto.getRandomValues(bytes);const j=bytes[0]%(i+1);[deck[i],deck[j]]=[deck[j],deck[i]]}
+  if(deck.at(-1)===entry.index)[deck[0],deck[deck.length-1]]=[deck[deck.length-1],deck[0]];
+ }
+ entry.index=deck.pop();entry.remaining=deck;rememberPresentation();$('lobbyWaitText').textContent=lobbyWaitTexts[entry.index];
+}
+function lobbyWaiting(){
+ const me=state?.players.find(p=>p.id===state.you),waiting=!!state&&!state.started&&!!me?.characterId&&!compatibilityBlocked;
+ $('waitAgain').hidden=true;if(!waiting)return false;
+ const id=state.sessionId+':'+state.you+':'+me.characterId;
+ if(saved.lobbyWait?.id!==id||!Number.isInteger(saved.lobbyWait.index)||!lobbyWaitTexts[saved.lobbyWait.index]){saved.lobbyWait={id,dismissed:false,remaining:[],index:-1};nextLobbyWaitText()}
+ $('lobbyWaitCharacter').textContent='Deine Figur: '+(state.characters.find(c=>c.id===me.characterId)?.name||me.characterId);
+ $('lobbyWaitText').textContent=lobbyWaitTexts[saved.lobbyWait.index];$('waitAgain').hidden=!saved.lobbyWait.dismissed;
+ return !saved.lobbyWait.dismissed;
+}
+function cancelLobbyWaiting(){if(saved.lobbyWait){saved.lobbyWait.dismissed=true;rememberPresentation()}syncModals();$('characters').focus()}
+$('cancelLobbyWait').onclick=cancelLobbyWaiting;
+$('waitAgain').onclick=()=>{if(saved.lobbyWait){saved.lobbyWait.dismissed=false;rememberPresentation()}syncModals()};
+setInterval(()=>{if(shownModal==='lobbyWaitDialog')nextLobbyWaitText()},10000);
+function openPortrait(c){
+ if(!state||!isPlaying(state)||!c||!/^\/portraits\/[a-z0-9-]{1,64}\.(jpg|svg)$/.test(c.portrait)||!$('myProfile').querySelector('img'))return;
+ $('myProfile').querySelector('.portrait')?.focus();portraitCharacter=c;syncModals();
+}
+function closePortrait(){portraitCharacter=null;syncModals()}
+$('closePortrait').onclick=closePortrait;
+$('portraitDialog').onclick=event=>{if(event.target===$('portraitDialog'))closePortrait()};
+$('portraitFull').onerror=()=>{$('portraitFull').hidden=true;$('portraitError').hidden=false};
+
 function syncModals(){
  const active=ownTurn(),waitForGo=active&&!state.turn.accepted;
  if(!active||!state.turn.accepted||state.turn.stage!=='choice'||rolling)directionPicking=false;
@@ -194,10 +262,12 @@ function syncModals(){
  const forced=setupActive()&&state.setup.stage==='building'&&state.setup.forced&&state.setup.roomMaster===state.you&&saved.roomDecision!==state.setup.id&&!compatibilityBlocked;
  const north=setupActive()&&state.setup.stage==='building'&&state.setup.roomMaster===state.you&&saved.northSetup!==state.sessionId+':'+state.setup.id;
  const keyPickup=state?.keyPickup?.pending&&!compatibilityBlocked;
- const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
+ const waiting=lobbyWaiting();if(!state||!isPlaying(state)||keyPickup||waitForGo||state.attack.pending&&state.attack.targetId===state.you||state.phase==='enemies'&&state.helperId===state.you)portraitCharacter=null;
+ if(portraitCharacter){$('portraitTitle').textContent=portraitCharacter.name;$('portraitFull').alt=portraitCharacter.name+' · großes Porträt';if($('portraitFull').getAttribute('src')!==portraitCharacter.portrait){$('portraitFull').hidden=false;$('portraitError').hidden=true;$('portraitFull').src=portraitCharacter.portrait}}
+ const modal=keyPickup?'keyDialog':roomOffer?'roomDialog':forced?'forcedDialog':north?'northDialog':waitForGo?'turnDialog':directionPicking?'directionDialog':portraitCharacter?'portraitDialog':waiting?'lobbyWaitDialog':'';const newlyOpened=!!modal&&modal!==shownModal;
  if(modal!==shownModal){
   const old=shownModal;if(modal)modalError='';if(!old&&modal)previousFocus=document.activeElement;
-  shownModal=modal;$('keyDialog').hidden=modal!=='keyDialog';$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';
+  shownModal=modal;$('keyDialog').hidden=modal!=='keyDialog';$('northDialog').hidden=modal!=='northDialog';$('forcedDialog').hidden=modal!=='forcedDialog';$('roomDialog').hidden=modal!=='roomDialog';$('turnDialog').hidden=modal!=='turnDialog';$('directionDialog').hidden=modal!=='directionDialog';$('portraitDialog').hidden=modal!=='portraitDialog';$('lobbyWaitDialog').hidden=modal!=='lobbyWaitDialog';
   document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>e.inert=!!modal);
   if(modal){$(modal).focus()}
   else if(old){
@@ -214,7 +284,7 @@ function syncModals(){
  $('roomYes').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomYes';$('roomNo').disabled=!roomOffer||busy||!!pending&&pending.action!=='roomNo';
  $('roomStatus').textContent=busy?'Deine Antwort wird gespeichert …':pending?'Bestätigung fehlt. Sende dieselbe Antwort erneut.':modalError;
  if(setupActive())renderSetup(state);
- if(newlyOpened){const target=modal==='keyDialog'?$('ackKey'):modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
+ if(newlyOpened){const target=modal==='keyDialog'?$('ackKey'):modal==='northDialog'?$('northConfirm'):modal==='forcedDialog'?$('openBoard'):modal==='roomDialog'?$('roomYes'):modal==='turnDialog'?$('goButton'):modal==='portraitDialog'?$('closePortrait'):modal==='lobbyWaitDialog'?$('cancelLobbyWait'):document.querySelector('[data-action-dir="N"]');if(!target.disabled)target.focus()}
 }
 function openActionPicker(){
  if(!ownTurn()||!state.turn.accepted||state.turn.stage!=='choice'||rolling||busy||pending)return;
@@ -236,8 +306,8 @@ function renderStory(s){
  viewport.scrollTop=wasTop?0:oldTop+viewport.scrollHeight-oldHeight;
 }
 function el(tag,text,className){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(className)e.className=className;return e}
-function dossier(c){
- const card=el('article',undefined,'card dossier'),photo=el('div',undefined,'portrait');photo.append(el('span','FOTO FOLGT'));
+function dossier(c,zoomable=false){
+ const card=el('article',undefined,'card dossier'),photo=el(zoomable?'button':'div',undefined,'portrait');if(zoomable){photo.type='button';photo.classList.add('portrait-zoom');photo.setAttribute('aria-label',c.name+' · Bild vergrößern');photo.onclick=()=>openPortrait(c)}photo.append(el('span','FOTO FOLGT'));
  if(c.portrait&&/^\/portraits\/[a-z0-9-]{1,64}\.(jpg|svg)$/.test(c.portrait)){const image=el('img');image.alt=c.name+(c.portrait.endsWith('.svg')?' · Illustration':'');image.src=c.portrait;image.addEventListener('error',()=>image.remove());photo.append(image)}
  const details=el('div',undefined,'details');details.append(el('h2',c.name),el('p',c.description));
  const stats=el('div',undefined,'stats');for(const [name,value] of [['Ausdauer',c.endurance],['Kraft',c.strength]]){const box=el('div',undefined,'stat');box.append(el('small',name),el('strong',value));stats.append(box)}details.append(stats,el('h3','Sonderfähigkeiten'));
@@ -245,9 +315,19 @@ function dossier(c){
 }
 const keyPicture='<svg viewBox="0 0 220 120" role="img" aria-label="Goldener Portalschlüssel"><g transform="rotate(-18 110 60)" fill="none" stroke="#b38324" stroke-width="12" stroke-linecap="round"><circle cx="50" cy="52" r="27"/><path d="M80 52h112m-32 0v25m27-25v20"/></g></svg>';
 document.querySelectorAll('.key-art').forEach(e=>e.innerHTML=keyPicture);
-function renderBag(s){const items=$('bagItems');items.replaceChildren();if(!s.bag?.length){items.append(el('p','Deine Tasche ist noch leer.','muted'));return}for(const item of s.bag){const row=el('article',undefined,'bag-item'),image=el('div');image.innerHTML=keyPicture;row.append(image,el('h3',item.name),el('p','Bewahre ihn gut auf. Wofür du ihn einsetzen kannst, erfährst du später.'));items.append(row)}}
+const pouchPicture='<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="pouchLeather" x2=".85" y2="1"><stop stop-color="#b97a40"/><stop offset=".55" stop-color="#81502c"/><stop offset="1" stop-color="#4b2a1c"/></linearGradient></defs><path d="M21 7q11 7 22 0l-3 14c14 11 20 29 7 35-8 4-22 4-30 0C4 50 10 32 24 21Z" fill="url(#pouchLeather)" stroke="#482b1b" stroke-width="2.5"/><path d="m24 22-8 10m24-10 8 10M22 20q10 6 21 0M20 25q12 5 24 0" fill="none" stroke="#dbb36e" stroke-width="2.5" stroke-linecap="round"/><path d="M20 39c-3 7-1 11 4 13m19-15c3 7 2 12-2 15" fill="none" stroke="#c08b53" stroke-width="2" stroke-linecap="round" opacity=".7"/></svg>';
+document.querySelectorAll('.pouch-icon').forEach((e,i)=>e.innerHTML=pouchPicture.replaceAll('pouchLeather','pouchLeather'+i));
+function renderBag(s){
+ const items=$('bagItems'),signature=JSON.stringify(s.bag||[]);if(items.dataset.signature===signature)return;items.dataset.signature=signature;items.replaceChildren();
+ if(!s.bag?.length){items.append(el('p','Deine Tasche ist noch leer.','muted bag-empty'));return}
+ for(const item of s.bag){
+  const slot=el('article',undefined,'bag-item');slot.setAttribute('role','listitem');slot.setAttribute('aria-label',item.name);slot.dataset.itemId=item.id;
+  const picture=el('div',undefined,'item-picture');if(item.id==='portal-key')picture.innerHTML=keyPicture;else{picture.classList.add('unknown-item');picture.textContent='✦';picture.setAttribute('aria-hidden','true')}
+  const label=el('h3');if(item.id==='portal-key'&&item.name==='Portalschlüssel')label.append(document.createTextNode('Portal'),el('wbr'),document.createTextNode('schlüssel'));else label.textContent=item.name;slot.append(picture,label);items.append(slot);
+ }
+}
 $('ackKey').onclick=()=>pending?.action==='ackKey'?send():command('ackKey');
-function profileInto(id,c){const container=$(id),signature=JSON.stringify(c);if(container.dataset.signature===signature)return;container.dataset.signature=signature;container.replaceChildren();if(c)container.append(dossier(c))}
+function profileInto(id,c){const container=$(id),signature=JSON.stringify(c);if(container.dataset.signature===signature)return;container.dataset.signature=signature;container.replaceChildren();if(c)container.append(dossier(c,id==='myProfile'))}
 function carouselInfo(){
  const cards=$('characters').children;
  $('cardPosition').textContent=cards.length?(cardIndex+1)+' / '+cards.length+' · '+cards[cardIndex].dataset.name:'';
@@ -368,8 +448,8 @@ function returnToJoin(message){
 }
 function resetJoinPresentation(){
  document.body.classList.remove('in-game','building','editing-board');
- for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog'])$(id).hidden=true;
- shownModal='';previousFocus=null;directionPicking=false;toolTap=null;
+ for(const id of ['playerArea','selection','game','idle','helper','battle','setupArea','forcedDialog','roomDialog','turnDialog','directionDialog','northDialog','keyDialog','portraitDialog','lobbyWaitDialog'])$(id).hidden=true;
+ shownModal='';previousFocus=null;directionPicking=false;portraitCharacter=null;toolTap=null;$('portraitFull').removeAttribute('src');
  if(drag)finishDrag({pointerId:drag.pointer},true);
  document.querySelectorAll('body > header,#message,#retry,#reloadPage,#join,#selection,#playerArea,#setupArea').forEach(e=>{e.inert=false;e.removeAttribute('inert')});
  $('join').hidden=false;
@@ -593,7 +673,7 @@ $('actionRetry').addEventListener('click',send);
 $('cancelDirection').addEventListener('click',()=>{if(!busy&&!pending){directionPicking=false;syncModals()}});
 document.addEventListener('keydown',event=>{
  if(!shownModal)return;const dialog=$(shownModal);
- if(event.key==='Escape'){event.preventDefault();if(shownModal==='directionDialog'&&!busy&&!pending){directionPicking=false;syncModals()}return}
+ if(event.key==='Escape'){event.preventDefault();if(shownModal==='directionDialog'&&!busy&&!pending){directionPicking=false;syncModals()}else if(shownModal==='portraitDialog')closePortrait();else if(shownModal==='lobbyWaitDialog')cancelLobbyWaiting();return}
  if(event.key==='Tab'){
   const items=Array.from(dialog.querySelectorAll('button:not(:disabled)')).filter(e=>!e.closest('[hidden]'));
   if(!items.length){event.preventDefault();dialog.focus();return}

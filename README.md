@@ -8,9 +8,14 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.10.1
+## Stand 0.10.2
 
-Neu in 0.10.1: mittige fette Feldlabels und neue Kacheln nur per Ziehen. Clients zeigen Story
+Neu in 0.10.2: TARDIS-Wartefenster nach bestätigter Figurenwahl, zehn wechselnde eigene
+Wartegags und Abbruch zum Figurenwechsel. Steckbriefbild antippbar als Großansicht.
+Lederbeutel-Symbol und scrollbar erweiterbares Inventar mit drei Itemkästchen pro Reihe.
+Details und vollständige Texte in ONBOARDING.md, Abschnitt 8j.
+
+Seit 0.10.1: mittige fette Feldlabels und neue Kacheln nur per Ziehen. Clients zeigen Story
 als scrollende Sprechblasen, einen bildgroßen Steckbrief mit Infos unten und direkt antippbaren
 W6. Würfel und Kompass stehen bei Bewegung nebeneinander; darunter folgt ein vergrößerter
 Kartenausschnitt der eigenen Figur. Details in ONBOARDING.md, Abschnitt 8i.
@@ -124,7 +129,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.10.1
+## Installationshinweis 0.10.2
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
