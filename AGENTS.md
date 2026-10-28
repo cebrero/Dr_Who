@@ -217,3 +217,10 @@
     haben Vorrang. Audio/Film/Retry dürfen keinen zweiten Spielzug auslösen. Details 8p.
 66. Format 12/Protokoll 9, Raumformat 1. Alte verbotene Portal-Verstecke/Teilpositionen migrieren,
     keine Nutzerdateien veröffentlichen. Fähigkeiten-Vorschläge aus dem Gespräch unbestätigt lassen.
+
+67. Ab 0.15.1 neuer leerer Entwurf startet beim Raummeister mit gespeichertem Portal A1, im Editor
+    oben mittig. Linkes Anlegen verschiebt nur neue Entwürfe samt Figuren atomar und definiert die
+    Koordinaten neu; 20×20 behalten. Keine laufenden Story-/Itemkoordinaten umnummerieren. Details 8q.
+68. Client hat vier Tabs ohne Karte; einziges Umfeld unter W6 behält Zoom/Pan/Fokus bei Vorschau,
+    Statusabfragen und Größenänderung. Vorhandene Zielbuttons erhalten. Die Animation 0.14 bleibt
+    im Projekt, aktuelle Ringe-Ausblendung 0.15 bis ausdrücklicher Wiederanzeige unverändert.

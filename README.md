@@ -8,7 +8,11 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.15.0
+## Stand 0.15.1
+
+Neu in 0.15.1: Neues Spielfeld beginnt mit dem Portal oben mittig. Links ausbauen mit
+angepassten Koordinaten und erhaltenen Figurenplätzen. Die Karte unter dem Würfel bleibt bei
+Zielauswahl und Statusabfragen ruhig; vier Client-Tabs ohne separaten Karten-Reiter. Details 8q.
 
 Neu in 0.15.0: Portal als ein dreiseitig ummauertes Zielfeld ohne Gegenstände, bestätigte
 Kartenbewegung mit erreichbaren Feldern und frei korrigierbarer Vorschau. Beide Portalziele

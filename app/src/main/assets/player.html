@@ -58,7 +58,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 #mapRotationFrame>#gameBoard,#mapRotationFrame>#grid{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
 #mapRotationFrame>#grid .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}
 #mapPanel{display:flex;flex-direction:column;gap:6px}#mapPanel .board-viewport{height:auto;min-height:0;flex:1;touch-action:pan-x pan-y}.map-tools{display:flex;align-items:center;gap:6px;color:#ead6ad;flex-shrink:0}.map-tools button{min-height:36px;padding:5px 12px;font-size:13px}.map-tools span{text-align:center;min-width:46px;font-size:12px}#mapFocus{margin-left:auto}
-#playerTabs{grid-template-columns:repeat(5,minmax(0,1fr))}#playerTabs button{font-size:10px}#bagPanel{flex:1;min-height:0;overflow:auto}.bag-card{margin:0}.bag-item{text-align:center}.bag-item svg{width:100%;max-height:140px}.key-art{text-align:center;animation:keyGleam 3s ease-in-out infinite}.key-art svg{max-height:150px;width:100%;filter:drop-shadow(0 0 12px #e2bd56aa)}@keyframes keyGleam{50%{transform:translateY(-8px) rotate(4deg);filter:brightness(1.2)}}@media(prefers-reduced-motion:reduce){.key-art{animation:none}}
+#playerTabs{grid-template-columns:repeat(4,minmax(0,1fr))}#playerTabs button{font-size:10px}#bagPanel{flex:1;min-height:0;overflow:auto}.bag-card{margin:0}.bag-item{text-align:center}.bag-item svg{width:100%;max-height:140px}.key-art{text-align:center;animation:keyGleam 3s ease-in-out infinite}.key-art svg{max-height:150px;width:100%;filter:drop-shadow(0 0 12px #e2bd56aa)}@keyframes keyGleam{50%{transform:translateY(-8px) rotate(4deg);filter:brightness(1.2)}}@media(prefers-reduced-motion:reduce){.key-art{animation:none}}
 
 /* Compact personal turn: touch the die, then keep die and confirmation beside the map. */
 #game>.card{display:flex;flex-direction:column;gap:4px;padding:8px;min-height:0}
@@ -77,7 +77,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 .turn-map-heading{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#6b5935;flex-shrink:0}
 #turnMapViewport{flex:1;min-height:100px;border-radius:8px;touch-action:pan-x pan-y;overflow:auto;overflow-anchor:none}
 #turnMapFrame{position:relative;--cell:128px;--map-counter-angle:0deg}
-#turnMapFrame>#turnBoard,#turnMapFrame>#turnLegacy{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
+#turnLegacy{display:grid;grid-template-columns:repeat(6,1fr)}#turnLegacy .cell{transform:rotate(var(--map-counter-angle));transform-origin:center}#turnMapFrame>#turnBoard,#turnMapFrame>#turnLegacy{position:absolute;left:0;top:0;transform-origin:0 0;margin:0}
 #turnBoard .board-tile{touch-action:pan-x pan-y}#turnLegacy{display:grid;grid-template-columns:repeat(6,1fr);gap:0}
 #turnLegacy .cell{transform:rotate(var(--map-counter-angle));font-size:15px;border-radius:0}
 /* A full-height character card, with the dossier in its lower half. */
@@ -113,7 +113,7 @@ body{height:100svh;max-height:100svh;overflow:hidden;padding:10px 12px;display:f
 .bag-card h2{font-size:24px;margin:0 0 12px;flex-shrink:0}#bagItems{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:9px;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 3px 10px;scrollbar-width:thin}
 .bag-item{min-width:0;min-height:112px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 5px;border:1px solid #aa834a;border-radius:9px;background:linear-gradient(145deg,#fff9e8,#e6d2a7);box-shadow:inset 0 0 0 3px #fff7df70,0 2px 6px #51371912;text-align:center}
 .item-picture{height:65px;width:100%;display:grid;place-items:center}.bag-item .item-picture svg{height:65px;max-height:65px;width:100%;max-width:110px}.bag-item h3{font:600 11px/1.3 system-ui,sans-serif;margin:5px 0 0;overflow-wrap:anywhere}.unknown-item{font-size:30px;color:#9f772e}.bag-empty{grid-column:1/-1;font-size:14px;text-align:center}
-@media(max-width:350px){#playerTabs{gap:4px;grid-template-columns:.8fr 1.2fr .8fr 1.2fr .8fr}#playerTabs button{font-size:10px}#tabBag{gap:1px}#tabBag .pouch-icon{width:14px}.bag-card{padding:10px}#bagItems{gap:6px}.bag-item{min-height:102px}.bag-item h3{font-size:10px}}
+@media(max-width:350px){#playerTabs{gap:4px;grid-template-columns:repeat(4,minmax(0,1fr))}#playerTabs button{font-size:10px}#tabBag{gap:1px}#tabBag .pouch-icon{width:14px}.bag-card{padding:10px}#bagItems{gap:6px}.bag-item{min-height:102px}.bag-item h3{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.wait-flight .tardis{animation:none}}
 .vote-option{display:flex;gap:12px;align-items:flex-start;padding:15px;margin:12px 0;border:2px solid #b69b64;border-radius:10px;background:#fff4da;font:600 17px/1.4 Georgia,serif}.vote-option:has(input:checked){border-color:#174f56;background:#d8e1cf}.vote-option input{width:22px;min-width:22px;margin:2px 0;accent-color:#174f56}#voteDialog .primary,#voteRandom{width:100%;margin:6px 0}#voteStatus{font-size:13px;min-height:20px}
 @media(max-height:650px){#voteDialog{padding:10px}#voteDialog .modal-surface{padding:15px;max-height:calc(100svh - 20px)}#voteDialog small{font-size:9px;letter-spacing:.04em}#voteDialog h2{font-size:25px;margin:5px 0 10px}#voteDialog .vote-option{font-size:15px;line-height:1.25;padding:10px;margin:8px 0}#voteDialog .modal-surface>p{font-size:12px;line-height:1.3;margin:8px 0}#voteDialog .primary,#voteRandom{font-size:16px;min-height:40px;padding:9px;margin:4px 0}}
@@ -135,7 +135,7 @@ body.moving-enemy #playPanel{display:flex;flex-direction:column;gap:5px}body.mov
 <link rel="stylesheet" href="/board-art.css">
 <link rel="stylesheet" href="/character-dossiers.css">
 <link rel="stylesheet" href="/room-library.css">
-<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.15.0</small></header>
+<header><small>DEIN ZEITREISE-ARCHIV</small><h1>Dr. Who</h1><small>Version 0.15.1</small></header>
 <div id="message" role="status" aria-live="polite"></div>
 <button type="button" id="retry" class="wide" hidden>Anfrage erneut senden</button>
 <button type="button" id="reloadPage" class="wide" hidden>Spieleroberfläche neu laden</button>
@@ -169,7 +169,6 @@ body.moving-enemy #playPanel{display:flex;flex-direction:column;gap:5px}body.mov
 <div id="playerTabs" role="tablist" aria-label="Deine Spielansicht">
 <button id="tabPlay" type="button" role="tab" aria-controls="playPanel" aria-selected="true" data-tab="play">Spiel</button>
 <button id="tabProfile" type="button" role="tab" aria-controls="profilePanel" aria-selected="false" tabindex="-1" data-tab="profile">Steckbrief</button>
-<button id="tabMap" type="button" role="tab" aria-controls="mapPanel" aria-selected="false" tabindex="-1" data-tab="map">Karte</button>
 <button id="tabBag" type="button" role="tab" aria-controls="bagPanel" aria-selected="false" tabindex="-1" data-tab="bag"><span class="pouch-icon" aria-hidden="true"></span><span>Tasche</span></button>
 <button id="tabHistory" type="button" role="tab" aria-controls="historyPanel" aria-selected="false" tabindex="-1" data-tab="history">Story</button>
 </div><div class="compass-tools"><button type="button" id="compassLeft">↶ Karte</button><span id="compassFacing"></span><button type="button" id="compassRight">Karte ↷</button></div></div>
@@ -189,7 +188,6 @@ body.moving-enemy #playPanel{display:flex;flex-direction:column;gap:5px}body.mov
 <p id="mapInfo" class="muted"></p><div class="turn-map-heading"><span>Dein Umfeld</span><strong id="turnMapField"></strong></div><div class="map-tools turn-map-tools"><button type="button" id="turnZoomOut" aria-label="Umfeld verkleinern">−</button><span id="turnZoomLevel">100 %</span><button type="button" id="turnZoomIn" aria-label="Umfeld vergrößern">+</button><button type="button" id="turnFocus">Dein Feld</button></div><div id="turnMapViewport" class="board-viewport" aria-label="Kartenausschnitt um deine Figur"><div id="turnMapFrame"><div id="turnBoard" class="board-grid"></div><div id="turnLegacy"></div></div></div></section>
 <p class="muted">Anmeldung bleibt in diesem Browser erhalten. Beim Fortsetzen dieselbe Host-Adresse und denselben Browser verwenden. Browserdaten nicht löschen.</p></main></section>
 <section id="profilePanel" role="tabpanel" aria-labelledby="tabProfile" tabindex="0" hidden><div id="myProfile"></div><div id="idle" class="card" hidden><p id="idleStatus"></p></div></section>
-<section id="mapPanel" role="tabpanel" aria-labelledby="tabMap" hidden><div class="map-tools"><button type="button" id="mapZoomOut" aria-label="Karte verkleinern">−</button><span id="mapZoomLevel" role="status">100 %</span><button type="button" id="mapZoomIn" aria-label="Karte vergrößern">+</button><button type="button" id="mapFocus" aria-label="Deine Figur auf der Karte anzeigen">Dein Feld</button></div><div id="gameMapViewport" class="board-viewport" hidden><div id="mapRotationFrame"><div id="gameBoard" class="board-grid" aria-label="Gespeichertes Raumgefüge"></div><div id="grid" aria-label="Bisheriges Testfeld A1 bis F6"></div></div></div></section>
 <section id="bagPanel" role="tabpanel" aria-labelledby="tabBag" tabindex="0" hidden><div class="card bag-card"><h2><span class="pouch-icon" aria-hidden="true"></span> Deine Tasche</h2><div id="bagItems" role="list" aria-label="Gesammelte Gegenstände"></div></div></section>
 <section id="historyPanel" role="tabpanel" aria-labelledby="tabHistory" tabindex="0" hidden><details id="historyDetails" class="card" open><summary>Story</summary><ol id="log"></ol></details></section>
 </section>
@@ -210,7 +208,7 @@ body.moving-enemy #playPanel{display:flex;flex-direction:column;gap:5px}body.mov
 'use strict';
 const $=id=>document.getElementById(id);
 const key='drwho.v1';
-const CLIENT_VERSION='0.15.0',PROTOCOL_VERSION=9;
+const CLIENT_VERSION='0.15.1',PROTOCOL_VERSION=9;
 let turnFocusKey='';
 let portalCheckedAt=0,compatibilityBlocked=false,selectedTab='play',viewMode='',attentionKey='';
 let saved={},state=null,pending=null,busy=false,joining=false,cardIndex=0,rolling=false,rollingId='';
@@ -240,6 +238,7 @@ function controls(){
  $('retry').hidden=!pending||compatibilityBlocked;$('retry').disabled=busy;
  $('confirmMovement').disabled=!state||busy||!!pending;
  $('ackAttack').disabled=!state||busy||!!pending;
+ document.querySelectorAll('.move-target').forEach(b=>b.disabled=busy||!!pending||rolling||compatibilityBlocked);
  document.querySelectorAll('.choose').forEach(b=>b.disabled=compatibilityBlocked||!state||b.dataset.locked==='true'||busy||!!pending);
  syncModals();
 }
@@ -401,10 +400,10 @@ function paintDice(value){
 }
 function selectTab(name,focus=false){
  selectedTab=name;
- for(const [key,tab,panel] of [['play','tabPlay','playPanel'],['profile','tabProfile','profilePanel'],['map','tabMap','mapPanel'],['bag','tabBag','bagPanel'],['history','tabHistory','historyPanel']]){
+ for(const [key,tab,panel] of [['play','tabPlay','playPanel'],['profile','tabProfile','profilePanel'],['bag','tabBag','bagPanel'],['history','tabHistory','historyPanel']]){
   const chosen=key===name;$(tab).setAttribute('aria-selected',String(chosen));$(tab).tabIndex=chosen?0:-1;$(panel).hidden=!chosen;if(chosen&&focus)$(tab).focus();
  }
- if(name==='history')$('historyDetails').open=true; if(name==='play')(window.requestAnimationFrame||setTimeout)(()=>updateTurnMap(true));
+ if(name==='history')$('historyDetails').open=true; if(name==='play')(window.requestAnimationFrame||setTimeout)(()=>updateTurnMap());
 }
 function updatePlayerView(s,active,helping,attacked){
  const playing=isPlaying(s);$('playerArea').hidden=!playing;document.body.classList.toggle('in-game',playing);if(!playing)return;
@@ -477,15 +476,6 @@ function render(s){
  const actor=s.players.find(p=>p.id===s.current);
  $('turn').textContent=!s.started?'Warte auf Spielleiter …':s.current===s.you?'Du bist am Zug':(actor?actor.name:'Spieler')+' ist am Zug';
  $('players').textContent=s.players.map(p=>p.name+' · '+(s.characters.find(c=>c.id===p.characterId)?.name||'wählt noch')+(p.id===s.you?' (du)':'')).join(' / ');
- const mapped=s.setup&&!s.setup.legacy&&s.setup.saved;$('grid').hidden=!!mapped;$('gameBoard').hidden=!mapped;$('gameMapViewport').hidden=false;
- $('mapInfo').textContent=mapped?'Euer gespeicherter Aufbau. Nur platzierte Felder sind begehbar; massive Wände blockieren. Ein kleines Feld entspricht einem Schritt.':'Bisheriges freies 6×6-Testfeld dieser gespeicherten Partie.';if(mapped)paintBoard($('gameBoard'),s,false);rotateClientMap();
- $('grid').replaceChildren();
- if(!mapped)for(let y=0;y<6;y++)for(let x=0;x<6;x++){
-  const cell=document.createElement('div');cell.className='cell';cell.textContent=String.fromCharCode(65+x)+(y+1);
-  for(const p of s.players.filter(p=>p.x===x&&p.y===y)){
-   const figure=document.createElement('span');figure.className='piece';figure.textContent=p.name;cell.append(figure);if(p.id===s.you)cell.classList.add('mine');
-  }$('grid').append(cell);
- }
  $('rollResult').textContent=rolling?'Dein Wurf entsteht im Zeitwirbel …':s.turn.roll?'Dein Wurf: '+s.turn.roll:'';
  $('roll').setAttribute('aria-label',rolling?'W6 wird gewürfelt. Ergebnis folgt.':s.turn.roll?'W6-Ergebnis: '+s.turn.roll:'Würfeln · Würfel antippen');
  $('diceHint').hidden=s.turn.stage!=='roll'||rolling;$('turnChoices').hidden=rolling||s.turn.stage!=='choice';$('controls').hidden=rolling||!helping&&s.turn.stage!=='move';
@@ -582,8 +572,8 @@ $('join').addEventListener('submit',async event=>{
 });
 $('code').addEventListener('input',clearJoinError);$('name').addEventListener('input',clearJoinError);
 async function send(){
- if(!pending||busy)return;const access=token,request=pending;modalError='';busy=true;controls();$('message').textContent='Aktion wird gespeichert …';
- try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();const roomMessage=roomArchiveCommandSucceeded(request);if(request.action==='tileMove')selectedTile=request.direction.split(',').slice(2).join(',');render(s);$('message').textContent=roomMessage||'Gespeichert.'}
+ if(!pending||busy)return;const access=token,request=pending;modalError='';busy=true;controls();const quiet=['previewMove','previewEnemy','confirmEnemyMove'].includes(request.action);$('message').textContent=quiet?'':'Aktion wird gespeichert …';
+ try{const s=await api(request.kind==='character'?'/api/character':'/api/command',request);if(token!==access||pending!==request||compatibilityBlocked)return;pending=null;persist();const roomMessage=roomArchiveCommandSucceeded(request);if(request.action==='tileMove'){const x=Number(request.direction.split(',')[2]);selectedTile=x<0?null:request.direction.split(',').slice(2).join(',');}render(s);$('message').textContent=roomMessage||(quiet?'':'Gespeichert.')}
  catch(e){
   if(token!==access||pending!==request||compatibilityBlocked)return;
   if(e.status===401){returnToJoin('Dein Spielerplatz ist nicht mehr angemeldet. Du kannst hier neu beitreten.');return}
@@ -603,7 +593,7 @@ function choose(characterId){
 const tileKinds={floor:'Steinplatten',corner:'Eckwände',single:'Eine Wand',parallel:'Gegenwände',dungeon:'Kerker',cemetery:'Friedhof',compass:'Kompass',lava:'Lava',
  'lava-stone':'Lava / Stein',well:'Brunnen',portal:'Portal · 2 Kacheln'};
 let palettePage=0,dungeonMode=false;
-let paletteKind='',spawnTarget='',spawnMode=false,boardFit=false,selectedTile=null,drag=null,suppressBoardClick=false,lastTouchHandledAt=-1000;
+let paletteKind='',spawnTarget='',spawnMode=false,boardFit=true,selectedTile=null,drag=null,suppressBoardClick=false,lastTouchHandledAt=-1000;
 function isPlaying(s){return s.started&&s.ready&&(!s.setup||s.setup.stage==='play')}
 function setupActive(){return state&&state.started&&state.setup&&state.setup.stage!=='play'}
 function isReadingDossier(){return !!(setupActive()&&state.setup.dossierRequired&&
@@ -631,12 +621,14 @@ const {tileGraphic,fieldName,fieldRange,tileSize,decorateTile}=BoardArt;
 function tileAt(s,x,y){return (s.board?.tiles||[]).find(t=>t.x===x&&t.y===y||t.kind==='portal'&&t.x+(t.rotation%2===0?1:0)===x&&t.y+(t.rotation%2?1:0)===y)}
 function positionTile(e,x,y,w=1,h=1){e.style.left='calc(var(--cell) * '+x+')';e.style.top='calc(var(--cell) * '+y+')';e.style.width='calc(var(--cell) * '+w+')';e.style.height='calc(var(--cell) * '+h+')'}
 function paintBoard(container,s,editable){
- const signature=JSON.stringify([s.board,s.players,s.enemies,s.you,editable,spawnMode,spawnTarget,paletteKind,selectedTile]);if(container.dataset.signature===signature)return;container.dataset.signature=signature;
+ const signature=JSON.stringify([s.board,s.players.map(p=>[p.id,p.name,p.x,p.y]),s.enemies,s.you,editable,editable?[spawnMode,spawnTarget,paletteKind,selectedTile]:null]);if(container.dataset.signature===signature)return;container.dataset.signature=signature;
  const focus=document.activeElement?.closest('[data-cell]')?.dataset.cell;container.replaceChildren();
- const ox=editable||!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.x)),oy=editable||!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.y));
- if(!editable){container.dataset.ox=ox;container.dataset.oy=oy;container.dataset.cols=Math.max(1,...s.board.tiles.map(t=>t.x+tileSize(t)[0]-ox));container.dataset.rows=Math.max(1,...s.board.tiles.map(t=>t.y+tileSize(t)[1]-oy));}
- if(editable)for(let y=0;y<20;y++)for(let x=0;x<20;x++){
-  if(tileAt(s,x,y))continue;const b=el('button',fieldRange(s,{x,y,kind:'floor',rotation:0}),'board-empty');b.type='button';b.dataset.cell=x+','+y;b.setAttribute('aria-label',b.textContent+' · kein Feld');positionTile(b,x,y);container.append(b);
+ const ox=editable?(s.setup?.fresh?-10:0):!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.x)),oy=editable||!s.board.tiles.length?0:Math.min(...s.board.tiles.map(t=>t.y));
+ container.dataset.ox=ox;container.dataset.oy=oy;
+ if(!editable){container.dataset.cols=Math.max(1,...s.board.tiles.map(t=>t.x+tileSize(t)[0]-ox));container.dataset.rows=Math.max(1,...s.board.tiles.map(t=>t.y+tileSize(t)[1]-oy));}
+ if(editable){container.dataset.cols=20-ox;container.dataset.rows=20;}
+ if(editable)for(let y=0;y<20;y++)for(let x=ox;x<20;x++){
+  if(tileAt(s,x,y))continue;const b=el('button',x<0?'':fieldRange(s,{x,y,kind:'floor',rotation:0}),'board-empty');b.type='button';b.dataset.cell=x+','+y;b.setAttribute('aria-label',b.textContent+' · kein Feld');positionTile(b,x-ox,y);container.append(b);
  }
  for(const t of s.board.tiles){
   const [w,h]=tileSize(t),tile=el(editable?'button':'div',undefined,'board-tile');if(editable)tile.type='button';tile.dataset.cell=t.x+','+t.y;tile.dataset.tile='true';positionTile(tile,t.x-ox,t.y-oy,w,h);
@@ -646,6 +638,16 @@ function paintBoard(container,s,editable){
  [...s.players,...(s.enemies||[]).map(e=>({...e,id:'enemy:'+e.characterId,name:e.characterId}))].forEach((p,i)=>{const scale=s.board.subdivisions||1;if(p.x<0||p.y<0||!tileAt(s,Math.floor(p.x/scale),Math.floor(p.y/scale)))return;const marker=el('span',String(i+1),'board-marker'+(p.id===s.you?' mine':''));marker.title=p.name;marker.style.left='calc(var(--cell) * '+((p.x+.78)/scale-ox)+')';marker.style.top='calc(var(--cell) * '+((p.y+.22)/scale-oy)+')';marker.style.right='auto';container.append(marker)});
  if(focus&&editable)container.querySelector('[data-cell="'+focus+'"]')?.focus({preventScroll:true});
 }
+let editorLayoutKey='';
+function layoutEditor(s,force=false){
+ const viewport=$('boardViewport'),grid=$('editorGrid');if(!viewport.clientWidth)return;
+ const tiles=s.board.tiles,minimum=tiles.length?Math.min(...tiles.map(t=>t.x)):0,maximum=Math.max(2,...tiles.map(t=>t.x+tileSize(t)[0])),width=maximum-minimum;
+ const key=JSON.stringify([s.sessionId,s.setup.id,tiles,boardFit,viewport.clientWidth]);if(!force&&key===editorLayoutKey)return;editorLayoutKey=key;
+ const cell=boardFit?Math.max(12,(viewport.clientWidth-2)/Math.max(10,width+2)):64,ox=Number(grid.dataset.ox||0);
+ grid.style.setProperty('--cell',cell+'px');grid.style.width=Number(grid.dataset.cols||20)*cell+'px';grid.style.height=20*cell+'px';
+ viewport.scrollLeft=Math.max(0,((minimum+maximum)/2-ox)*cell-viewport.clientWidth/2);$('boardZoom').textContent=boardFit?'Große Kacheln':'Kleine Kacheln';
+}
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>{if(state&&setupActive()&&state.setup.roomMaster===state.you)layoutEditor(state)}).observe($('boardViewport'));
 function renderSetup(s){
  const preparing=setupActive();$('setupArea').hidden=!preparing;document.body.classList.toggle('building',!!preparing);document.body.classList.toggle('editing-board',!!preparing&&s.setup.stage==='building'&&s.setup.roomMaster===s.you);renderDossier(s);if(!preparing)return;
  const setup=s.setup,master=s.players.find(p=>p.id===setup.roomMaster),candidate=s.players.find(p=>p.id===setup.candidate),editing=setup.stage==='building'&&setup.roomMaster===s.you;
@@ -653,7 +655,7 @@ function renderSetup(s){
  $('setupTitle').textContent=setup.stage==='voting'?'Ziel des Spiels':setup.stage==='voteResult'?'Euer Spielziel steht fest!':setup.stage==='selecting'?'der Raummeister wird gerade ausgewählt...':setup.stage==='offering'?(candidate?.name||'Ein Mitreisender')+' wird gerade gefragt…':setup.stage==='launching'?'Das Abenteuer beginnt!':(master?.name||'Der Raummeister')+' stellt das Raumgefüge wieder her…';
  $('setupSub').textContent=setup.stage==='voting'?(s.vote?.votedBy?.includes(s.you)?'Deine Stimme ist gespeichert. Das Portal wartet auf die anderen.':'Stimme am eigenen Handy ab.'):setup.stage==='voteResult'?(s.vote?.objective===1?'Wer als erstes vor dem Portal steht gewinnt.':'Wer den Schlüssel gefunden hat und vor dem Portal ist gewinnt.')+(s.vote?.tied?' Bei Gleichstand hat das Portal ausgelost.':' Die Mehrheit hat entschieden.'):setup.stage==='building'?(setup.forced?'Alle haben abgelehnt. Das Portal hat '+(master?.name||'einen Spieler')+' bestimmt.':(master?.name||'Der Raummeister')+' baut das Raumgefüge.')+' Den aktuellen Aufbau siehst du am Portal.':setup.stage==='launching'?'Aufbau gespeichert. Stellt eure Figuren auf die markierten Startfelder.':'Das Portal wählt nur echte Mitspieler. Ihr müsst nichts am Portal bedienen.';
  if(editing){
-  paintBoard($('editorGrid'),s,true);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomSave').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomLoad').disabled=!canBuild();
+  paintBoard($('editorGrid'),s,true);layoutEditor(s);$('saveBoard').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomSave').disabled=!canBuild()||s.board.tiles.length===0;$('openRoomLoad').disabled=!canBuild();
   $('boardStatus').textContent=busy?'Änderung wird am Portal gespeichert …':pending?'Bestätigung fehlt. Bitte dieselbe Anfrage erneut senden.':'';
   if(!busy&&!pending&&!modalError)$('boardStatus').textContent=spawnMode?'Wähle unten einen Spieler und tippe sein Startfeld an.':paletteKind?tileKinds[paletteKind]+' gewählt. Ziehe die Kachel aus der Auswahl ins Raster.':s.board.tiles.length+' Kacheln gespeichert · Antippen dreht um 90°.';
   if(modalError&&!busy&&!pending)$('boardStatus').textContent=modalError;
@@ -667,7 +669,7 @@ function boardClick(event){
  if(spawnMode){const scale=state.board.subdivisions||1;let sx=x*scale,sy=y*scale;const tile=tileAt(state,x,y);if(tile&&event.detail){const rect=target.getBoundingClientRect(),[w,h]=tileSize(tile);sx=x*scale+Math.min(w*scale-1,Math.max(0,Math.floor((event.clientX-rect.left)/rect.width*w*scale)));sy=y*scale+Math.min(h*scale-1,Math.max(0,Math.floor((event.clientY-rect.top)/rect.height*h*scale)));}if(spawnTarget)command('setSpawn',spawnTarget+','+sx+','+sy);return}
  if(target.dataset.tile){selectedTile=x+','+y;command(dungeonMode?'tileState':'tileRotate',selectedTile)}
 }
-function dropTarget(clientX,clientY){const rect=$('editorGrid').getBoundingClientRect(),cell=rect.width/20;return {x:Math.floor((clientX-rect.left)/cell),y:Math.floor((clientY-rect.top)/cell)}}
+function dropTarget(clientX,clientY){const grid=$('editorGrid'),rect=grid.getBoundingClientRect(),cell=rect.width/Number(grid.dataset.cols||20);return {x:Math.floor((clientX-rect.left)/cell)+Number(grid.dataset.ox||0),y:Math.floor((clientY-rect.top)/cell)}}
 function inside(rect,x,y){return x>=rect.left&&x<rect.right&&y>=rect.top&&y<rect.bottom}
 function beginDrag(event,kind,source){
  if(!canBuild()||spawnMode&&!source||event.button!==0||event.isPrimary===false)return;
@@ -686,7 +688,7 @@ function finishDrag(event,cancel=false){
  if(event.pointerType==='touch')lastTouchHandledAt=performance.now();suppressBoardClick=true;setTimeout(()=>suppressBoardClick=false,0);event.preventDefault();if(!canBuild())return;
  const trash=$('boardTrash').getBoundingClientRect();if(d.source&&inside(trash,event.clientX,event.clientY)){command('tileRemove',d.source);return}
  if(!inside($('boardViewport').getBoundingClientRect(),event.clientX,event.clientY))return;
- const {x,y}=dropTarget(event.clientX,event.clientY);if(x<0||x>19||y<0||y>19)return;modalError='';
+ const {x,y}=dropTarget(event.clientX,event.clientY);if(x<(state.setup.fresh?-10:0)||x>19||y<0||y>19)return;modalError='';if(x<0)selectedTile=null;
  if(d.source){const [sx,sy]=d.source.split(',').map(Number);if(sx!==x||sy!==y){selectedTile=d.source;command('tileMove',d.source+','+x+','+y)}}else{paletteKind=d.kind;command('tilePlace',x+','+y+','+d.kind+',0')}
 }
 function moveDrag(event){
@@ -695,8 +697,9 @@ function moveDrag(event){
  const trash=inside($('boardTrash').getBoundingClientRect(),event.clientX,event.clientY);$('boardTrash').classList.toggle('drag-over',!!d.source&&trash);
  let preview=$('boardPreview');if(!preview){preview=el('div',undefined,'board-preview');preview.id='boardPreview';$('editorGrid').append(preview)}
  const {x,y}=dropTarget(event.clientX,event.clientY),old=d.source?tileAt(state,...d.source.split(',').map(Number)):null,t={kind:d.kind,rotation:old?.rotation||0},[w,h]=tileSize(t);
- const valid=x>=0&&y>=0&&x+w<=20&&y+h<=20&&Array.from({length:w*h},(_,i)=>tileAt(state,x+i%w,y+Math.floor(i/w))).every(tile=>!tile||tile===old);
- preview.hidden=trash||!inside($('boardViewport').getBoundingClientRect(),event.clientX,event.clientY);preview.classList.toggle('invalid',!valid);positionTile(preview,x,y,w,h);
+ const shift=Math.max(0,-x),right=Math.max(0,...state.board.tiles.filter(t=>t!==old).map(t=>t.x+tileSize(t)[0]));
+ const valid=x>=(state.setup.fresh?-10:0)&&y>=0&&x+w<=20&&right+shift<=20&&y+h<=20&&Array.from({length:w*h},(_,i)=>tileAt(state,x+i%w,y+Math.floor(i/w))).every(tile=>!tile||tile===old);
+ preview.hidden=trash||!inside($('boardViewport').getBoundingClientRect(),event.clientX,event.clientY);preview.classList.toggle('invalid',!valid);positionTile(preview,x-Number($('editorGrid').dataset.ox||0),y,w,h);
  // Edge scrolling makes all 20 rows/columns reachable without ending the drag.
  const viewport=$('boardViewport'),r=viewport.getBoundingClientRect();d.lastEvent=event;
  let edgeX=0,edgeY=0;if(!trash&&inside(r,event.clientX,event.clientY)){edgeX=event.clientX<r.left+28?-1:event.clientX>r.right-28?1:0;edgeY=event.clientY<r.top+28?-1:event.clientY>r.bottom-28?1:0;}
@@ -716,7 +719,7 @@ $('editorGrid').addEventListener('keydown',event=>{if(!canBuild()||!event.target
 $('boardTrash').onclick=()=>{if(canBuild()&&selectedTile){const [x,y]=selectedTile.split(',').map(Number);if(tileAt(state,x,y))command('tileRemove',selectedTile);selectedTile=null}};
 $('clearPalette').onclick=()=>{paletteKind='';spawnMode=false;renderSetup(state)};
 $('spawnMode').onclick=()=>{spawnMode=!spawnMode;paletteKind='';spawnTarget=spawnTarget||state.you;renderSetup(state)};
-$('boardZoom').onclick=()=>{boardFit=!boardFit;$('editorGrid').style.setProperty('--cell',boardFit?Math.max(12,Math.floor(($('boardViewport').clientWidth-2)/10))+'px':'64px');$('boardZoom').textContent=boardFit?'Große Kacheln':'Kleine Kacheln'};
+$('boardZoom').onclick=()=>{boardFit=!boardFit;layoutEditor(state,true)};
 // Pointer-driven tools stay responsive immediately after a captured tile drag.
 const boardToolSelector='#spawnMode,#clearPalette,#boardZoom,#boardTrash,#saveBoard,#spawnList button,#palettePrev,#paletteNext,#dungeonMode';let toolTap=null;
 document.addEventListener('pointerdown',event=>{const button=event.target.closest(boardToolSelector);if(event.pointerType==='touch'&&button&&!button.disabled)toolTap={button,id:event.pointerId,x:event.clientX,y:event.clientY}});
@@ -771,25 +774,14 @@ document.addEventListener('keydown',event=>{
 });
 
 let compassAngle=[0,90,180,270].includes(Number(saved.compassAngle))?Number(saved.compassAngle):0;
-let turnZoom=Number(saved.turnZoom)||1;turnZoom=Math.max(.5,Math.min(3,turnZoom));
-let mapZoom=Number(saved.mapZoom);if(!Number.isFinite(mapZoom)||mapZoom<.5||mapZoom>3)mapZoom=1;
-
-function rotateClientMap(){
- const map=$('gameBoard').hidden?$('grid'):$('gameBoard'),frame=$('mapRotationFrame');
- const cols=map.id==='grid'?6:Number(map.dataset.cols)||1,rows=map.id==='grid'?6:Number(map.dataset.rows)||1;
- const cell=(map.id==='grid'?48:64)*mapZoom;frame.style.setProperty('--cell',cell+'px');map.style.setProperty('--cell',cell+'px');$('mapZoomLevel').textContent=Math.round(mapZoom*100)+' %';$('mapZoomOut').disabled=mapZoom<=.5;$('mapZoomIn').disabled=mapZoom>=3;
- const me=state?.players.find(p=>p.id===state.you);$('mapFocus').disabled=!me||me.x<0;$('mapFocus').textContent=me&&me.x>=0?'Dein Feld '+fieldName(state,me.x,me.y):'Dein Feld';frame.style.setProperty('--map-counter-angle',(-compassAngle)+'deg');
- const sideways=compassAngle%180!==0;frame.style.width='calc(var(--cell) * '+(sideways?rows:cols)+')';frame.style.height='calc(var(--cell) * '+(sideways?cols:rows)+')';
- map.style.width='calc(var(--cell) * '+cols+')';map.style.height='calc(var(--cell) * '+rows+')';
- const tx=compassAngle===90?rows:compassAngle===180?cols:0,ty=compassAngle===180?rows:compassAngle===270?cols:0;
- map.style.transform='translate(calc(var(--cell) * '+tx+'), calc(var(--cell) * '+ty+')) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle); updateTurnMap();
-}
+let turnZoom=Number(saved.turnZoom)||Number(saved.mapZoom)||1;turnZoom=Math.max(.5,Math.min(3,turnZoom));
+function paintLegacy(map,s){const signature=JSON.stringify(s.players.map(p=>[p.id,p.name,p.x,p.y]));if(map.dataset.signature===signature)return;map.dataset.signature=signature;map.replaceChildren();for(let y=0;y<6;y++)for(let x=0;x<6;x++){const cell=el('div',fieldName({board:{subdivisions:1,tiles:[]}},x,y),'cell');for(const p of s.players.filter(p=>p.x===x&&p.y===y)){cell.append(el('span',p.name,'piece'));if(p.id===s.you)cell.classList.add('mine')}map.append(cell)}}
 function updateTurnMap(force=false){
  if(!state||!isPlaying(state))return;
  const helper=state.phase==='enemies'&&state.helperId===state.you,me=helper?state.enemies?.find(p=>p.characterId===state.activeEnemy):state.players.find(p=>p.id===state.you),mapped=state.setup&&!state.setup.legacy&&state.setup.saved;
  const map=mapped?$('turnBoard'):$('turnLegacy'),frame=$('turnMapFrame'),viewport=$('turnMapViewport');
  $('turnBoard').hidden=!mapped;$('turnLegacy').hidden=!!mapped;
- if(mapped)paintBoard(map,state,false);else if(map.dataset.signature!==$('grid').innerHTML){map.dataset.signature=$('grid').innerHTML;map.replaceChildren(...Array.from($('grid').children,n=>n.cloneNode(true)))}
+ if(mapped)paintBoard(map,state,false);else paintLegacy(map,state);
  paintMovementTargets(map,state,mapped);$('turnZoomLevel').textContent=Math.round(turnZoom*100)+' %';$('turnZoomOut').disabled=turnZoom<=.5;$('turnZoomIn').disabled=turnZoom>=3;
  const cols=mapped?Number(map.dataset.cols)||1:6,rows=mapped?Number(map.dataset.rows)||1:6,q=mapped?state.board.subdivisions||1:1;
  const cell=(mapped?128:64)*turnZoom,sideways=compassAngle%180!==0;
@@ -799,33 +791,17 @@ function updateTurnMap(force=false){
  const tx=compassAngle===90?rows:compassAngle===180?cols:0,ty=compassAngle===180?rows:compassAngle===270?cols:0;
  map.style.transform='translate('+tx*cell+'px,'+ty*cell+'px) rotate('+compassAngle+'deg)';frame.dataset.angle=String(compassAngle);
  $('turnMapField').textContent=me&&me.x>=0?fieldName(state,me.x,me.y):'Noch kein Feld';
- const focusKey=JSON.stringify([me?.x,me?.y,compassAngle,map.dataset.signature,viewport.clientWidth,viewport.clientHeight]);
+ const focusKey=JSON.stringify([state.sessionId,helper?state.activeEnemy:state.you,me?.x,me?.y,compassAngle,mapped?state.board:null]);
+ if(!viewport.clientWidth||!viewport.clientHeight)return;
+ frame.style.marginLeft=viewport.clientWidth/2+'px';frame.style.marginRight=viewport.clientWidth/2+'px';frame.style.marginTop=viewport.clientHeight/2+'px';frame.style.marginBottom=viewport.clientHeight/2+'px';
  if(!me||me.x<0||!viewport.clientWidth||!viewport.clientHeight||!force&&focusKey===turnFocusKey)return;turnFocusKey=focusKey;
  const u=(me.x+.5)/q-(Number(map.dataset.ox)||0),v=(me.y+.5)/q-(Number(map.dataset.oy)||0);
  const x=compassAngle===90?rows-v:compassAngle===180?cols-u:compassAngle===270?v:u,y=compassAngle===90?u:compassAngle===180?rows-v:compassAngle===270?cols-u:v;
- // Padding lets even corner fields remain in the center of the crop.
- frame.style.marginLeft=viewport.clientWidth/2+'px';frame.style.marginRight=viewport.clientWidth/2+'px';frame.style.marginTop=viewport.clientHeight/2+'px';frame.style.marginBottom=viewport.clientHeight/2+'px';
+ // Explicit focus only; ordinary responses and resizes preserve the chosen view.
  viewport.scrollLeft=x*cell;viewport.scrollTop=y*cell;
 }
-if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>updateTurnMap(true)).observe($('turnMapViewport'));
-window.addEventListener('resize',()=>updateTurnMap(true));
-function setMapZoom(value,anchor,save=true){
- const viewport=$('gameMapViewport'),frame=$('mapRotationFrame'),ratio=Math.max(.5,Math.min(3,value))/mapZoom;
- const at=anchor||{x:viewport.clientWidth/2,y:viewport.clientHeight/2};
- const x=viewport.scrollLeft+at.x-frame.offsetLeft,y=viewport.scrollTop+at.y-frame.offsetTop;
- mapZoom=Math.max(.5,Math.min(3,value));rotateClientMap();
- viewport.scrollLeft=frame.offsetLeft+x*ratio-at.x;viewport.scrollTop=frame.offsetTop+y*ratio-at.y;
- if(save){saved.mapZoom=mapZoom;persist()}
-}
-$('mapZoomOut').onclick=()=>setMapZoom(mapZoom-.25);$('mapZoomIn').onclick=()=>setMapZoom(mapZoom+.25);
-$('mapFocus').onclick=()=>{
- const me=state?.players.find(p=>p.id===state.you);if(!me||me.x<0)return;
- const map=$('gameBoard').hidden?$('grid'):$('gameBoard'),q=map.id==='grid'?1:state.board.subdivisions||1;
- const cols=map.id==='grid'?6:Number(map.dataset.cols),rows=map.id==='grid'?6:Number(map.dataset.rows),u=(me.x+.5)/q-(Number(map.dataset.ox)||0),v=(me.y+.5)/q-(Number(map.dataset.oy)||0);
- const x=compassAngle===90?rows-v:compassAngle===180?cols-u:compassAngle===270?v:u,y=compassAngle===90?u:compassAngle===180?rows-v:compassAngle===270?cols-u:v;
- const viewport=$('gameMapViewport'),frame=$('mapRotationFrame'),cell=(map.id==='grid'?48:64)*mapZoom;
- viewport.scrollLeft=frame.offsetLeft+x*cell-viewport.clientWidth/2;viewport.scrollTop=frame.offsetTop+y*cell-viewport.clientHeight/2;
-};
+if(typeof ResizeObserver!=='undefined')new ResizeObserver(()=>updateTurnMap()).observe($('turnMapViewport'));
+window.addEventListener('resize',()=>updateTurnMap());
 function renderPortalClients(s,active,helping,attacked){
  const finished=!!s.result?.id,show=s.portalOpen&&isPlaying(s)&&!active&&!helping&&!attacked&&!finished,p=s.portal;
  $('gameResult').hidden=!finished;$('spectator').hidden=!show;$('playWaiting').hidden=finished||show||active||helping||attacked;
@@ -838,16 +814,16 @@ function renderPortalClients(s,active,helping,attacked){
 }
 function paintMovementTargets(map,s,mapped){
  const enabled=!rolling&&!s.result?.id&&(s.phase==='players'?s.current===s.you&&s.turn.accepted&&s.turn.stage==='move':s.helperId===s.you);
- const paths=s.movement?.path||[],targets=enabled?s.movement?.targets||[]:[],signature=JSON.stringify([targets,paths,s.movement?.actor,enabled]);
- if(map.dataset.moves===signature&&map.querySelector('[data-target]')!==null===!!targets.length)return;map.dataset.moves=signature;map.querySelectorAll('.move-target,.route-dot').forEach(n=>n.remove());
+ const paths=s.movement?.path||[],targets=enabled?s.movement?.targets||[]:[],existing=new Map(Array.from(map.querySelectorAll('.move-target'),b=>[b.dataset.target,b]));
  const q=mapped?s.board.subdivisions||1:1,ox=Number(map.dataset.ox)||0,oy=Number(map.dataset.oy)||0,end=paths.at(-1);
  for(const at of targets){
-  const tile=mapped?tileAt(s,Math.floor(at.x/q),Math.floor(at.y/q)):null,portal=tile?.kind==='portal',[w,h]=portal?tileSize(tile):[1/q,1/q];
-  const b=el('button',undefined,'move-target'+(end&&at.x===end.x&&at.y===end.y?' planned':''));b.type='button';b.dataset.target=at.x+','+at.y;
+  const id=at.x+','+at.y,tile=mapped?tileAt(s,Math.floor(at.x/q),Math.floor(at.y/q)):null,portal=tile?.kind==='portal',[w,h]=portal?tileSize(tile):[1/q,1/q];
+  let b=existing.get(id);existing.delete(id);if(!b){b=el('button',undefined,'move-target');b.type='button';b.dataset.target=id;b.append(el('span',fieldName(s,at.x,at.y)));b.onclick=()=>{if(performance.now()<suppressMoveTapUntil||busy||pending)return;command(state.phase==='enemies'?'previewEnemy':'previewMove',id)};map.append(b)}
+  const chosen=!!end&&at.x===end.x&&at.y===end.y;b.classList.toggle('planned',chosen);b.setAttribute('aria-pressed',String(chosen));b.disabled=busy||!!pending;
   b.setAttribute('aria-label','Zielfeld '+fieldName(s,at.x,at.y)+' · '+at.steps+' Schritte · zur Vorschau auswählen');
-  b.append(el('span',fieldName(s,at.x,at.y)));b.style.left='calc(var(--cell) * '+(at.x/q-ox)+')';b.style.top='calc(var(--cell) * '+(at.y/q-oy)+')';b.style.width='calc(var(--cell) * '+w+')';b.style.height='calc(var(--cell) * '+h+')';
-  b.onclick=()=>{if(performance.now()<suppressMoveTapUntil)return;command(s.phase==='enemies'?'previewEnemy':'previewMove',b.dataset.target)};map.append(b);
+  b.style.left='calc(var(--cell) * '+(at.x/q-ox)+')';b.style.top='calc(var(--cell) * '+(at.y/q-oy)+')';b.style.width='calc(var(--cell) * '+w+')';b.style.height='calc(var(--cell) * '+h+')';
  }
+ for(const b of existing.values())b.remove();map.querySelectorAll('.route-dot').forEach(n=>n.remove());
  for(const at of paths.slice(0,-1)){const d=el('i',undefined,'route-dot');d.style.left='calc(var(--cell) * '+((at.x+.5)/q-ox)+')';d.style.top='calc(var(--cell) * '+((at.y+.5)/q-oy)+')';map.append(d)}
 }
 let suppressMoveTapUntil=0,moveTouch=null,turnPinch=null;
@@ -855,19 +831,13 @@ const turnViewport=$('turnMapViewport');
 turnViewport.addEventListener('pointerdown',e=>{moveTouch={id:e.pointerId,x:e.clientX,y:e.clientY};});
 turnViewport.addEventListener('pointermove',e=>{if(moveTouch&&moveTouch.id===e.pointerId&&Math.hypot(e.clientX-moveTouch.x,e.clientY-moveTouch.y)>8)suppressMoveTapUntil=performance.now()+500;},{passive:true});
 turnViewport.addEventListener('pointercancel',()=>{moveTouch=null;suppressMoveTapUntil=performance.now()+500;});
-function setTurnZoom(value,anchor,save=true){const previous=turnZoom,at=anchor||{x:turnViewport.clientWidth/2,y:turnViewport.clientHeight/2},x=turnViewport.scrollLeft+at.x,y=turnViewport.scrollTop+at.y;turnZoom=Math.max(.5,Math.min(3,value));updateTurnMap();const ratio=turnZoom/previous;turnViewport.scrollLeft=x*ratio-at.x;turnViewport.scrollTop=y*ratio-at.y;if(save){saved.turnZoom=turnZoom;persist()}}
+function setTurnZoom(value,anchor,save=true){const previous=turnZoom,at=anchor||{x:turnViewport.clientWidth/2,y:turnViewport.clientHeight/2},mx=turnViewport.clientWidth/2,my=turnViewport.clientHeight/2,x=turnViewport.scrollLeft+at.x-mx,y=turnViewport.scrollTop+at.y-my;turnZoom=Math.max(.5,Math.min(3,value));updateTurnMap();const ratio=turnZoom/previous;turnViewport.scrollLeft=mx+x*ratio-at.x;turnViewport.scrollTop=my+y*ratio-at.y;if(save){saved.turnZoom=turnZoom;persist()}}
 $('turnZoomOut').onclick=()=>setTurnZoom(turnZoom-.25);$('turnZoomIn').onclick=()=>setTurnZoom(turnZoom+.25);$('turnFocus').onclick=()=>updateTurnMap(true);
 turnViewport.addEventListener('touchstart',e=>{if(e.touches.length===2){turnPinch={distance:Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY),zoom:turnZoom};suppressMoveTapUntil=performance.now()+1000;e.preventDefault()}},{passive:false});
 turnViewport.addEventListener('touchmove',e=>{if(!turnPinch||e.touches.length!==2)return;e.preventDefault();const r=turnViewport.getBoundingClientRect(),distance=Math.hypot(e.touches[1].clientX-e.touches[0].clientX,e.touches[1].clientY-e.touches[0].clientY);setTurnZoom(turnPinch.zoom*distance/turnPinch.distance,{x:(e.touches[0].clientX+e.touches[1].clientX)/2-r.left,y:(e.touches[0].clientY+e.touches[1].clientY)/2-r.top},false);suppressMoveTapUntil=performance.now()+1000;},{passive:false});
 function endTurnPinch(e){if(turnPinch&&e.touches.length<2){turnPinch=null;saved.turnZoom=turnZoom;persist();suppressMoveTapUntil=performance.now()+500;}}
 turnViewport.addEventListener('touchend',endTurnPinch);turnViewport.addEventListener('touchcancel',endTurnPinch);
-let mapPinch=null;const mapViewport=$('gameMapViewport');
-const pinchDistance=t=>Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);
-mapViewport.addEventListener('touchstart',event=>{if(event.touches.length===2){mapPinch={distance:pinchDistance(event.touches),zoom:mapZoom};event.preventDefault()}},{passive:false});
-mapViewport.addEventListener('touchmove',event=>{if(!mapPinch||event.touches.length!==2)return;event.preventDefault();const rect=mapViewport.getBoundingClientRect(),anchor={x:(event.touches[0].clientX+event.touches[1].clientX)/2-rect.left,y:(event.touches[0].clientY+event.touches[1].clientY)/2-rect.top};if(mapPinch.distance>0)setMapZoom(mapPinch.zoom*pinchDistance(event.touches)/mapPinch.distance,anchor,false)},{passive:false});
-function finishMapPinch(event){if(mapPinch&&event.touches.length<2){mapPinch=null;saved.mapZoom=mapZoom;persist()}}
-mapViewport.addEventListener('touchend',finishMapPinch);mapViewport.addEventListener('touchcancel',finishMapPinch);
-function paintCompass(){$('compassFacing').textContent='Norden: '+['oben','rechts','unten','links'][compassAngle/90];document.querySelectorAll('.compass-wheel').forEach(e=>{e.style.transform='rotate('+compassAngle+'deg)';e.querySelectorAll('button').forEach(b=>b.style.transform='rotate('+(-compassAngle)+'deg)')});rotateClientMap()}function rotateCompass(delta){compassAngle=(compassAngle+delta+360)%360;saved.compassAngle=compassAngle;persist();paintCompass();$('gameMapViewport').scrollTo?.(0,0)}$('compassLeft').onclick=()=>rotateCompass(-90);$('compassRight').onclick=()=>rotateCompass(90);paintCompass();
+function paintCompass(){$('compassFacing').textContent='Norden: '+['oben','rechts','unten','links'][compassAngle/90];document.querySelectorAll('.compass-wheel').forEach(e=>{e.style.transform='rotate('+compassAngle+'deg)';e.querySelectorAll('button').forEach(b=>b.style.transform='rotate('+(-compassAngle)+'deg)')});updateTurnMap()}function rotateCompass(delta){compassAngle=(compassAngle+delta+360)%360;saved.compassAngle=compassAngle;persist();paintCompass()}$('compassLeft').onclick=()=>rotateCompass(-90);$('compassRight').onclick=()=>rotateCompass(90);paintCompass();
 $('confirmMovement').addEventListener('click',()=>command('confirmMovement'));$('ackAttack').addEventListener('click',()=>command('ackAttack'));
 if(token){$('join').hidden=true}controls();poll();setInterval(poll,1500);
 const connectionCode=new URL(location.href).searchParams.get('code');if(connectionCode&&/^[0-9]{6}$/.test(connectionCode))$('code').value=connectionCode;

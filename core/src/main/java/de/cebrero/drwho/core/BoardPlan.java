@@ -29,6 +29,8 @@ public final class BoardPlan {
   if(isPortal(x,y)){Tile t=at(x/scale(),y/scale());for(int[] f:fields())if(!isPortal(f[0],f[1])&&portalAccess(t,f[0],f[1])&&canStep(x,y,f[0],f[1]))result.add(f);}
   else for(int[] d:new int[][]{{0,-1},{1,0},{0,1},{-1,0}}){int[] c=canonical(x+d[0],y+d[1]);if(canStep(x,y,c[0],c[1])&&result.stream().noneMatch(a->Arrays.equals(a,c)))result.add(c);}return result;
  }
+ /** Translate the whole draft atomically; persisted field coordinates remain nonnegative. */
+ public BoardPlan shifted(int dx,int dy){BoardPlan b=new BoardPlan(subdivided);for(Tile t:tiles){b.place(t.x+dx,t.y+dy,t.kind,t.rotation);b.at(t.x+dx,t.y+dy).closed=t.closed;}return b;}
  public void place(int x,int y,String kind,int rotation){Tile t=new Tile(x,y,kind,rotation);validate(t,null);tiles.add(t);sort();}
  public void rotate(int x,int y){Tile old=require(x,y);Tile t=new Tile(old.x,old.y,old.kind,(old.rotation+1)%4);t.closed=old.closed;replace(old,t);}
  public void move(int x,int y,int nx,int ny){Tile old=require(x,y);Tile t=new Tile(nx,ny,old.kind,old.rotation);t.closed=old.closed;replace(old,t);}

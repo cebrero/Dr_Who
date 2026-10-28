@@ -10,7 +10,7 @@ final class PortalRulesTest {
  static Object value(Object o,String name)throws Exception{var f=o.getClass().getDeclaredField(name);f.setAccessible(true);return f.get(o);}
  static void set(Object o,String name,Object v)throws Exception{var f=o.getClass().getDeclaredField(name);f.setAccessible(true);f.set(o,v);}
  static GameEngine game(MemoryStore store,Dice dice,int goal,String... enemies)throws Exception{
-  GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");for(String enemy:enemies)e.addEnemy(enemy);e.startDemo();cmd(e,a,"vote",""+goal);cmd(e,b,"vote",""+goal);advance(e);advance(e);cmd(e,b,"roomYes","");
+  GameEngine e=engine(store,dice);String a=ready(e,"Alice","doctor"),b=ready(e,"Bob","dalek");for(String enemy:enemies)e.addEnemy(enemy);e.startDemo();cmd(e,a,"vote",""+goal);cmd(e,b,"vote",""+goal);advance(e);advance(e);acceptEmptyRoom(e,b);
   cmd(e,b,"tilePlace","0,0,portal,0");for(int y=1;y<3;y++)for(int x=0;x<2;x++)cmd(e,b,"tilePlace",x+","+y+",floor,0");
   cmd(e,b,"setSpawn",text(e.snapshot(a),"you")+",0,4");cmd(e,b,"setSpawn",text(e.snapshot(b),"you")+",3,5");cmd(e,b,"boardSave","");advance(e);return e;
  }

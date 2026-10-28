@@ -308,7 +308,7 @@ public final class GameEngine {
             .append(",\"ready\":").append(readyForPlay()).append(",\"selectedCount\":").append(selectedCount())
             .append(",\"setup\":{\"stage\":").append(quote(state.setupStage)).append(",\"id\":").append(quote(state.setupId)).append(",\"roomMaster\":").append(quote(state.roomMaster))
             .append(",\"candidate\":").append(quote(state.candidate)).append(",\"forced\":").append(state.forcedRoomMaster)
-            .append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard)
+            .append(",\"fresh\":").append(state.freshSetup).append(",\"saved\":").append(state.boardSaved).append(",\"legacy\":").append(state.legacyBoard)
             .append(",\"dossierRequired\":").append(state.dossierRequired).append(",\"readBy\":[");
         int readIndex=0;for(String id:state.dossierRead){if(readIndex++>0)b.append(',');b.append(quote(id));}
         b.append("]}");
@@ -615,12 +615,20 @@ public final class GameEngine {
         next.setupDeadline=0;
         if(choices.isEmpty()){
             Player p=next.players.get(random.nextInt(next.players.size()));next.roomMaster=p.id;next.candidate="";
-            next.forcedRoomMaster=true;next.setupStage="building";
+            next.forcedRoomMaster=true;next.setupStage="building";seedPortal(next);
             notice(next,"Alle haben abgelehnt. Das Portal entscheidet: "+p.name+" ist Raummeister.");
             addLog(next,"Das Portal bestimmt "+p.name+" zum Raummeister, nachdem alle abgelehnt haben.");
         }else{
             Player p=choices.get(random.nextInt(choices.size()));next.candidate=p.id;next.asked.add(p.id);next.setupStage="offering";
         }
+    }
+    private static void seedPortal(State s){if(s.freshSetup&&s.board.tiles().isEmpty())s.board.place(0,0,"portal",0);}
+    private static int shiftDraftLeft(State s,int x){
+        if(x>=0)return 0;
+        if(!s.freshSetup||!s.keyState.equals("pending")||x< -19)throw new IllegalArgumentException("Eine laufende Karte kann nicht nach links erweitert werden.");
+        int dx=-x;s.board=s.board.shifted(dx,0);int q=s.board.scale();
+        for(Player p:s.players)if(p.x>=0)p.x+=dx*q;for(int[] at:s.enemyPositions.values())at[0]+=dx*q;
+        return dx;
     }
     private void notice(State next,String text){next.notices.add(new PortalNotice(UUID.randomUUID().toString(),text));while(next.notices.size()>40)next.notices.remove(0);}
     private String setupCommand(Player actor,String token,String receipt,String action,String payload)throws IOException{
@@ -628,7 +636,7 @@ public final class GameEngine {
         if(action.equals("roomYes")||action.equals("roomNo")){
             if(!next.setupStage.equals("offering")||!actor.id.equals(next.candidate))throw new IllegalArgumentException("Gerade wird ein anderer Spieler gefragt.");
             if(action.equals("roomYes")){
-                next.roomMaster=actor.id;next.candidate="";next.setupStage="building";
+                next.roomMaster=actor.id;next.candidate="";next.setupStage="building";seedPortal(next);
                 notice(next,actor.name+" hat zugesagt und ist Raummeister!");addLog(next,actor.name+" stellt das Raumgefüge wieder her.");
             }else{
                 notice(next,actor.name+" hat abgelehnt. Das Portal sucht weiter…");addLog(next,actor.name+" lehnt die Raummeister-Rolle ab.");offerNext(next);
@@ -642,8 +650,8 @@ public final class GameEngine {
                         requireArgs(args,1);next.board=rooms.board(payload);
                         if(next.freshSetup){next.manualSpawns.clear();next.enemyPositions.clear();for(Player p:next.players){p.x=-1;p.y=-1;}}
                         addLog(next,actor.name+" lädt das Raumgefüge „"+rooms.name(payload)+"“.");break;
-                    case "tilePlace":requireArgs(args,4);next.board.place(number(args[0]),number(args[1]),args[2],number(args[3]));break;
-                    case "tileMove":requireArgs(args,4);next.board.move(number(args[0]),number(args[1]),number(args[2]),number(args[3]));break;
+                    case "tilePlace":{requireArgs(args,4);int x=number(args[0]),dx=shiftDraftLeft(next,x);next.board.place(x+dx,number(args[1]),args[2],number(args[3]));break;}
+                    case "tileMove":{requireArgs(args,4);int x=number(args[2]),dx=shiftDraftLeft(next,x);next.board.move(number(args[0])+dx,number(args[1]),x+dx,number(args[3]));break;}
                     case "tileRotate":requireArgs(args,2);next.board.rotate(number(args[0]),number(args[1]));break;
                     case "tileState":requireArgs(args,2);next.board.toggleDungeon(number(args[0]),number(args[1]));break;
                     case "tileRemove":requireArgs(args,2);next.board.remove(number(args[0]),number(args[1]));break;
@@ -684,7 +692,7 @@ public final class GameEngine {
     }
 
     private static void requireArgs(String[] args,int n){if(args.length!=n)throw new IllegalArgumentException("Unvollständige Aufbauaktion.");}
-    private static int number(String value){if(!value.matches("[0-9]{1,2}"))throw new NumberFormatException();return Integer.parseInt(value);}
+    private static int number(String value){if(!value.matches("-?[0-9]{1,2}"))throw new NumberFormatException();return Integer.parseInt(value);}
     private static void repairSpawns(State s){
         Set<String> occupied=new HashSet<>();
         for(Player p:s.players){

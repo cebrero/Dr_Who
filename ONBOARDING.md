@@ -1,11 +1,15 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **28.10.2026 · Version 0.15.0 · Portal-Zielfeld, Finale und bestätigte Kartenbewegung**
-<!-- app-version: 0.15.0 -->
-<!-- reviewed-source-sha256: d1de85c7ee358f3493636dbe4b8c3fe0004058f5fc1d0441d8d25353527d37f3 -->
+Stand: **28.10.2026 · Version 0.15.1 · Ruhige Kartenansicht und Portal als Aufbauanfang**
+<!-- app-version: 0.15.1 -->
+<!-- reviewed-source-sha256: fed8a1748262e02f7d1f0cc84de78817897d8c138f9b521b911d36905923f340 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
-**Neu in 0.15.0:** Portal über zwei Kacheln, aber **ein logisches Feld/eine Koordinate**, drei
+**Neu in 0.15.1:** Neues Raumgefüge beginnt automatisch mit dem Portal oben mittig.
+Nach links erweitern mit angepassten Koordinaten; Zielauswahl/Statusabfragen behalten die
+Kartenansicht. Nur vier Client-Tabs, die Karte liegt unter dem Würfel. Details 8q.
+
+**Seit 0.15.0:** Portal über zwei Kacheln, aber **ein logisches Feld/eine Koordinate**, drei
 rote Wandseiten und nur die offene lange Seite als Zugang. Keine Gegenstände auf Portalfläche.
 Bewegung am Client durch erreichbare Kartenziele, frei korrigierbare gespeicherte Vorschau und
 explizites Bestätigen des ganzen Wegs statt Richtungstasten. Beide gewählten Ziele beenden die
@@ -128,7 +132,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.15.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.15.1
 
 ### Vor der Partie
 
@@ -1626,7 +1630,52 @@ Ideenliste sind weiterhin **unbestätigte Vorschläge**; keine dieser Fähigkeit
 - Automatische Tests und APK-Prüfung siehe Abschnitt 11; echte Android-Video-/Audio-/Touch-/
   Halterungs-/Mehrgeräteprüfung bleibt offen, solange sie nicht tatsächlich am Telefon erfolgt ist.
 
-## 9. Technische Grundlage 0.15.0
+## 8q. Aufbau ab Portal, stabile Kartenansicht und vier Tabs ab 0.15.1
+
+**Neueste Nutzerwünsche vom 28.10.2026:** Neues Spielfeld beginnt mit dem Portal oben mittig;
+nach links ausbauen und erst danach Koordinaten vergeben. Sprünge bei der Zielauswahl beheben.
+Separaten Client-Reiter Karte entfernen. Nutzer fragt nach der erhaltenen Animation aus 0.14.0.
+
+- Bei neuer leerer Partie wird beim ersten Raummeister (Zusage oder Portalentscheidung) genau
+  eine dreiseitige Portal-Kachel automatisch am Host gespeichert, Front nach Süden. Im Editor
+  liegt sie oben mittig im ersten sichtbaren Ausschnitt. Koordinate zunächst A1. Sie bleibt wie
+  andere Kacheln dreh-/verschiebbar und kann für einen eigenen Entwurf entfernt werden.
+  Laufende/alte Aufbauten und geladene Vorlagen werden nicht mit zusätzlichen Portalen verändert.
+- Der Editor zeigt links leeren Platz zum Ziehen. Wird dort eine Kachel abgelegt oder hinbewegt,
+  verschiebt der Host im **neuen Entwurf** alle Kacheln und bestehenden Figurenplätze gemeinsam
+  um ganze Kacheln nach rechts. Linker Bezugspunkt beginnt danach wieder bei A. Beispiel:
+  Portal A1; eine Steinkachel links darunter anlegen → Steinfelder A3/B3/A4/B4, Portal C1.
+  Die leeren Stellen ohne Kachel bleiben nicht existent. Im Spiel gibt es keine negativen Labels.
+- Verschiebung, Platzierung, Figurenpositionen und neue Koordinaten sind eine atomare Speicherung.
+  Fehler/Überlappung/zu große Fläche ändern nichts; identischer Retry verschiebt niemals zweimal.
+  Raumvorlagen, vollständige Spielstände und Neustarts erhalten den normalisierten Aufbau.
+  Die physische Grenze bleibt 20×20 Kacheln. Leere Randflächen sind ausschließlich Editorplatz.
+- Kleine Kacheln als Standard: anfangs zehn Kacheln über die sichtbare Breite. Wird der belegte
+  Aufbau breiter, passt sich der Ausschnitt automatisch an. Große Kacheln bleiben zum detaillierten
+  Arbeiten und Scrollen auswählbar. Der Liveplan am Portal zoomt weiterhin auf den ganzen Aufbau.
+- **Während einer bereits begonnenen Partie** bleiben Koordinaten fest. Der spätere Reparaturaufbau
+  erhält seine bisherigen Plätze und erlaubt keine automatische Verschiebung über den linken Rand;
+  Story, Gegenstände und bereits protokollierte Feldangaben werden nicht nachträglich umnummeriert.
+- Client-Tabs nur noch **Spiel / Steckbrief / Tasche / Story**. Kein eigener Karten-Reiter und
+  keine zweite versteckte Kartenansicht. Zoom, Ein-Finger-Pan, Zwei-Finger-Zoom, lokale Drehung und
+  Dein Feld liegen bei der einzigen Karte unter dem Würfel. Legacy-Partien zeigen dort ihr altes
+  6×6-Feld. Ein früherer Kartenzoom dient als Vorgabe, falls der Umfeld-Zoom noch nicht gespeichert ist.
+- Zielvorschau aktualisiert bestehende Schaltflächen statt sie vollständig zu ersetzen. Dadurch
+  bleiben Fokus und Scrollposition erhalten. Normale Statusabfragen und Änderungen der verfügbaren
+  Höhe zentrieren nicht mehr neu. Automatisch zur eigenen Figur nur bei erstem Anzeigen, echter
+  Bewegung oder Drehung; explizit weiterhin über Dein Feld. Reine Vorschauen haben ihre Rückmeldung
+  direkt am Ziel/Bestätigungsbutton und lassen die globale Statuszeile unverändert.
+- Zoom berücksichtigt die Randabstände des Kartenausschnitts. Verschieben/Zoomen plant keinen Zug.
+  Vorschau/Korrektur/atomare Zugbestätigung, Öffnungsfilm und Siegerwertung aus 0.15.0 bleiben erhalten.
+- **Animation aus 0.14.0 weiterhin vollständig vorhanden:** Energieringe, mittiges Porträt und
+  animierte Bühnen-Dateien liegen im Repository und APK. Die 0.15.0-Stilregeln blenden die Ringe
+  vor dem Fund aus. Nutzer hat nach ihrem Verbleib gefragt; diese Fassung dokumentiert die
+  Wiederherstellbarkeit und ändert die zuletzt vereinbarte Film-/Porträtphase nicht ungefragt.
+- App **0.15.1 / Code 23**, API-Protokoll **9**, Spielstandformat **12**, Raumformat **1**.
+  Neue additive setup.fresh-Angabe beschreibt nur den Entwurf. Bestehende Partien bleiben ladbar;
+  Clients wegen Versionswechsel neu laden. Keine neuen Charakterwerte, Wirkungen oder Erzählangebote.
+
+## 9. Technische Grundlage 0.15.1
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1768,6 +1817,23 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.15.1 am 28.10.2026:
+
+- **858 Kern-/HTTP-Prüfungen bestanden** (839 bisherige + 19 neue): automatisches Portal bei
+  Zusage und Portalwahl, dauerhafter Entwurf, linke Erweiterung/Verschieben mit Figuren und
+  Koordinaten, Speicherfehler/Retry/Neustart, Überlappung und 20-Kachel-Grenze sowie Schutz der
+  Koordinaten laufender Partien. Historische Testlayouts entfernen das neue Standardportal explizit.
+- **342 DOM-/Grafikprüfungen bestanden**, an die einzige Clientkarte angepasst.
+- **Sieben Browserabläufe bestanden**; neuer Bewegungsablauf zusätzlich mit echtem Touch-Drag
+  links vom automatisch mittigen Portal, sichtbarer Umnummerierung, Neustart, vier Tabs,
+  unveränderten Ziel-Schaltflächen sowie stabiler Ansicht bei Vorschau, Statusabfragen und
+  Höhenänderung. Zoom/Pan/Drehung, Antwortverlust, Schlüssel und dauerhaftes Spielende mitgeprüft.
+- Android-Build/Lint und Paketprüfung werden vor Ausgabe mit diesem Anleitungsstand ausgeführt:
+  Version 0.15.1 / Code 23, bekanntes Signierzertifikat; Quellassets und Anleitung bytegleich;
+  originale OGGs und MP4 bytegleich und unkomprimiert. Keine neuen Medien hinzugefügt.
+- Echter Telefon-/Hotspottest, native Ton-/Video-Wiedergabe und Lesbarkeit in der Halterung offen.
+  Der gemeldete Hotspot-/mDNS-Fehler ist mit diesen Änderungen nicht als behoben erklärt.
 
 Für 0.15.0 am 28.10.2026:
 
@@ -2224,7 +2290,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
   Vor weiteren Builds genau diesen wiederverwenden,
   damit Versionen ab 0.5.0 installierbare Updates bleiben. Keine Schlüssel ins Repository stellen.
 - Aktuelle lokale Datei liegt außerhalb des Repositorys unter
-  `../build-tools/android-user/debug.keystore` (`ANDROID_USER_HOME` für diese Builds).
+  `../private/android-user/debug.keystore` (`ANDROID_USER_HOME` für diese Builds).
   Standard-Android-Debug-Alias/-Kennwort; kein Produktions-Signiersystem.
 - APK-Signatur und Versionsmetadaten vor Übergabe geprüft. Ein verlorener privater Schlüssel
   kann aus einer bereits signierten APK nicht zurückgewonnen werden.
@@ -2259,6 +2325,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 
 | 27.10.2026 | 0.13.0 | Immersive Dossiers ohne Serien-/Bildhinweise, Zielabstimmung mit Mehrheit/Gleichstands-Los und privater Vollbildanimation, Portalwürfel nach Clientaufdeckung, Eckwände an sichtbare Grafik angepasst; Format 11/Protokoll 8 |
 
+| 28.10.2026 | 0.15.1 | Automatisches Portal oben mittig bei neuem Aufbau, linke Erweiterung mit atomarer Koordinaten-/Figurenverschiebung, stabile Zielauswahl ohne erneutes Zentrieren, vier Client-Tabs mit Karte unter W6; Formate/Protokoll unverändert |
 | 28.10.2026 | 0.15.0 | Dreiseitiges Portal als ein Zielfeld, keine Gegenstände darauf; Kartenbewegung mit erreichbaren Zielen, persistenter korrigierbarer Vorschau und atomarer Bestätigung, beide Zielwertungen/Spielende; Öffnungsfilm/Sound ab Fund und Status auf unbeteiligten Clients; Format 12/Protokoll 9 |
 
 ## 13. Fortsetzung in einem anderen Chat
