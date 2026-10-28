@@ -8,7 +8,10 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.15.1
+## Stand 0.15.2
+
+Neu in 0.15.2: Die ursprünglichen bewegten Energieringe aus 0.14.0 um das mittige
+Charakterfoto sind vor dem Schlüsselfund wieder sichtbar. Danach bleibt das Öffnungsvideo.
 
 Neu in 0.15.1: Neues Spielfeld beginnt mit dem Portal oben mittig. Links ausbauen mit
 angepassten Koordinaten und erhaltenen Figurenplätzen. Die Karte unter dem Würfel bleibt bei

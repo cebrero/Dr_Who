@@ -222,5 +222,5 @@
     oben mittig. Linkes Anlegen verschiebt nur neue Entwürfe samt Figuren atomar und definiert die
     Koordinaten neu; 20×20 behalten. Keine laufenden Story-/Itemkoordinaten umnummerieren. Details 8q.
 68. Client hat vier Tabs ohne Karte; einziges Umfeld unter W6 behält Zoom/Pan/Fokus bei Vorschau,
-    Statusabfragen und Größenänderung. Vorhandene Zielbuttons erhalten. Die Animation 0.14 bleibt
-    im Projekt, aktuelle Ringe-Ausblendung 0.15 bis ausdrücklicher Wiederanzeige unverändert.
+    Statusabfragen und Größenänderung. Vorhandene Zielbuttons erhalten. Ab 0.15.2 ausdrücklich die
+    originalen Energieringe mit mittigem Foto vor Schlüsselfund wieder anzeigen; danach Film. Details 8r.

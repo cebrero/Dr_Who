@@ -1,11 +1,14 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **28.10.2026 · Version 0.15.1 · Ruhige Kartenansicht und Portal als Aufbauanfang**
-<!-- app-version: 0.15.1 -->
-<!-- reviewed-source-sha256: fed8a1748262e02f7d1f0cc84de78817897d8c138f9b521b911d36905923f340 -->
+Stand: **28.10.2026 · Version 0.15.2 · Energieringe aus 0.14.0 wieder sichtbar**
+<!-- app-version: 0.15.2 -->
+<!-- reviewed-source-sha256: 9f7b220779fb31ec8b637d7746592c4c94bd41db5715ef0afe224772cd75d296 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
 
-**Neu in 0.15.1:** Neues Raumgefüge beginnt automatisch mit dem Portal oben mittig.
+**Neu in 0.15.2:** Auf ausdrücklichen Wunsch die ursprünglichen bewegten Energieringe um das
+mittige Charakterfoto wieder anzeigen. Ab Schlüsselfund weiterhin das Öffnungsvideo. Details 8r.
+
+**Seit 0.15.1:** Neues Raumgefüge beginnt automatisch mit dem Portal oben mittig.
 Nach links erweitern mit angepassten Koordinaten; Zielauswahl/Statusabfragen behalten die
 Kartenansicht. Nur vier Client-Tabs, die Karte liegt unter dem Würfel. Details 8q.
 
@@ -132,7 +135,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.15.1
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.15.2
 
 ### Vor der Partie
 
@@ -1675,7 +1678,25 @@ Separaten Client-Reiter Karte entfernen. Nutzer fragt nach der erhaltenen Animat
   Neue additive setup.fresh-Angabe beschreibt nur den Entwurf. Bestehende Partien bleiben ladbar;
   Clients wegen Versionswechsel neu laden. Keine neuen Charakterwerte, Wirkungen oder Erzählangebote.
 
-## 9. Technische Grundlage 0.15.1
+## 8r. Energieringe mit Charakterfoto wieder anzeigen ab 0.15.2
+
+**Ausdrücklicher Nutzerwunsch vom 28.10.2026:** „Ich will die Animation aus 0.14.0“.
+Damit entfällt die bisherige Ausblendung der Energieringe aus 0.15.0/0.15.1.
+
+- Vor dem ersten Schlüsselfund wieder die ursprünglichen drehenden Cyan-/Gold-Energieringe,
+  umlaufende Lichtpunkte und das Foto des aktiven Charakters mittig auf der animierten Bühne.
+  Die ursprünglichen Ringanimationen und die gerundete leuchtende Porträtumrandung verwenden;
+  Darstellung mittig und vollständig auf Hoch- und Querformat einpassen.
+- Vorhandene Vorschau weiter als große weiße Meldung einblenden. Verwaltungsmenü erreichbar.
+  Keine Rückkehr der alten Textkarten/Teamleiste oder des Portalwürfels in diese Fotophase.
+- Ab wirklichem Schlüsselfund weiterhin private MP4/Öffnungssound aus 8p. Dabei Ring- und
+  Fotobühne vollständig ausblenden; unbeteiligte Clients erhalten weiterhin die Portalinfos.
+- Identische Statusabfragen starten die Ringe nicht neu. Hintergrundpause und reduzierte
+  Bewegung erhalten. Reine Grafikänderung; keine neue Zufallsentscheidung oder Spielwirkung.
+- App **0.15.2 / Code 24**; API **9**, Spielstandformat **12**, Raumformat **1** unverändert.
+  Keine neue Partie nötig. Die stabile Kartenauswahl und der Portal-Aufbau aus 0.15.1 bleiben.
+
+## 9. Technische Grundlage 0.15.2
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1817,6 +1838,18 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.15.2 am 28.10.2026:
+
+- **342 DOM-/Grafikprüfungen bestanden**. Regellogik gegenüber 0.15.1 unverändert;
+  dessen 858 Kern-/HTTP-Prüfungen beim Android-Build erneut ausführen.
+- **Portal-Browserprüfung bestanden** bei 390×844, 320×568, 691×1477 und 844×390:
+  Ringe sichtbar und vollständig im Bildschirm, tatsächliche Animation läuft bei identischen
+  Statusabfragen weiter, Hintergrundpause und reduzierte Bewegung stoppen sie, Foto bleibt
+  vollständig, Vorschau lesbar, Ring-/Fotoebene verschwindet in der offenen Filmphase.
+  Vorhandenes Siegerergebnis ebenfalls geprüft; Screenshots visuell kontrolliert.
+- Android assembleDebug/lintDebug, Signatur und bytegleiche Paketassets vor Ausgabe prüfen.
+  Version 0.15.2 / Code 24, bestehender privater Signierschlüssel; native Telefonprüfung offen.
 
 Für 0.15.1 am 28.10.2026:
 
@@ -2325,6 +2358,7 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 
 | 27.10.2026 | 0.13.0 | Immersive Dossiers ohne Serien-/Bildhinweise, Zielabstimmung mit Mehrheit/Gleichstands-Los und privater Vollbildanimation, Portalwürfel nach Clientaufdeckung, Eckwände an sichtbare Grafik angepasst; Format 11/Protokoll 8 |
 
+| 28.10.2026 | 0.15.2 | Ursprüngliche Energieringe und mittiges Charakterfoto vor Schlüsselfund wieder sichtbar; Öffnungsfilm danach erhalten, Grafik in Hoch-/Querformat und bei reduzierter Bewegung geprüft |
 | 28.10.2026 | 0.15.1 | Automatisches Portal oben mittig bei neuem Aufbau, linke Erweiterung mit atomarer Koordinaten-/Figurenverschiebung, stabile Zielauswahl ohne erneutes Zentrieren, vier Client-Tabs mit Karte unter W6; Formate/Protokoll unverändert |
 | 28.10.2026 | 0.15.0 | Dreiseitiges Portal als ein Zielfeld, keine Gegenstände darauf; Kartenbewegung mit erreichbaren Zielen, persistenter korrigierbarer Vorschau und atomarer Bestätigung, beide Zielwertungen/Spielende; Öffnungsfilm/Sound ab Fund und Status auf unbeteiligten Clients; Format 12/Protokoll 9 |
 
