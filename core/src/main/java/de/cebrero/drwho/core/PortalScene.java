@@ -17,8 +17,11 @@ public final class PortalScene {
         else if(eventText.contains("Auswahl gespeichert")&&eventText.contains("Wirkung")){eventTitle="AKTION VORGEMERKT";eventText=v.eventSpeaker+" hat die Richtung gewählt. Die Wirkung ist noch offen.";eventType="action";}
         if(rolling){eventTitle="DAS SCHICKSAL HÄLT DEN ATEM AN";eventText="Bitte keine Abkürzung durch die Zukunft.";eventType="wait";eventId="wait:"+v.rollId;}
         else if(v.awaitingGo&&!eventType.equals("move")&&!eventType.equals("action")){eventTitle="DEIN MOMENT IM ZEITGEFÜGE";eventText="Das Universum wartet. Ausnahmsweise auf dich.";eventType="go";eventId="go:"+v.round+":"+v.activePlayerName;}
+        if(!v.previewField.isEmpty()){eventTitle=v.previewFrom+"  →  "+v.previewField;eventText="Zielfeld vorgemerkt · wartet auf Bestätigung";eventType="preview";eventId="preview:"+v.previewFrom+":"+v.previewField;}
+        if(v.finished){eventTitle=v.winnerName+" gewinnt!";eventText="Das Portal wurde erreicht. Die Partie ist beendet.";eventType="victory";eventId=v.winEvent;}
         String portrait=v.activeCharacter==null?"":v.activeCharacter.portrait;
         StringBuilder b=new StringBuilder("{\"session\":"+q(v.sessionId)+",\"round\":"+v.round+",\"mode\":"+q(mode)+",\"actor\":"+q(v.activePlayerName)+",\"character\":"+q(v.activeCharacter==null?"":v.activeCharacter.name)+",\"portrait\":"+q(portrait)+",\"field\":"+q(v.field)+",\"title\":"+q(title)+",\"hint\":"+q(hint)+",\"remaining\":"+(rolling?0:v.remaining)+",\"steps\":"+(rolling?0:v.turnRoll));
+        b.append(",\"open\":").append(v.portalOpen).append(",\"openEvent\":").append(q(v.portalOpenEvent)).append(",\"finished\":").append(v.finished).append(",\"preview\":").append(!v.previewField.isEmpty());
         b.append(",\"rollId\":").append(q(v.currentRoll?v.rollId:"")).append(",\"die\":").append(v.currentRoll&&v.rollPresented?v.die:0).append(",\"ready\":").append(v.rollPresented).append(",\"seen\":").append(seen).append(",\"reduced\":").append(reduced);
         b.append(",\"eventId\":").append(q(eventId)).append(",\"eventTitle\":").append(q(eventTitle)).append(",\"eventText\":").append(q(eventText)).append(",\"eventType\":").append(q(eventType)).append(",\"team\":[");
         for(int i=0;i<v.positions.size();i++){

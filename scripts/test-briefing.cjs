@@ -7,7 +7,7 @@ let current={sessionId:'briefing',revision:1,started:true,ready:true,selectedCou
 let posts=[],offline=false,lostReply=false,expired=false;
 function page(){return new JSDOM(html,{url:'http://192.168.4.1/',runScripts:'dangerously',beforeParse(w){w.setInterval=()=>0;w.localStorage.setItem('drwho.v1',JSON.stringify({token:'token',sessionId:'briefing',northSetup:'briefing:setup'}));w.fetch=async(path,opts)=>{
  if(expired&&path==='/api/state')return{ok:false,status:401,json:async()=>({error:'Entfernt'})};
- if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.14.0',protocolVersion:8,sessionId:'briefing'})};
+ if(path==='/api/info')return{ok:true,json:async()=>({appVersion:'0.15.0',protocolVersion:9,sessionId:'briefing'})};
  if(path==='/api/command'){
   const form=new URLSearchParams(opts.body);posts.push(form);if(offline)throw Error('offline');
   if(form.get('action')==='readDossier'){if(!current.setup.readBy.includes(current.you))current.setup.readBy.push(current.you);current.revision++;if(lostReply){lostReply=false;throw Error('reply lost')}}

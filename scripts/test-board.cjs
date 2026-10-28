@@ -5,8 +5,8 @@ try{
  check(labels(0,0).join(',')==='A1,B1,A2,B2','each movement subfield has its own coordinate');
  check(labels(19,19).join(',')==='AM39,AN39,AM40,AN40','coordinates at outer edge');
  check(labels(0,0,'floor',3).join(',')===labels(0,0).join(','),'rotating terrain never renames world fields');
- check(labels(0,0,'portal',0).join(',')==='A1,B1,C1,D1,A2,B2,C2,D2','old horizontal portal covers eight distinct subfields');
- check(labels(0,0,'portal',1).join(',')==='A1,B1,A2,B2,A3,B3,A4,B4','old vertical portal keeps real coordinates');
+ check(labels(0,0,'portal',0).join(',')==='A1','horizontal portal has one goal coordinate');
+ check(labels(0,0,'portal',1).join(',')==='A1','vertical portal keeps one goal coordinate');
  check(labels(4,4,'floor',0,1).join(',')==='E5','old single-field saves keep old names');
  const all=[];for(let y=0;y<20;y++)for(let x=0;x<20;x++)all.push(...labels(x,y));check(new Set(all).size===1600,'1600 movement fields have unique names');
  for(const r of [0,1,2,3]){const tile=w.document.createElement('div');art.decorateTile(tile,{x:3,y:1,kind:'compass',rotation:r},2);check(tile.querySelector('svg g').getAttribute('transform')==='rotate('+r*90+' 50 50)','compass art uses saved quarter turn '+r);check(tile.querySelectorAll('.field-label').length===4,'four coordinates remain visible when compass rotates');}

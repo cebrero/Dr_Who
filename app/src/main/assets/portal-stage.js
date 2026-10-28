@@ -13,6 +13,7 @@ window.PortalStage=(()=>{
   document.body.dataset.mode=s.mode;document.body.classList.toggle('has-die',!!s.rollId);document.body.classList.toggle('reduced',s.reduced);document.body.classList.toggle('paused',paused);
   text('round',s.round);text('actor',s.actor);text('character',s.character);text('eyebrow',s.mode==='go'?'DIE ZEIT RUFT':s.mode==='enemy'?'GEGNERPHASE':'IM ZEITGEFÜGE UNTERWEGS');
   const src=safePortrait(s.portrait);if($('portrait').getAttribute('src')!==src){$('portrait').src=src;$('portrait').hidden=!src}$('portrait').alt=s.character;$('portrait').onerror=()=>{$('portrait').hidden=true};
+  document.body.classList.toggle('portal-open',!!s.open);document.body.classList.toggle('portal-finished',!!s.finished);document.body.classList.toggle('portal-preview',!!s.preview);
   text('field',s.field||'—');text('title',revealing?'Das Schicksal enthüllt sich …':s.title);text('hint',revealing?'Der Spielerwürfel steht. Nun antwortet das Portal.':s.hint);
   $('steps').hidden=s.mode!=='move'||revealing;const stepKey=[s.steps,s.remaining].join(':');if($('steps').dataset.signature!==stepKey){$('steps').dataset.signature=stepKey;$('steps').replaceChildren();for(let i=0;i<s.steps;i++){const p=document.createElement('i');if(i>=s.remaining)p.className='used';$('steps').append(p)}$('steps').setAttribute('aria-label',s.remaining+' von '+s.steps+' Schritten verbleiben')}
   event(s,revealing);paintTeam(s);

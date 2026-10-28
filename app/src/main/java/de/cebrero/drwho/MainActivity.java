@@ -26,6 +26,7 @@ public class MainActivity extends Activity {
     private GameEngine engine;
     private PortalAudio audio;
     private PortalAudioEvents audioEvents;
+    private String observedOpening=null;
     private boolean foreground;
     private LocalServer server;
     private PortalNetwork network;
@@ -51,6 +52,7 @@ public class MainActivity extends Activity {
     private final Runnable finishNotice=()->{if(!activeNotice.isEmpty()){prefs.edit().putString("seen-notice-"+engine.sessionId(),activeNotice).apply();activeNotice="";}noticeScreen.setVisibility(View.GONE);updatePortal();};
     private ScrollView lobby,director;
     private PortalPlayView portalPlay;
+    private PortalVideo playVideo;
     private FrameLayout play;
     private ImageView lobbyBackground;
     private LinearLayout playerRows;
@@ -125,6 +127,7 @@ public class MainActivity extends Activity {
     }
     private void buildPlay(){
         play=new FrameLayout(this);root.addView(play,new FrameLayout.LayoutParams(-1,-1));play.setVisibility(View.GONE);
+        playVideo=new PortalVideo(this);play.addView(playVideo,new FrameLayout.LayoutParams(-1,-1));
         portalPlay=new PortalPlayView(this);play.addView(portalPlay,new FrameLayout.LayoutParams(-1,-1));
         Button menu=button("⋮",this::portalMenu);menu.setTextSize(28);menu.setContentDescription("Portal-Menü öffnen");menu.setMinWidth(0);menu.setMinimumWidth(0);menu.setPadding(0,0,0,0);menu.setBackgroundColor(Color.TRANSPARENT);
         FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(dp(48),dp(48),Gravity.TOP|Gravity.END);lp.topMargin=dp(15);lp.setMarginEnd(dp(10));play.addView(menu,lp);
@@ -172,9 +175,11 @@ public class MainActivity extends Activity {
         }
         updateTrivia(info.preparing&&info.setupStage.equals("building"),info.sessionId+":"+info.setupStage);
         boolean ended=wasPreparing&&!info.preparing;wasPreparing=info.preparing;if(ended){if(engine.playing()){play.setVisibility(View.VISIBLE);lobbyBackground.setVisibility(View.VISIBLE);}else showLobby();}
+        if(info.setupStage.equals("play")){handler.removeCallbacks(finishNotice);activeNotice="";noticeScreen.setVisibility(View.GONE);if(!info.notices.isEmpty())prefs.edit().putString("seen-notice-"+info.sessionId,info.notices.get(info.notices.size()-1).id).apply();return;}
         if(activeNotice.isEmpty()&&!info.setupStage.equals("selecting")&&!info.setupStage.equals("launching")&&!voting){
             String seen=prefs.getString("seen-notice-"+info.sessionId,"");int next=0;
             for(int i=0;i<info.notices.size();i++)if(info.notices.get(i).id.equals(seen))next=i+1;
+            while(next<info.notices.size()&&info.notices.get(next).id.equals(info.keyEvent)&&info.portalOpen){prefs.edit().putString("seen-notice-"+info.sessionId,info.notices.get(next).id).apply();next++;}
             if(next<info.notices.size()){
                 GameEngine.PortalNotice notice=info.notices.get(next);activeNotice=notice.id;boolean foundKey=notice.id.equals(info.keyEvent);noticeFlight.setVisibility(foundKey?View.GONE:View.VISIBLE);noticeKey.setVisibility(foundKey?View.VISIBLE:View.GONE);noticeText.setGravity(foundKey?Gravity.BOTTOM|Gravity.CENTER_HORIZONTAL:Gravity.CENTER);noticeText.setText(notice.text);noticeScreen.setVisibility(View.VISIBLE);noticeScreen.bringToFront();handler.postDelayed(finishNotice,3000);
             }
@@ -225,7 +230,7 @@ public class MainActivity extends Activity {
         gameStatus.setText(engine.hostText());stageStatus.setText(summary());
         GameEngine.PortalState info=engine.portalState();updateSetup(info);updateAudio(info,players);
         boolean visible=foreground&&play.getVisibility()==View.VISIBLE&&!info.preparing;
-        portalPlay.active(visible);
+        portalPlay.active(visible);playVideo.show(visible&&info.portalOpen);
         if(visible){
             String seenKey="seen-roll-"+info.sessionId;
             portalPlay.show(info,prefs.getString(seenKey,"").equals(info.rollId),!android.animation.ValueAnimator.areAnimatorsEnabled(),id->prefs.edit().putString(seenKey,id).apply());
@@ -234,6 +239,7 @@ public class MainActivity extends Activity {
 
     private void updateAudio(GameEngine.PortalState info,java.util.List<String[]> players){
         java.util.List<String> ids=new ArrayList<>();for(String[] p:players)ids.add(p[0]);
+        if(observedOpening==null)observedOpening=info.portalOpenEvent;else if(!observedOpening.equals(info.portalOpenEvent)){observedOpening=info.portalOpenEvent;if(foreground&&!observedOpening.isEmpty()&&audio!=null)audio.playJoin();}
         if(audioEvents==null){audioEvents=new PortalAudioEvents(info.sessionId,info.setupStage,ids);return;}
         PortalAudioEvents.Cue cue=audioEvents.observe(info.sessionId,info.setupStage,ids);if(!foreground||audio==null)return;
         if(cue==PortalAudioEvents.Cue.THEME)audio.playTheme();else if(cue==PortalAudioEvents.Cue.JOIN)audio.playJoin();
@@ -257,7 +263,7 @@ public class MainActivity extends Activity {
         new AndroidStore(new File(archiveDir(),stamp+"_"+safe+".drwho")).save(engine.exportGame());
     }
     private void saveDialog(){EditText name=new EditText(this);name.setHint("Name des Spielstands");name.setText("Abenteuer");new AlertDialog.Builder(this).setTitle("Gesamtes Spiel speichern").setMessage("Raumplanung, alle Figurenpositionen, Runde, Würfel und Story werden gespeichert.").setView(name).setPositiveButton("Speichern",(d,w)->{try{saveNamed(name.getText().toString());toast("Gesamtes Spiel gespeichert.");}catch(IOException e){toast("Speichern fehlgeschlagen: "+e.getMessage());}}).setNegativeButton("Zurück",null).show();}
-    private void loadDialog(){File[] files=archiveDir().listFiles((dir,n)->n.endsWith(".drwho"));if(files==null||files.length==0){toast("Noch kein Spielstand gespeichert.");return;}Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));String[] names=new String[files.length];for(int i=0;i<files.length;i++)names[i]=files[i].getName().replace(".drwho","");new AlertDialog.Builder(this).setTitle("Gespeichertes Spiel laden").setItems(names,(d,i)->new AlertDialog.Builder(this).setTitle("Spiel laden?").setMessage("Der aktuelle Stand wird vorher automatisch gesichert. Spieler treten danach mit ihrem gespeicherten Namen erneut bei.").setPositiveButton("Laden",(a,b)->{try{byte[] bytes=new AndroidStore(files[i]).load();saveNamed("Vor_Laden");engine.loadGame(bytes);afterGameChange();toast("Geladen. Spieler mit ihrem bisherigen Namen beitreten lassen.");}catch(IOException e){toast("Laden fehlgeschlagen. Aktuelle Partie bleibt erhalten. "+e.getMessage());}}).setNegativeButton("Zurück",null).show()).setNegativeButton("Zurück",null).show();}
+    private void loadDialog(){File[] files=archiveDir().listFiles((dir,n)->n.endsWith(".drwho"));if(files==null||files.length==0){toast("Noch kein Spielstand gespeichert.");return;}Arrays.sort(files,(a,b)->b.getName().compareTo(a.getName()));String[] names=new String[files.length];for(int i=0;i<files.length;i++)names[i]=files[i].getName().replace(".drwho","");new AlertDialog.Builder(this).setTitle("Gespeichertes Spiel laden").setItems(names,(d,i)->new AlertDialog.Builder(this).setTitle("Spiel laden?").setMessage("Der aktuelle Stand wird vorher automatisch gesichert. Spieler treten danach mit ihrem gespeicherten Namen erneut bei.").setPositiveButton("Laden",(a,b)->{try{byte[] bytes=new AndroidStore(files[i]).load();saveNamed("Vor_Laden");engine.loadGame(bytes);observedOpening=null;afterGameChange();toast("Geladen. Spieler mit ihrem bisherigen Namen beitreten lassen.");}catch(IOException e){toast("Laden fehlgeschlagen. Aktuelle Partie bleibt erhalten. "+e.getMessage());}}).setNegativeButton("Zurück",null).show()).setNegativeButton("Zurück",null).show();}
     private void resetDialog(boolean fullPortal){
         String message="Zurücksetzen verwirft die laufende Partie ohne neue Sicherung. Alternativ kannst du vorher den gesamten Spielstand sichern.";
         if(fullPortal)message+=" Der Spiel-Hotspot wird beendet und die Startseite vollständig geleert.";
@@ -285,7 +291,7 @@ public class MainActivity extends Activity {
     private void exportDialog(){startActivityForResult(new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/octet-stream").putExtra(Intent.EXTRA_TITLE,"Dr_Who_Spielstand.drwho"),91);}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||data.getData()==null)return;try{
         if(request==91){try(OutputStream out=getContentResolver().openOutputStream(data.getData())){if(out==null)throw new IOException("Datei nicht erreichbar.");out.write(engine.exportGame());}toast("Spielstanddatei exportiert.");}
-        if(request==92){byte[] bytes;try(InputStream in=getContentResolver().openInputStream(data.getData());ByteArrayOutputStream out=new ByteArrayOutputStream()){if(in==null)throw new IOException("Datei nicht erreichbar.");byte[] b=new byte[4096];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>8*1024*1024)throw new IOException("Spielstand zu groß.");}bytes=out.toByteArray();}new AlertDialog.Builder(this).setTitle("Datei als Spielstand laden?").setMessage("Der aktuelle Stand wird vorher gesichert. Danach treten Spieler mit ihrem gespeicherten Namen bei.").setPositiveButton("Laden",(d,w)->{try{saveNamed("Vor_Import");engine.loadGame(bytes);afterGameChange();}catch(IOException e){toast("Datei ungültig. Aktuelle Partie bleibt erhalten.");}}).setNegativeButton("Zurück",null).show();}
+        if(request==92){byte[] bytes;try(InputStream in=getContentResolver().openInputStream(data.getData());ByteArrayOutputStream out=new ByteArrayOutputStream()){if(in==null)throw new IOException("Datei nicht erreichbar.");byte[] b=new byte[4096];int n;while((n=in.read(b))!=-1){out.write(b,0,n);if(out.size()>8*1024*1024)throw new IOException("Spielstand zu groß.");}bytes=out.toByteArray();}new AlertDialog.Builder(this).setTitle("Datei als Spielstand laden?").setMessage("Der aktuelle Stand wird vorher gesichert. Danach treten Spieler mit ihrem gespeicherten Namen bei.").setPositiveButton("Laden",(d,w)->{try{saveNamed("Vor_Import");engine.loadGame(bytes);observedOpening=null;afterGameChange();}catch(IOException e){toast("Datei ungültig. Aktuelle Partie bleibt erhalten.");}}).setNegativeButton("Zurück",null).show();}
     }catch(IOException e){toast("Datei konnte nicht verarbeitet werden: "+e.getMessage());}}
     private void enemyDialog(){
         java.util.List<CharacterProfile> available=engine.availableEnemies();if(available.isEmpty()){toast(engine.readyForPlay()?"Keine übrige bekannte Figur verfügbar.":"Zuerst wählen alle Spieler ihre Figuren.");return;}
@@ -333,8 +339,8 @@ public class MainActivity extends Activity {
         }catch(WriterException error){toast("QR-Code konnte nicht erstellt werden.");}
     }
     private void toast(String message){Toast.makeText(this,message,Toast.LENGTH_LONG).show();}
-    @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
-    @Override protected void onStop(){foreground=false;if(portalPlay!=null)portalPlay.active(false);if(setupVideo!=null)setupVideo.show(false);if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
+    @Override protected void onStart(){super.onStart();foreground=true;audioEvents=null;observedOpening=null;if(noticeScreen!=null&&!activeNotice.isEmpty()){handler.removeCallbacks(finishNotice);handler.postDelayed(finishNotice,3000);}if(engine!=null&&playerRows!=null)handler.post(refresh);}
+    @Override protected void onStop(){foreground=false;if(portalPlay!=null)portalPlay.active(false);if(playVideo!=null)playVideo.show(false);if(setupVideo!=null)setupVideo.show(false);if(audio!=null)audio.stop();handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(setupTrivia!=null){setupTrivia.animate().cancel();triviaSetup="";triviaIndex=-1;}super.onStop();}
     @Override protected void onDestroy(){destroyed=true;if(audio!=null)audio.stop();hotspotGeneration++;networkGeneration++;hotspotPermissionRequested=false;handler.removeCallbacks(refresh);handler.removeCallbacks(finishNotice);handler.removeCallbacks(fadeTrivia);if(reservation!=null)reservation.close();if(network!=null)network.close();if(server!=null)server.close();super.onDestroy();}
     private static final class AndroidStore implements GameEngine.Store{
         private final AtomicFile file;AndroidStore(File path){file=new AtomicFile(path);}

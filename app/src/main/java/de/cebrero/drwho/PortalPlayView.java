@@ -16,7 +16,7 @@ final class PortalPlayView extends WebView {
     private Consumer<String> completed;
     @SuppressLint("SetJavaScriptEnabled") // Only explicitly allowed bundled presentation assets.
     PortalPlayView(Context context){
-        super(context);setBackgroundColor(Color.rgb(3,12,23));getSettings().setJavaScriptEnabled(true);
+        super(context);setBackgroundColor(Color.TRANSPARENT);getSettings().setJavaScriptEnabled(true);
         getSettings().setAllowFileAccess(false);getSettings().setAllowContentAccess(false);getSettings().setBlockNetworkLoads(true);
         setVerticalScrollBarEnabled(false);setHorizontalScrollBarEnabled(false);
         setWebViewClient(new WebViewClient(){

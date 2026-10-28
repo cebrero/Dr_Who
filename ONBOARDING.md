@@ -1,9 +1,17 @@
 # Dr_Who – Onboarding, Spielablauf und Spielregeln
 
-Stand: **27.10.2026 · Version 0.14.0 · Inszenierte Portal-Spielansicht**
-<!-- app-version: 0.14.0 -->
-<!-- reviewed-source-sha256: 6055146fcf68117f77765ed984d27b1be6199809f9bc8df918c82c39d96c1483 -->
+Stand: **28.10.2026 · Version 0.15.0 · Portal-Zielfeld, Finale und bestätigte Kartenbewegung**
+<!-- app-version: 0.15.0 -->
+<!-- reviewed-source-sha256: d1de85c7ee358f3493636dbe4b8c3fe0004058f5fc1d0441d8d25353527d37f3 -->
 Repository: https://github.com/cebrero/Dr_Who · Hauptbranch: `main`
+
+**Neu in 0.15.0:** Portal über zwei Kacheln, aber **ein logisches Feld/eine Koordinate**, drei
+rote Wandseiten und nur die offene lange Seite als Zugang. Keine Gegenstände auf Portalfläche.
+Bewegung am Client durch erreichbare Kartenziele, frei korrigierbare gespeicherte Vorschau und
+explizites Bestätigen des ganzen Wegs statt Richtungstasten. Beide gewählten Ziele beenden die
+Partie automatisch. Ab echtem Schlüsselfund privater Portalfilm in Schleife und einmal TARDIS-Sound;
+zuvor nur mittiges aktives Porträt. Statusinformationen während des Films auf unbeteiligten Clients.
+Details und Interpretationen Abschnitt **8p**; aktueller Prüfstand Abschnitt 11.
 
 **Neu in 0.14.0:** Portal-Spielansicht als lebendige Zeitreise-Bühne statt großer Textkarten:
 leuchtende bewegte Energieringe/Sternenhimmel, große Charakterdarstellung bei Go, inszenierter
@@ -120,7 +128,7 @@ Für den verbindlichen bisherigen Ablauf gilt jetzt Abschnitt 4a. Die frühere D
 „ein Schritt ODER W6-Test ODER passen“ ist aufgehoben. Zwei Aktionspunkte sind nicht vereinbart.
 Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weiterhin.
 
-## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.14.0
+## 4a. Spielablauf und Spielregeln – verbindlicher Stand 0.15.0
 
 ### Vor der Partie
 
@@ -141,33 +149,33 @@ Eine vollständige Missionsschleife und automatische Kampfauflösung fehlen weit
 7. Raummeister erfasst den tatsächlichen Aufbau oder lädt eine benannte Raumvorlage direkt im Editor;
    Speichern einer eigenen Vorlage mit editierbarem Datum-Zeit_Charaktername beendet den Bau nicht.
    Manueller Aufbau weiterhin per Kachel-Editor (20×20, elf Typen einschließlich Portal über zwei Kacheln, 90°-Drehung,
-   vier Bewegungsfelder pro Kachel, Startfiguren). Portal zeigt den bestätigten Entwurf live und kurze Serienfakten.
+   vier Bewegungsfelder pro normaler Kachel, ein Feld für das ganze Portal, Startfiguren). Portal zeigt den bestätigten Entwurf live und kurze Serienfakten.
    Andere Spieler lesen währenddessen ihr Dossier und bestätigen Gelesen. Nach dem Speichern liest
    auch der Raummeister. Erst alle Bestätigungen erlauben drei Sekunden Startfilm und Go.
    Automatische neue Plätze bevorzugen Abstand zum Portal, manuelle Plätze bleiben erhalten.
    Beim Planspeichern wird ein Portalschlüssel geheim auf
-   einem freien erreichbaren Feld versteckt. Beim Betreten Fund-Popup, Portalanimation und Tasche.
+   einem freien erreichbaren Feld **außerhalb des Portals** versteckt. Erst bestätigte Bewegung sammelt ihn ein: Fund-Popup/Tasche, Portalvideo und einmal Öffnungssound.
    Aktuelle Details siehe Abschnitte 8d–8k.
 8. Normale Spielerhandlungen laufen am eigenen Gerät. Bereits laufende ältere Partien bleiben
    erhalten und können ihren Plan über die Spielleitung nachtragen. Der Inventargenerator folgt später.
 
 ### Spielerzug
 
-| Schritt | Regel | Umsetzung 0.14.0 |
+| Schritt | Regel | Umsetzung 0.15.0 |
 | --- | --- | --- |
-| 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; bis dahin Karte des aktiven Spielers am Portal und keine Würfel-/Spielaktion |
+| 0 | Zugbeginn mit „Your move...“ und Go bestätigen | Host speichert die Bestätigung; vor Schlüsselfund mittiges Porträt am Portal, nach Fund Portalfilm; keine Aktion vor Go |
 | 1 | Aktiver Spieler würfelt zuerst einen W6 am eigenen Handy | Direkt den Würfel antippen; Host speichert verbindlich. Client animiert 2,6 s und bestätigt Aufdeckung; Portal deckt erst danach auf. Kein erneutes Würfeln bei Retry |
 | 2a | Bei 1, 2, 3 oder 4: genau diese Zahl Felder ziehen | Direkt zur Bewegung; dies ist die aus der Nutzerregel abgeleitete Interpretation |
 | 2b | Bei 5 oder 6: Bewegung ODER Charakteraktion wählen | Zwei Auswahlmöglichkeiten; kein Bewegen plus Aktion |
-| 3a | Bewegung immer genau um die Augenzahl, nicht nur bis zu dieser Zahl | Reststrecke wird nach jedem gespeicherten Schritt reduziert |
-| 3b | Nur gerade/orthogonale Schritte; Richtungswechsel unterwegs erlaubt | Nord/Ost/Süd/West, keine Diagonalen; z. B. 2 nach Norden, dann 3 nach Osten bei einer 5 |
-| 3c | Spieler meldet seine Bewegungen am eigenen Gerät und bewegt die echte Figur passend | Schrittweise Eingabe im gespeicherten Aufbau; App kann die physische Bewegung nicht automatisch erkennen |
+| 3a | Normaler Weg genau um die Augenzahl; eine erfüllte Portal-Siegbedingung beendet sofort | Host markiert genau passende Endfelder; erreichbares Siegportal auch mit kürzerer Strecke, Rest entfällt ausschließlich beim Sieg |
+| 3b | Nur orthogonale Übergänge; Richtungswechsel erlaubt | Host berechnet den ganzen legalen Weg mit Wänden/Figuren. Portalfläche ist ein Knoten mit Zugang nur über ihre offene Front |
+| 3c | Erreichbares Zielfeld antippen, ggf. anderes wählen, dann Zug bestätigen | Vorschau am Portal parallel; Figur/Schritte/Schlüsselfund/Story ändern erst durch atomare Bestätigung des vollständigen Wegs. Physische Figur danach entsprechend versetzen |
 | 3d | Alternativ bei 5/6: charakterabhängige Aktion | Aktionswahl protokolliert; konkrete Wirkung noch nicht umgesetzt |
-| 4 | Nach vollständiger Bewegung bzw. Aktion folgt der nächste Spieler | Nach exakt verbrauchter Strecke bzw. Test-Aktionswahl; nächster Spieler beginnt wieder mit Go/W6 |
+| 4 | Ohne Sieg folgt nach Bewegung bzw. Aktion der nächste Spieler | Nach bestätigtem Weg bzw. Test-Aktionswahl Go/W6; bei erfülltem Ziel stattdessen dauerhaft gespeichertes Spielende |
 
 Im Prototyp ist die 5/6-Entscheidung verbindlich, sobald „Bewegen“ gewählt wurde. Während
 angefangener Bewegung kann nicht nachträglich zur Aktion gewechselt werden. Das ist eine
-technische Festlegung für klare Zustände; ein späterer Zurück-/Planungsmodus ist noch offen.
+technische Festlegung für klare Zustände. Ab 0.15.0 ist das Bewegungsziel vor Bestätigung frei korrigierbar, ohne wieder zur Aktion zurückzukehren.
 Für die drei bisherigen Typen und deren Duplikate öffnet die Taste „Aktion wählen · Techniktest“ bei den gerichteten
 Fähigkeiten zuerst die Richtungsauswahl Nord/Ost/Süd/West. Erst die gesendete Richtungswahl
 beendet den Zug; Abbrechen verbraucht nichts. Gespeichert wird weiterhin nur die Auswahl,
@@ -211,11 +219,11 @@ bisher nicht vereinbart. Der Bewegungs-W6 ist nicht automatisch ein Schadenswurf
   Figur nicht gelaufen werden kann? Rest verfallen lassen, Umweg, Zurückgehen oder andere Lösung?
 - Darf ein Feld im selben Zug mehrfach betreten werden? Im freien Prototyp technisch möglich,
   aber als endgültige Regel noch nicht bestätigt. Andere Figuren blockieren dort vorläufig Felder.
-- Können Spieler einen Weg zuerst komplett planen und dann bestätigen/noch ändern?
+- Seit 0.15.0 Ziel vor Bestätigung korrigierbar; Auswahl zwischen mehreren gleich langen Routen ist noch nicht vorgesehen (Host nimmt deterministisch einen gültigen Weg).
 - Welche Charakteraktion ist bei mehreren Fähigkeiten wählbar, mit welchem Ziel und welcher Probe?
 - Treffer, Schaden, Ausdauerverlust, Kraftberechnung, Schutz, Erholung und Niederlage.
 - Gegnerverhalten, Gegner-Bewegungsweite, Sichtlinien, Türen und Zeitversetzung/Überspringen.
-- Missionsziel, Siegbedingungen, Startreihenfolge und gewünschte Spieldauer.
+- Weitere Missionen, Startreihenfolge und gewünschte Spieldauer. Die beiden gewählten Portalziele werden ab 0.15.0 gewertet (8p).
 
 Das Missionsziel „Der Zeitriss“ bleibt ein unbestätigter Vorschlag, nicht bereits festes Regelwerk.
 
@@ -1511,7 +1519,114 @@ Keine weitere Designauswahl verlangt; bestehende Spielregeln nicht verändern.
 - Keine Behauptung eines echten Android-WebView-/Telefon-/Hotspot-/Sitzrichtungs-/Leistungstests.
   Native Menübedienung, Pause/Resume und Anzeige in der gedruckten Halterung bleiben Gerätetests.
 
-## 9. Technische Grundlage 0.14.0
+## 8p. Portal-Zielfeld, Spielende und Kartenbewegung ab 0.15.0
+
+**Neueste Nutzerwünsche vom 28.10.2026** haben Vorrang vor früheren Richtungsbuttons, acht
+Portal-Teilfeldern und dem alten Portal-Statusbildschirm. Charakterfähigkeiten aus der vorherigen
+Ideenliste sind weiterhin **unbestätigte Vorschläge**; keine dieser Fähigkeiten eingebaut.
+
+### Portalgeometrie und Gegenstände
+
+- Physische Fläche bleibt **zwei Kacheln**, Drehung in 90°-Schritten und gemeinsame Grafik auf
+  Editor, Portal-Liveplan und Spielerkarte. Zwei kurze Seiten und eine lange Rückseite als dicke
+  rote Wände. Grundausrichtung 0: Nord/Ost/West geschlossen, Süd als offene lange Seite;
+  90°: West offen, 180°: Nord offen, 270°: Ost offen. Nachbarkachelwände blockieren ebenfalls.
+- Die gesamte Portalfläche ist **ein einziger Bewegungsknoten mit einer Matrixkoordinate**,
+  dem globalen oberen linken Ankerfeld (z. B. A1). Keine acht Labels oder inneren Schrittlinien.
+  Alle vier Teilfelder vor der offenen langen Seite sind mögliche Zugänge zum selben Knoten.
+  Betreten zählt einen Schritt; außerhalb bleiben normale 2×2-Kacheln unverändert.
+- Interpretation des bisherigen „vor dem Portal“: **das eine Portal-Zielfeld betreten**.
+  Das wurde dem Nutzer vor der Umsetzung so beschrieben; keine zusätzliche unsichtbare Zielzelle.
+- Startaufstellung außerhalb des Portals. Verstecken und Zurücklegen von Gegenständen sind
+  auf **der gesamten Portalfläche** ausgeschlossen, nicht nur auf dem beschrifteten Anker.
+  Schlüsselgenerator und Recovery beim Entfernen des Trägers verwenden dieselbe Feldprüfung.
+  Weitere Items besitzen noch keine Ablagefunktion; diese muss künftig dieselbe Prüfung nutzen.
+- Alte Raumvorlagen (Raumformat 1) bleiben vollständig ladbar und erhalten automatisch die neue
+  Darstellung/Geometrie. Alte Portalpositionen auf den Anker zusammenführen; einen dort früher
+  versteckten Schlüssel beim validierten Laden deterministisch auf ein freies erreichbares
+  Nicht-Portal-Feld verlegen. Kein neues Würfellos bei jedem Polling oder Neustart.
+  Haben mehrere alte Figuren im Portal gestanden, bleibt eine am Anker und die übrigen erhalten
+  freie Außenfelder. Reicht die Fläche nicht oder gibt es kein gültiges Schlüsselversteck, pausiert
+  die erhaltene Partie im Aufbau beim ersten Spieler; große Portalmeldung erklärt die nötige
+  Ergänzung. Unplatzierte Figuren neu setzen, dann normal speichern. Keine Behauptung, alle
+  hätten die Raummeisterrolle abgelehnt, und kein stiller Spielreset.
+
+### Ziel und echtes Spielende
+
+- Ziel 1: Erster menschlicher Spieler, der das Portal betritt, gewinnt; kein Schlüssel nötig.
+- Ziel 2: Spieler mit **Portalschlüssel in der eigenen Tasche** betritt das Portal und gewinnt.
+  Ohne Schlüssel keine Wertung. Es gibt weiterhin keine Übergabe-/Tauschfunktion; Finder und
+  Träger sind dadurch im normalen Ablauf dieselbe Person. Menschen bleiben Partner.
+- Sobald die Siegbedingung auf dem bestätigten Weg erfüllt ist, endet die Partie sofort;
+  verbleibende Würfel-Schritte entfallen nur dabei. Kein zweiter Sieger, kein weiterer Wurf,
+  kein weiteres Go und keine neue Gegneraktion. Gewinnername/Figur/Feld und Ergebnis-ID speichern.
+- Vollständiges Speichern/Laden und App-Neustart erhalten das Ergebnis und die gesamte Story.
+  Kein automatischer Reset. Alte geladene Partie mit bereits erfüllter gewählter Portalbedingung
+  erhält den fehlenden Abschluss; sonst an der vorhandenen Stelle fortsetzen.
+- Bei neuem zielbasiertem Aufbau muss ein Portal vorhanden sein; kein Brettgenerator und keine
+  unbekannten Wände/Teile erfinden. Zusammenhang des gesamten Bretts bleibt Aufgabe des Aufbaus.
+
+### Antippen, korrigieren und bestätigen
+
+- **Keine Bewegungs-Richtungstasten** mehr, auch nicht beim Gegnerhelfer. Die gerichteten
+  Charakteraktionen behalten ihr eigenes Nord/Ost/Süd/West-Popup; das sind keine Bewegungstasten.
+- Unter dem Würfel dieselbe tatsächliche Karte mit Zoomtasten, Zwei-Finger-Zoom und Ein-Finger-
+  Verschieben. **Karte ↶ / ↷** dreht die lokale Ansicht weiter synchron; Weltkoordinaten bleiben.
+  Eigener Kartenzoom und Sitzorientierung über Browser-Neuladen erhalten. Keine Bewegung durch Pan/Zoom.
+- Nach Aufdeckung des W6 (und bei 5/6 nach Bewegung wählen) markiert der Host **exakt passende
+  Endfelder**. Mauern, nicht vorhandene Felder und andere Figuren blockieren. Keine diagonalen
+  Übergänge. Umwege und bereits technisch erlaubte Wiederholungen von Feldern bleiben möglich;
+  daraus keine neue endgültige Anti-Schleifenregel ableiten. Ein bereits qualifiziertes Siegportal
+  wird auch bei kürzerem Weg markiert. Keine geheimen Schlüsselkoordinaten in der Zielberechnung.
+- Feld antippen speichert nur den gewählten Weg als **Vorschau**. Zielfeld am Client hervorheben,
+  Wegpunkte zeichnen und am Portal Ausgang → Ziel mit Hinweis **vorgemerkt** anzeigen. Anderes
+  erreichbares Feld antippen korrigiert frei. Figur, Tasche, Story und Reststrecke ändern dabei nicht.
+- **Zug bestätigen** rechts neben dem nach links ausgewichenen Würfel führt den ganzen Weg
+  atomar am Host aus. Der Client sendet keine frei erfundene Karte oder Schritte. Host berechnet
+  und prüft Route erneut. Schlüssel auf durchlaufenen Feldern aufnehmen; nicht nur am Endfeld suchen.
+  Erst erfolgreiches Speichern bestätigt Bewegung und Spielende. Danach echte Figur passend versetzen.
+- Identischer Retry nach Antwortverlust bewegt/öffnet/wertet niemals doppelt. Eine verlorene
+  Zugantwort, die inzwischen einen Fund auslöst, kann **im Funddialog** erneut abgeglichen werden;
+  kein unerreichbarer Retryknopf hinter dem Popup. Vorschau über Neustart/Sichern/Laden erhalten.
+- Gegnerhelfer markiert jeweils einen legalen nächsten Schritt auf derselben Karte und bestätigt
+  ihn. Danach ggf. nächsten Schritt wählen, abschließend **Figur bewegt · bestätigen**. Kein neuer
+  Gegner-W6 oder neue Reichweite/KI festgelegt; bisher moderierter Auftrag bleibt bestehen.
+
+### Portalbild und wartende Spieler
+
+- Während regulärem Spiel **vor dem ersten Schlüsselfund** nur das vollständige mittige Porträt
+  der aktiven Figur auf dunklem Hintergrund. Keine alte Kartenwand, W6- oder Teamverwaltung.
+  Das kleine native ⋮-Menü bleibt erreichbar. Vorschau erscheint als große weiße Zielmeldung.
+- **Erster wirklicher Fund**, niemals Vorschau: vorhandene private `portal_blue.mp4` im Hintergrund
+  in Schleife, einmal `tardis_sound.ogg` als Öffnungssound. Das Originalvideo hat keinen Audiostream.
+  Keine neue Medienquelle und kein über Git veröffentlichtes Nutzeroriginal. Film bleibt nach Fund
+  offen, auch wenn der Träger später entfernt wird. Sieg ohne Schlüssel öffnet das Portal ebenfalls.
+- Gewählte Interpretation von „nur in dieser Phase“: **während der offenen Filmphase** erscheint
+  die bisherige Portal-Statusinformation im Spieltab der gerade **unbeteiligten** Clients:
+  Figur/Bild/Runde/Feld, Wurf nach Client-ACK, aktuelle Entscheidung/Story und Zielvorschau.
+  Eigenen Zug, angegriffene Person und aktiven Gegnerhelfer ausnehmen. Automatisch einmal in
+  diese Ansicht wechseln; Steckbrief/Story bleiben anschließend freiwillig anwählbar.
+- Portalfilm wird durch alte Schlüssel-/Angriffskarten nicht überdeckt; diese Hinweise laufen
+  in den vorgesehenen Clientansichten. Zielvorschau und dauerhaftes Siegerergebnis groß weiß über
+  dem Film. Aufbau-Livekarte/Fakten, Abstimmung und Startphasen bleiben eigene bestehende Ansichten.
+- Öffnungs-ID speichern; Polling/Retry/Resume/Laden spielt den Sound nicht neu. Hintergrund/
+  ausgeblendete Ansicht gibt Videoplayer und Audiofokus frei, Rückkehr setzt nur den Film fort.
+  Film/Audio sind Darstellung und dürfen niemals Spielaktionen oder Zufall erzeugen.
+
+### Technik, Migration und Grenzen
+
+- App **0.15.0 / Code 22**, **Protokoll 9**, **Spielstandformat 12**, Formate 1–11 lesbar;
+  benannte Raumdateien behalten Format 1. Normal über APK ab 0.5.0 installieren, nicht deinstallieren.
+  Clientseiten wegen neuer Befehle/Metadaten neu laden. Keine neue Partie für Darstellung nötig.
+- Format 12 ergänzt Öffnungs-ID, vollständiges Ergebnis und gespeicherte Vorschau. Lesen prüft
+  Route, Berechtigung, Reichweite und Zustand. Öffentliche Lobby bleibt reine Platzbelegung;
+  Status für wartende Handys nur über deren authentisierten Snapshot, kein neuer Admin-Endpunkt.
+- Keine neue Charakterwirkung, Ausdauer-/Kraftwerte, Gegenstandskosten, Angebote oder Kampflogik.
+  Der bereits dokumentierte Hotspot-/mDNS-Ladefehler wird durch diesen Ausbau nicht als behoben erklärt.
+- Automatische Tests und APK-Prüfung siehe Abschnitt 11; echte Android-Video-/Audio-/Touch-/
+  Halterungs-/Mehrgeräteprüfung bleibt offen, solange sie nicht tatsächlich am Telefon erfolgt ist.
+
+## 9. Technische Grundlage 0.15.0
 
 - `app`: native Activity, minSdk 26 (Android 8), target/compileSdk 36, Java 17.
 - Build: AGP 8.13.2, Gradle 8.13, JDK 17. Ab 0.4.0 JmDNS 3.6.3 für den lokalen Hostnamen,
@@ -1531,7 +1646,7 @@ Keine weitere Designauswahl verlangt; bestehende Spielregeln nicht verändern.
 - Jeder menschliche Zug wartet zunächst auf gespeichertes Go, danach folgt der W6. Bei 1–4 direkt bewegen, bei 5/6
   Bewegung oder Aktionswahl. Bewegung endet erst nach genau der gewürfelten Schrittzahl.
 - Kein freies Passen und kein zweiter Wurf innerhalb desselben Zugs. Die Aktionswahl ersetzt
-  die Bewegung; derzeit wird nur die Wahl protokolliert, keine Wirkung berechnet. Keine Missionswertung.
+  die Bewegung; derzeit wird nur die Wahl protokolliert, keine Wirkung berechnet. Wertung der beiden gewählten Portalziele seit 0.15.0; keine weiteren Missionswirkungen.
 - Zufall entsteht ausschließlich am Host; Browser präsentiert gespeichertes Ergebnis.
 - Authentisierte Zustandsabfrage, separate Tokens, kein Host-Steuerungsendpunkt.
 - Längenlimits, begrenzter Threadpool, Anmeldedrosselung, keine CORS-Freigabe,
@@ -1563,8 +1678,8 @@ Keine weitere Designauswahl verlangt; bestehende Spielregeln nicht verändern.
 
 Zwei bestätigte Zieloptionen, Mehrheit und einmaliges Gleichstands-Los sowie Zufall als eigene
 zufällige Stimme sind umgesetzt (Abschnitt 8n). Weitere Fragen folgen nach Vorgaben des Nutzers.
-Offen: genaue Ziel-/Eingangszelle „vor dem Portal“, Finder versus aktueller Schlüsselträger,
-automatische Siegprüfung und objektivspezifischer Finalphasentrigger. Die persönliche Siegbedingung
+Seit 0.15.0: ein Portal-Zielfeld, Betreten als Erreichen, beim Schlüsselziel eigener Taschenbesitz;
+automatische Siegprüfung und Öffnung bei Fund umgesetzt (8p). Weitere Zielabstimmungen bleiben offen. Die persönliche Siegbedingung
 macht beigetretene Spieler nicht zu Gegnern; Partner-/Gegnerzuordnung bleibt unverändert.
 
 **Spätere Atmosphäre und Erzählung – merken und zur passenden Entwicklungsphase ansprechen
@@ -1592,10 +1707,11 @@ macht beigetretene Spieler nicht zu Gegnern; Partner-/Gegnerzuordnung bleibt unv
 - Nur als spätere Planung speichern. Dieser Wunsch löst weder Implementierung noch neuen
   APK-Build aus; die damals verschobene Startaufstellung ist inzwischen in 0.11.0 umgesetzt (Abschnitt 8k).
 
-### Spätere Finalphase: bereitgestellte Portalanimation
+### Finalphase: bereitgestellte Portalanimation – ab 0.15.0 konkretisiert
 
-Nutzerdatei und Gestaltungswunsch vom 27.10.2026: **Finalphase noch vorgemerkt**. Dieselbe
-Originaldatei läuft seit 0.13.0 bereits während der Zielabstimmung; der folgende Finaltrigger bleibt offen:
+Historischer Wunsch vom 27.10.2026. **Neueste Konkretisierung und Umsetzung am 28.10.2026
+siehe 8p**: erster echter Schlüsselfund öffnet den Portalfilm dauerhaft, einmal mit vorhandenem
+TARDIS-Sound; davor mittiges aktives Porträt. Die folgenden Punkte dokumentieren die frühere Planung:
 
 - Wenn kurz vor dem Ende alle übrigen Zielbedingungen erfüllt sind und nur noch der passende
   Spieler das Portal erreichen muss, soll **portal_blue.mp4** als durchgehender Hintergrund
@@ -1652,6 +1768,32 @@ Parallel nach verfügbarer APK die Android-Version und das Host-Telefon notieren
 echten Vier-Spieler-Hotspottest durchführen. Das Host-Telefon ist bislang nicht benannt.
 
 ## 11. Tests und bekannte Grenzen
+
+Für 0.15.0 am 28.10.2026:
+
+- **839 Kern-/HTTP-Prüfungen bestanden**: vier Portalrotationen mit genau einer Koordinate,
+  beidseitige Frontzugänge, geschlossene Seiten, Itemverbot auf ganzer Fläche, exakt erreichbare
+  Ziele, korrigierbare Vorschau ohne Bewegung/Story/Fund, Berechtigung, Speicherfehler, atomare
+  Bestätigung, identischer Retry, Schlüssel auch auf Zwischenfeldern, beide Ziele und dauerhaftes
+  Spielende, Neustart/Laden, Gegnerhelfer und Migration alter Portalpositionen/Verstecke.
+  Ein alter nur aus Portal bestehender voller Aufbau wird zur Korrektur pausiert und bleibt ladbar.
+- **342 DOM-/Grafikprüfungen bestanden**; vorhandene Registrierung, Wartefenster, Tasche,
+  Dossiers, Raumvorlagen, Abstimmung und Client-ACK-Würfel bleiben geprüft.
+- **Sieben Browserabläufe bestanden** mit echtem Java-HTTP-Host und getrennten mobilen
+  Browserkontexten: bestehender Spielablauf/Kartenorientierung, Schlüssel/Sicherung, Dossiers,
+  Raumvorlagen, Abstimmung/Eckkachel, neue Portalansicht und neue Kartenbewegung bis zum Sieg.
+  Der neue Zwei-Client-Test prüft Zielkorrektur ohne Verschieben, öffentliche Vorschau, echten
+  Touch-Zoom und Ein-Finger-Pan ohne Fehl-Auswahl, Drehung/Neuladen, verlorene Bestätigungsantwort
+  mit Retry im Funddialog, Status nur auf unbeteiligtem Handy und erhaltenen Sieg nach Host-Neustart.
+  Portalansicht zusätzlich bei 390×844, 320×568, 691×1477 und 844×390 geprüft, einschließlich
+  vollständigem Porträt, weißer Vorschau, transparenter Filmebene und Siegertext.
+- Android **assembleDebug / lintDebug / core:smokeTest** erfolgreich; vor Ausgabe des finalen
+  Pakets erneut mit aktualisierter Dokumentation und Prüfmarkierung ausführen. Ausgabeprüfung:
+  Code 22 / Version 0.15.0, bekanntes Signierzertifikat, sämtliche gebündelten Quellassets und
+  ONBOARDING.md bytegleich; beide OGGs und private MP4 bytegleich und unkomprimiert.
+- Dossier-Bedienung auf Karte/Zielvorschau/Bestätigung und tatsächliche Schlüsselzielwertung
+  aktualisiert. Keine neuen Spezialfähigkeiten oder Charakterwerte beschlossen.
+- Echte Telefone, native Video-/Tonwiedergabe, Hotspot und Lesbarkeit in der Halterung bleiben offen.
 
 Für 0.14.0 am 27.10.2026:
 
@@ -2116,6 +2258,8 @@ löscht dabei ihren Spielstand; Export/Import steht ab 0.9.0 zur Verfügung.
 | 27.10.2026 | 0.14.0 | Portal-Spielbühne mit Energieringen, großer Figur, W6 nach Clientfreigabe, Bewegungsgrafik, Teamleiste und kleinem Portal-Menü; Darstellung ersetzt Formularansicht, Formate/Protokoll unverändert |
 
 | 27.10.2026 | 0.13.0 | Immersive Dossiers ohne Serien-/Bildhinweise, Zielabstimmung mit Mehrheit/Gleichstands-Los und privater Vollbildanimation, Portalwürfel nach Clientaufdeckung, Eckwände an sichtbare Grafik angepasst; Format 11/Protokoll 8 |
+
+| 28.10.2026 | 0.15.0 | Dreiseitiges Portal als ein Zielfeld, keine Gegenstände darauf; Kartenbewegung mit erreichbaren Zielen, persistenter korrigierbarer Vorschau und atomarer Bestätigung, beide Zielwertungen/Spielende; Öffnungsfilm/Sound ab Fund und Status auf unbeteiligten Clients; Format 12/Protokoll 9 |
 
 ## 13. Fortsetzung in einem anderen Chat
 

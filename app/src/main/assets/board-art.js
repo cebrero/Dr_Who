@@ -19,14 +19,15 @@ function tileGraphic(kind,rotation=0,closed=true,subdivisions=2){
  };
  if(kind==='dungeon'&&closed)drawings.dungeon+='<path d="M6 6H94V94H6Z" fill="none" stroke="#e12e2e" stroke-width="12"/>';
  if(kind==='dungeon'&&!closed)drawings.dungeon='<path d="M23 80V32a27 27 0 0 1 54 0v48" fill="none" stroke="#347366" stroke-width="9"/><path d="M25 30L6 50V92L25 80" fill="#52857a"/>';
- svg.innerHTML='<g transform="rotate('+rotation*90+' 50 50)">'+(drawings[kind]||drawings.floor).replace(/<path[^>]*stroke="#d1c39a"[^>]*\/>/g,'').replaceAll('#28494c','#e12e2e').replaceAll('stroke-width="11"','stroke-width="13"')+'</g>'+(subdivisions===2?'<path d="M50 0V100M0 50H100" stroke="#34483ecc" stroke-width="2.5"/>':'');return svg;
+ if(kind==='portal')drawings.portal+='<path d="M6 94V6H94V94" fill="none" stroke="#e12e2e" stroke-width="12"/>';
+ svg.innerHTML='<g transform="rotate('+rotation*90+' 50 50)">'+(drawings[kind]||drawings.floor).replace(/<path[^>]*stroke="#d1c39a"[^>]*\/>/g,'').replaceAll('#28494c','#e12e2e').replaceAll('stroke-width="11"','stroke-width="13"')+'</g>'+(subdivisions===2&&kind!=='portal'?'<path d="M50 0V100M0 50H100" stroke="#34483ecc" stroke-width="2.5"/>':'');return svg;
 }
-function fieldName(s,x,y){if(x<0||y<0)return 'noch nicht aufgestellt';let column='',at=x;do{column=String.fromCharCode(65+at%26)+column;at=Math.floor(at/26)-1}while(at>=0);return column+(y+1)}
-function fieldRange(s,t){const q=s.board?.subdivisions||1,[w,h]=tileSize(t),first=fieldName(s,t.x*q,t.y*q),last=fieldName(s,(t.x+w)*q-1,(t.y+h)*q-1);return first===last?first:first+'–'+last}
+function fieldName(s,x,y){const q=s?.board?.subdivisions||1,t=s?.board?.tiles?.find(t=>t.kind==='portal'&&x>=t.x*q&&x<(t.x+tileSize(t)[0])*q&&y>=t.y*q&&y<(t.y+tileSize(t)[1])*q);if(t){x=t.x*q;y=t.y*q}if(x<0||y<0)return 'noch nicht aufgestellt';let column='',at=x;do{column=String.fromCharCode(65+at%26)+column;at=Math.floor(at/26)-1}while(at>=0);return column+(y+1)}
+function fieldRange(s,t){const q=s.board?.subdivisions||1,[w,h]=tileSize(t),first=fieldName(s,t.x*q,t.y*q),last=t.kind==='portal'?first:fieldName(s,(t.x+w)*q-1,(t.y+h)*q-1);return first===last?first:first+'–'+last}
 function tileSize(t){return [t.kind==='portal'&&t.rotation%2===0?2:1,t.kind==='portal'&&t.rotation%2?2:1]}
 function decorateTile(element,tile,subdivisions=2){
  element.append(tileGraphic(tile.kind,tile.rotation,tile.closed,0));
- const [w,h]=tileSize(tile),cols=w*subdivisions,rows=h*subdivisions;
+ const [w,h]=tileSize(tile),cols=tile.kind==='portal'?1:w*subdivisions,rows=tile.kind==='portal'?1:h*subdivisions;
  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
   const field=document.createElement('span');field.className='board-subfield';field.style.left=(x/cols*100)+'%';field.style.top=(y/rows*100)+'%';field.style.width=(100/cols)+'%';field.style.height=(100/rows)+'%';
   const label=document.createElement('span');label.className='field-label';label.dataset.field=fieldName({board:{subdivisions}},tile.x*subdivisions+x,tile.y*subdivisions+y);label.textContent=label.dataset.field;field.append(label);element.append(field);

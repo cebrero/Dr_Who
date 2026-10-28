@@ -13,7 +13,7 @@ public final class GameEngine {
         public InvalidPortalCodeException(){super("Portalcode falsch.");}
     }
     public interface Store { byte[] load() throws IOException; void save(byte[] bytes) throws IOException; }
-    private static final int FORMAT = 11, MAGIC = 0x4457484f;
+    private static final int FORMAT = 12, MAGIC = 0x4457484f;
     private final Store store;
     private final SecureRandom random;
     private final Clock clock;
@@ -66,6 +66,8 @@ public final class GameEngine {
         boolean rollPresented=true;
         Map<String,Integer> votes=new LinkedHashMap<>();
         int objective; boolean voteTied;
+        String portalOpenEvent="",winnerId="",winnerName="",winnerCharacter="",winnerField="",winEvent="",previewActor="";
+        List<int[]> preview=new ArrayList<>();
     }
 
     public GameEngine(Store store) throws IOException { this(store, new SecureRandom()); }
@@ -91,7 +93,7 @@ public final class GameEngine {
             addLog(initial,"Technikdemo bereit. Noch keine endgültigen Spielregeln.");
             store.save(encode(initial));
             state = initial;
-        } else state = decode(saved); // Never silently replace an unreadable save.
+        } else { state=decode(saved);if(state.winEvent.isEmpty()&&state.setupStage.equals("play"))for(Player p:state.players)if(canWin(state,p,p.x,p.y)){victory(state,p);store.save(encode(state));break;}if(new DataInputStream(new ByteArrayInputStream(saved)).readInt()==MAGIC&&java.nio.ByteBuffer.wrap(saved).getInt(4)<FORMAT)store.save(encode(state)); } // Validate fully before migrating.
     }
 
     public synchronized String fieldName(int x,int y){return state.legacyBoard?BoardPlan.cell(x,y):state.board.fieldName(x,y);}
@@ -114,7 +116,8 @@ public final class GameEngine {
         public List<PortalNotice> notices;
         public List<String[]> boardPlayers;
         public String dossierStatus="";
-        public boolean awaitingGo, enemyTurn, currentRoll;
+        public boolean awaitingGo, enemyTurn, currentRoll, portalOpen, finished;
+        public String portalOpenEvent="",winnerName="",winnerCharacter="",winnerField="",winEvent="",previewField="",previewFrom="";
         public String field="", turnStage="roll", eventId="", eventText="", eventSpeaker="";
         public int remaining, turnRoll;
         public String activePlayerName="";
@@ -123,6 +126,9 @@ public final class GameEngine {
     }
     public synchronized PortalState portalState() {
         PortalState view = new PortalState();
+        view.portalOpen=!state.portalOpenEvent.isEmpty();view.portalOpenEvent=state.portalOpenEvent;
+        view.finished=!state.winEvent.isEmpty();view.winnerName=state.winnerName;view.winnerCharacter=state.winnerCharacter;view.winnerField=state.winnerField;view.winEvent=state.winEvent;
+        if(!state.preview.isEmpty()){int[] end=state.preview.get(state.preview.size()-1);view.previewField=field(state,end[0],end[1]);int[] from=state.phase.equals("enemies")?state.enemyPositions.get(state.enemies.get(state.enemyIndex)):new int[]{state.players.get(state.current).x,state.players.get(state.current).y};view.previewFrom=from==null?"":field(state,from[0],from[1]);}
         view.rollPresented=state.rollPresented;view.objectiveText=objectiveText(state.objective);
         if(state.setupStage.equals("voteResult"))view.voteStatus=state.voteTied?"Gleichstand · Das Portal hat ausgelost.":"Die Mehrheit hat entschieden.";
         if(state.setupStage.equals("voting")){StringJoiner waiting=new StringJoiner("\n");for(Player p:state.players)if(!state.votes.containsKey(p.id))waiting.add(p.name+" · "+characterName(p.characterId));view.voteStatus="Abgestimmt: "+state.votes.size()+" / "+state.players.size()+"\nEs fehlen noch:\n"+waiting;}
@@ -148,7 +154,7 @@ public final class GameEngine {
         for(Player p:state.players)view.positions.add(p.name+" · "+characterName(p.characterId)+" · Feld "+cell(p));
         if(!playing()){view.headline="Dein Team sammelt sich";view.detail="Charaktere wählen und Abenteuer starten.";}
         else if(state.phase.equals("players")){
-            Player p=state.players.get(state.current);view.field=cell(p);view.currentRoll=state.turnRoll>0&&state.rollPlayerId.equals(p.id);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
+            Player p=state.players.get(state.current);view.field=cell(p);view.currentRoll=state.winEvent.isEmpty()&&state.turnRoll>0&&state.rollPlayerId.equals(p.id);view.activePlayerName=p.name;view.awaitingGo=!state.turnAccepted;
             for(CharacterProfile c:catalogue)if(c.id.equals(p.characterId))view.activeCharacter=c;
             view.headline=view.awaitingGo?p.name+" ist dran…":p.name+" · "+characterName(p.characterId);
             view.detail=view.awaitingGo?"Wartet auf Go am Spielerhandy.":"Feld "+cell(p)+" · "+(state.turnStage.equals("roll")?"Zuerst am eigenen Handy würfeln.":state.turnStage.equals("choice")?(profile(p.characterId).actionAvailable?"Bewegung oder Charakteraktion wählen.":"Bewegung wählen; Spezialaktion noch offen."):"Noch "+state.remaining+" Felder ziehen.");
@@ -228,6 +234,7 @@ public final class GameEngine {
     public synchronized void loadGame(byte[] bytes)throws IOException{
         if(bytes==null)throw new IOException("Spielstand fehlt.");
         State next=decode(bytes); // Validate before touching current state or durable storage.
+        if(next.winEvent.isEmpty()&&next.setupStage.equals("play"))for(Player p:next.players)if(canWin(next,p,p.x,p.y)){victory(next,p);break;}
         next.id=UUID.randomUUID().toString();next.revision=state.revision;
         for(Player p:next.players){p.token=UUID.randomUUID().toString()+UUID.randomUUID();p.joinRequest="";p.reclaimable=true;}
         if(next.setupStage.equals("selecting")||next.setupStage.equals("launching")||next.setupStage.equals("voteResult"))next.setupDeadline=clock.millis()+3000;
@@ -241,10 +248,11 @@ public final class GameEngine {
     public synchronized void removePlayer(String playerId)throws IOException{
         int index=-1;for(int i=0;i<state.players.size();i++)if(state.players.get(i).id.equals(playerId))index=i;
         if(index<0)return;
-        State next=copy();Player removed=next.players.get(index);
-        if(next.started&&next.phase.equals("players")&&next.current==index&&next.players.size()>1)endPlayerTurn(next);
+        State next=copy();next.preview.clear();next.previewActor="";Player removed=next.players.get(index);
+        if(next.winEvent.isEmpty()&&next.started&&next.phase.equals("players")&&next.current==index&&next.players.size()>1)endPlayerTurn(next);
         next.players.remove(index);
-        if(next.keyOwner.equals(playerId)){next.keyState=next.board.exists(removed.x,removed.y)?"hidden":"pending";next.keyX=next.keyState.equals("hidden")?removed.x:-1;next.keyY=next.keyState.equals("hidden")?removed.y:-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;addLog(next,"Der Portalschlüssel bleibt auf Feld "+next.board.fieldName(removed.x,removed.y)+" zurück.");}
+        if(next.previewActor.equals(playerId)){next.preview.clear();next.previewActor="";}
+        if(next.keyOwner.equals(playerId)){next.keyState=next.board.itemField(removed.x,removed.y)?"hidden":"pending";next.keyX=next.keyState.equals("hidden")?removed.x:-1;next.keyY=next.keyState.equals("hidden")?removed.y:-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;if(next.keyState.equals("pending"))relocateKey(next);addLog(next,"Der Portalschlüssel wurde außerhalb des Portals zurückgelegt.");}
         if(next.current>index)next.current--;if(next.current>=next.players.size())next.current=0;
         next.asked.remove(playerId);next.receipts.removeIf(r->r.startsWith(playerId+":"));
         next.votes.remove(playerId);next.dossierRead.remove(playerId);next.manualSpawns.remove(playerId);
@@ -255,9 +263,10 @@ public final class GameEngine {
         if(lostMaster)next.roomMaster="";if(lostCandidate)next.candidate="";
         if(next.players.isEmpty()){
             next.keyState="pending";next.keyX=-1;next.keyY=-1;next.keyOwner="";next.keyEvent="";next.keyPending=false;
+            next.portalOpenEvent="";next.winEvent="";next.winnerId="";next.winnerName="";next.winnerCharacter="";next.winnerField="";next.preview.clear();next.previewActor="";
             next.votes.clear();next.objective=0;next.voteTied=false;next.started=false;next.setupStage="lobby";next.setupId="";next.setupDeadline=0;
             next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
-            next.dossierRequired=false;next.freshSetup=false;next.dossierRead.clear();next.manualSpawns.clear();
+            next.preview.clear();next.previewActor="";next.dossierRequired=false;next.freshSetup=false;next.dossierRead.clear();next.manualSpawns.clear();
             next.phase="players";next.enemyIndex=0;next.helperId="";next.movementDone=false;
             next.turnStage="roll";next.turnRoll=0;next.remaining=0;next.turnAccepted=false;
         }else if((lostCandidate&&next.setupStage.equals("offering"))||(lostMaster&&Arrays.asList("building","briefing","launching").contains(next.setupStage))){
@@ -284,10 +293,10 @@ public final class GameEngine {
     }
     /** Host-only: preserve an existing adventure while recording or correcting its physical plan. */
     public synchronized void rebuildBoard() throws IOException {
-        if(!playing())throw new IllegalArgumentException("Zuerst Partie starten oder laufenden Aufbau abschließen.");
+        if(!playing()||!state.winEvent.isEmpty())throw new IllegalArgumentException("Zuerst Partie starten oder laufenden Aufbau abschließen.");
         State next=copy();next.setupStage="selecting";next.setupId=UUID.randomUUID().toString();next.setupDeadline=clock.millis()+3000;
         next.roomMaster="";next.candidate="";next.asked.clear();next.forcedRoomMaster=false;next.boardSaved=false;
-        next.dossierRequired=false;next.freshSetup=false;
+        next.preview.clear();next.previewActor="";next.dossierRequired=false;next.freshSetup=false;
         if(next.legacyBoard)for(Player p:next.players){p.x=-1;p.y=-1;}
         if(!next.board.subdivided()){next.board.upgrade();for(Player p:next.players)if(p.x>=0){p.x*=2;p.y*=2;}}
         next.legacyBoard=false;addLog(next,"Die Partie pausiert zum Erfassen des Raumgefüges. Runde und Zug bleiben erhalten.");commit(next);
@@ -351,7 +360,11 @@ public final class GameEngine {
                 .append(",\"playerName\":").append(quote(e.playerName)).append(",\"text\":").append(quote(e.text))
                 .append(",\"direction\":").append(quote(e.direction)).append('}');
         }
-        return b.append("]}").toString();
+        b.append(']');
+        b.append(",\"portalOpen\":").append(!state.portalOpenEvent.isEmpty()).append(",\"result\":{\"id\":").append(quote(state.winEvent)).append(",\"playerId\":").append(quote(state.winnerId)).append(",\"name\":").append(quote(state.winnerName)).append(",\"characterId\":").append(quote(state.winnerCharacter)).append(",\"field\":").append(quote(state.winnerField)).append("}");
+        b.append(",\"movement\":").append(movementJson(self));
+        b.append(",\"portal\":").append(PortalScene.json(portalState(),true,false));
+        return b.append('}').toString();
     }
     public synchronized String roomLibrary(String token){
         Player actor=authenticated(state,token);requireRoomMaster(actor);
@@ -400,18 +413,27 @@ public final class GameEngine {
             if(!state.keyState.equals("owned")||!state.keyOwner.equals(actor.id))throw new IllegalArgumentException("Kein Schlüsselfund für dich.");
             State next=copy();next.keyPending=false;remember(next,receipt);commit(next);return snapshot(token);
         }
+        if(!state.winEvent.isEmpty())throw new IllegalArgumentException("Die Partie ist beendet. Speichern, laden oder am Portal eine neue Partie starten.");
         if(Arrays.asList("roomYes","roomNo","tilePlace","tileMove","tileRotate","tileRemove","tileState","setSpawn","boardSave","roomLoad").contains(action))
             return setupCommand(actor,token,receipt,action,direction);
+        if("previewEnemy".equals(action)||"confirmEnemyMove".equals(action)){
+            if(!playing()||!state.phase.equals("enemies")||!actor.id.equals(state.helperId)||state.movementDone)throw new IllegalArgumentException("Kein Bewegungsauftrag für dich.");
+            State next=copy();String enemy=next.enemies.get(next.enemyIndex);int[] from=next.enemyPositions.get(enemy);if(from==null)throw new IllegalArgumentException("Gegner zuerst aufstellen.");
+            Map<String,List<int[]>> options=enemyRoutes(next,enemy);
+            if(action.equals("previewEnemy")){String[] a=(direction==null?"":direction).split(",",-1);requireArgs(a,2);int[] c=next.board.canonical(number(a[0]),number(a[1]));List<int[]> path=options.get(MovementRoutes.key(c[0],c[1]));if(path==null)throw new IllegalArgumentException("Dieses Gegnerfeld ist nicht erreichbar.");next.preview=new ArrayList<>(path);next.previewActor=actor.id;}
+            else{if(!next.previewActor.equals(actor.id)||next.preview.size()!=1)throw new IllegalArgumentException("Wähle zuerst ein Gegner-Zielfeld.");int[] at=next.preview.get(0);if(!options.containsKey(MovementRoutes.key(at[0],at[1])))throw new IllegalArgumentException("Weg blockiert.");next.enemyPositions.put(enemy,at);next.preview.clear();next.previewActor="";addSpeech(next,characterName(enemy)+" zieht nach "+field(next,at[0],at[1]),enemy,actor.name,"Ich ziehe zu Feld "+field(next,at[0],at[1])+".","");}
+            remember(next,receipt);commit(next);return snapshot(token);
+        }
         if("moveEnemy".equals(action)){
             if(!playing()||!state.phase.equals("enemies")||!actor.id.equals(state.helperId))throw new IllegalArgumentException("Kein Bewegungsauftrag für dich.");
             State next=copy();String enemy=next.enemies.get(next.enemyIndex);int[] at=next.enemyPositions.get(enemy);if(at==null)throw new IllegalArgumentException("Gegnerposition zuerst im Aufbau setzen.");
-            int d="NESW".indexOf(direction==null?"":direction);if(d<0||direction.length()!=1)throw new IllegalArgumentException("Richtung fehlt.");int x=at[0]+(d==1?1:d==3?-1:0),y=at[1]+(d==2?1:d==0?-1:0);
+            int d="NESW".indexOf(direction==null?"":direction);if(d<0||direction.length()!=1)throw new IllegalArgumentException("Richtung fehlt.");int x=at[0]+(d==1?1:d==3?-1:0),y=at[1]+(d==2?1:d==0?-1:0);int[] canonical=next.board.canonical(x,y);x=canonical[0];y=canonical[1];
             if(!next.board.canStep(at[0],at[1],x,y))throw new IllegalArgumentException("Weg blockiert.");for(Player p:next.players)if(p.x==x&&p.y==y)throw new IllegalArgumentException("Feld belegt.");for(Map.Entry<String,int[]> other:next.enemyPositions.entrySet())if(!other.getKey().equals(enemy)&&other.getValue()[0]==x&&other.getValue()[1]==y)throw new IllegalArgumentException("Feld belegt.");
             next.enemyPositions.put(enemy,new int[]{x,y});addSpeech(next,characterName(enemy)+" zieht nach "+next.board.fieldName(x,y),enemy,actor.name,"Ich ziehe zu Feld "+next.board.fieldName(x,y)+".",direction);remember(next,receipt);commit(next);return snapshot(token);
         }
         if ("confirmMovement".equals(action)) {
             if (!playing() || !state.phase.equals("enemies") || !actor.id.equals(state.helperId)) throw new IllegalArgumentException("Du wurdest nicht für diese Bewegung ausgewählt.");
-            State next = copy(); next.helperId = ""; next.movementDone = true;
+            State next = copy();next.preview.clear();next.previewActor=""; next.helperId = ""; next.movementDone = true;
             addSpeech(next,actor.name+" hat die Gegnerbewegung auf dem Tisch bestätigt.",actor.characterId,actor.name,"Ich habe die Gegnerfigur auf dem Tisch bewegt.",""); remember(next, receipt); commit(next); return snapshot(token);
         }
         if ("ackAttack".equals(action)) {
@@ -431,6 +453,18 @@ public final class GameEngine {
         State next = copy(); Player p = next.players.get(next.current);
         boolean finished = false;
         switch (action == null ? "" : action) {
+            case "previewMove":
+                if(!next.turnStage.equals("move")||next.remaining<1)throw new IllegalArgumentException("Zuerst Bewegung wählen.");
+                String[] target=(direction==null?"":direction).split(",",-1);requireArgs(target,2);int tx=number(target[0]),ty=number(target[1]);int[] canonical=next.legacyBoard?new int[]{tx,ty}:next.board.canonical(tx,ty);
+                List<int[]> route=routes(next,p).get(MovementRoutes.key(canonical[0],canonical[1]));if(route==null)throw new IllegalArgumentException("Dieses Zielfeld ist mit deinem Wurf nicht erreichbar.");
+                next.preview=new ArrayList<>(route);next.previewActor=p.id;next.rollPresented=true;break;
+            case "confirmMove":
+                if(!next.turnStage.equals("move")||!next.previewActor.equals(p.id)||next.preview.isEmpty())throw new IllegalArgumentException("Wähle zuerst ein erreichbares Zielfeld auf der Karte.");
+                List<int[]> path=new ArrayList<>(next.preview);int[] destination=path.get(path.size()-1);
+                List<int[]> legal=routes(next,p).get(MovementRoutes.key(destination[0],destination[1]));
+                if(legal==null||legal.size()!=path.size())throw new IllegalArgumentException("Der vorgemerkte Weg ist nicht mehr gültig. Wähle erneut.");
+                for(int[] step:path){applyStep(next,p,step[0],step[1],"");if(!next.winEvent.isEmpty())break;}
+                next.preview.clear();next.previewActor="";finished=next.remaining==0;break;
             case "move":
                 if (!next.turnStage.equals("move") || next.remaining < 1) throw new IllegalArgumentException("Zuerst würfeln und gegebenenfalls Bewegung wählen.");
                 int dx = 0, dy = 0;
@@ -442,21 +476,16 @@ public final class GameEngine {
                     default: throw new IllegalArgumentException("Ungültige Richtung.");
                 }
                 int x = p.x + dx, y = p.y + dy;
+                if(!next.legacyBoard){int[] c=next.board.canonical(x,y);x=c[0];y=c[1];}
                 if(next.legacyBoard){if(x<0||x>=6||y<0||y>=6)throw new IllegalArgumentException("Außerhalb des bisherigen Testfelds.");}
                 else if(!next.board.exists(x,y))throw new IllegalArgumentException("Hier existiert kein Spielfeld.");
-                else if(!next.board.canStep(p.x,p.y,x,y))throw new IllegalArgumentException("Eine Wand versperrt diesen Weg.");
+                else if(!next.board.canStep(p.x,p.y,next.board.canonical(x,y)[0],next.board.canonical(x,y)[1]))throw new IllegalArgumentException("Eine Wand versperrt diesen Weg.");
                 for(int[] at:next.enemyPositions.values())if(at[0]==x&&at[1]==y)throw new IllegalArgumentException("Dieses Feld ist durch einen Gegner belegt.");
                 for (Player other : next.players) if (other != p && other.x == x && other.y == y)
                     throw new IllegalArgumentException("Dieses Feld ist belegt.");
-                String from = cell(p); p.x = x; p.y = y;
-                next.remaining--;
-                addSpeech(next, p.name + " zieht von " + from + " nach " + cell(p) + " · noch " + next.remaining + " Felder. Figur auf dem Tisch versetzen.",
-                    p.characterId,p.name,(CharacterProfile.archetypeOf(p.characterId).equals("dalek")?"Ich rolle":"Ich gehe")+" von Feld "+from+" zu Feld "+cell(p)+". Noch "+next.remaining+" Felder liegen vor mir.",direction);
-                if(next.keyState.equals("hidden")&&next.keyX==x&&next.keyY==y){
-                    next.keyState="owned";next.keyOwner=p.id;next.keyPending=true;
-                    notice(next,p.name+" hat den Portalschlüssel gefunden!");next.keyEvent=next.notices.get(next.notices.size()-1).id;
-                    addSpeech(next,p.name+" findet den Portalschlüssel auf "+next.board.fieldName(x,y)+".",p.characterId,p.name,"Ich habe auf Feld "+next.board.fieldName(x,y)+" den Portalschlüssel gefunden. Ich stecke ihn in meine Tasche.","");
-                }
+                int[] step=next.legacyBoard?new int[]{x,y}:next.board.canonical(x,y);
+                applyStep(next,p,step[0],step[1],direction);
+                next.preview.clear();next.previewActor="";
                 finished = next.remaining == 0;
                 break;
             case "roll":
@@ -490,10 +519,72 @@ public final class GameEngine {
         // These UI actions are enabled only after the player's die landed. They also recover a lost cosmetic ACK.
         if(Arrays.asList("move","chooseMove","action").contains(action)&&actor.id.equals(next.rollPlayerId))next.rollPresented=true;
         remember(next, receipt);
-        if (finished) endPlayerTurn(next);
+        if (finished&&next.winEvent.isEmpty()) endPlayerTurn(next);
         commit(next);
         return snapshot(token);
     }
+    private static String field(State s,int x,int y){return s.legacyBoard?BoardPlan.cell(x,y):s.board.fieldName(x,y);}
+    private static Set<String> blocked(State s,Player actor){
+        Set<String> cells=new HashSet<>();for(Player p:s.players)if(p!=actor)cells.add(MovementRoutes.key(p.x,p.y));for(int[] a:s.enemyPositions.values())cells.add(MovementRoutes.key(a[0],a[1]));return cells;
+    }
+    private static boolean canWin(State s,Player p,int x,int y){return !s.legacyBoard&&s.board.isPortal(x,y)&&(s.objective==1||s.objective==2&&s.keyState.equals("owned")&&s.keyOwner.equals(p.id));}
+    private static Map<String,List<int[]>> routes(State s,Player p){return MovementRoutes.routes(s.board,s.legacyBoard,p.x,p.y,s.remaining,blocked(s,p),s.objective==1||s.objective==2&&s.keyOwner.equals(p.id));}
+    private static Map<String,List<int[]>> enemyRoutes(State s,String enemy){
+        int[] from=s.enemyPositions.get(enemy);if(from==null)return Map.of();Set<String> blocked=new HashSet<>();for(Player p:s.players)blocked.add(MovementRoutes.key(p.x,p.y));for(Map.Entry<String,int[]> e:s.enemyPositions.entrySet())if(!e.getKey().equals(enemy))blocked.add(MovementRoutes.key(e.getValue()[0],e.getValue()[1]));return MovementRoutes.routes(s.board,false,from[0],from[1],1,blocked,false);
+    }
+    private String movementJson(Player self){
+        boolean active=playing()&&state.winEvent.isEmpty()&&state.phase.equals("players")&&state.players.get(state.current).id.equals(self.id)&&state.turnAccepted&&state.turnStage.equals("move");
+        boolean helping=playing()&&state.winEvent.isEmpty()&&state.phase.equals("enemies")&&state.helperId.equals(self.id)&&!state.movementDone;
+        Map<String,List<int[]>> paths=active?routes(state,self):helping?enemyRoutes(state,state.enemies.get(state.enemyIndex)):Map.of();StringBuilder b=new StringBuilder("{\"actor\":"+quote(state.previewActor)+",\"targets\":[");int i=0;
+        for(List<int[]> path:paths.values()){int[] at=path.get(path.size()-1);if(i++>0)b.append(',');b.append("{\"x\":").append(at[0]).append(",\"y\":").append(at[1]).append(",\"steps\":").append(path.size()).append('}');}
+        b.append("],\"path\":[");for(i=0;i<state.preview.size();i++){if(i>0)b.append(',');int[] at=state.preview.get(i);b.append("{\"x\":").append(at[0]).append(",\"y\":").append(at[1]).append('}');}return b.append("]}").toString();
+    }
+    private void applyStep(State next,Player p,int x,int y,String direction){
+        String from=field(next,p.x,p.y);p.x=x;p.y=y;next.remaining--;
+        addSpeech(next,p.name+" zieht von "+from+" nach "+field(next,x,y)+".",p.characterId,p.name,(CharacterProfile.archetypeOf(p.characterId).equals("dalek")?"Ich rolle":"Ich gehe")+" von Feld "+from+" zu Feld "+field(next,x,y)+". Noch "+next.remaining+" Felder liegen vor mir.",direction);
+        if(next.keyState.equals("hidden")&&next.keyX==x&&next.keyY==y){
+            next.keyState="owned";next.keyOwner=p.id;next.keyPending=true;
+            notice(next,p.name+" hat den Portalschlüssel gefunden!");next.keyEvent=next.notices.get(next.notices.size()-1).id;
+            if(next.portalOpenEvent.isEmpty())next.portalOpenEvent=next.keyEvent;
+            addSpeech(next,p.name+" findet den Portalschlüssel auf "+field(next,x,y)+".",p.characterId,p.name,"Ich habe auf Feld "+field(next,x,y)+" den Portalschlüssel gefunden. Ich stecke ihn in meine Tasche.","");
+        }
+        if(canWin(next,p,x,y))victory(next,p);
+    }
+    private void victory(State next,Player p){
+        next.winEvent=UUID.randomUUID().toString();next.winnerId=p.id;next.winnerName=p.name;next.winnerCharacter=p.characterId;next.winnerField=field(next,p.x,p.y);
+        if(next.portalOpenEvent.isEmpty())next.portalOpenEvent=next.winEvent;
+        next.preview.clear();next.previewActor="";next.turnStage="roll";next.turnRoll=0;next.remaining=0;next.turnAccepted=false;
+        addLog(next,p.name+" erreicht das Portal"+(next.objective==2?" mit dem Portalschlüssel":"")+" und gewinnt! Die Partie ist beendet.");
+    }
+    /** Deterministic recovery: no item can ever be hidden or dropped inside the portal footprint. */
+    private static void relocateKey(State s){
+        Set<String> occupied=new HashSet<>();for(Player p:s.players)occupied.add(MovementRoutes.key(p.x,p.y));for(int[] a:s.enemyPositions.values())occupied.add(MovementRoutes.key(a[0],a[1]));
+        Set<String> reached=new HashSet<>();ArrayDeque<int[]> queue=new ArrayDeque<>();for(Player p:s.players)if(s.board.exists(p.x,p.y)){int[] a=s.board.canonical(p.x,p.y);if(reached.add(MovementRoutes.key(a[0],a[1])))queue.add(a);}
+        while(!queue.isEmpty()){int[] a=queue.remove();for(int[] n:s.board.neighbours(a[0],a[1]))if(reached.add(MovementRoutes.key(n[0],n[1])))queue.add(n);}
+        s.keyState="pending";s.keyX=-1;s.keyY=-1;
+        for(int[] a:s.board.fields())if(s.board.itemField(a[0],a[1])&&reached.contains(MovementRoutes.key(a[0],a[1]))&&!occupied.contains(MovementRoutes.key(a[0],a[1]))){s.keyState="hidden";s.keyX=a[0];s.keyY=a[1];return;}
+    }
+    private static void migratePortal(State s){
+        if(s.keyState.equals("owned"))s.portalOpenEvent=s.keyEvent;
+        if(s.legacyBoard)return;
+        boolean repair=false;Set<String> occupied=new HashSet<>();List<int[]> fields=s.board.fields();
+        for(Player p:s.players){
+            int[] c=s.board.canonical(p.x,p.y);p.x=c[0];p.y=c[1];
+            if(p.x>=0&&!occupied.add(MovementRoutes.key(p.x,p.y))){p.x=-1;p.y=-1;for(int[] f:fields)if(s.board.itemField(f[0],f[1])&&occupied.add(MovementRoutes.key(f[0],f[1]))){p.x=f[0];p.y=f[1];break;}if(p.x<0)repair=true;}
+        }
+        for(int[] a:s.enemyPositions.values()){
+            int[] c=s.board.canonical(a[0],a[1]);a[0]=c[0];a[1]=c[1];
+            if(!occupied.add(MovementRoutes.key(a[0],a[1]))){a[0]=-1;a[1]=-1;for(int[] f:fields)if(s.board.itemField(f[0],f[1])&&occupied.add(MovementRoutes.key(f[0],f[1]))){a[0]=f[0];a[1]=f[1];break;}if(a[0]<0)repair=true;}
+        }
+        s.enemyPositions.entrySet().removeIf(e->e.getValue()[0]<0);
+        if(s.keyState.equals("hidden")&&s.board.isPortal(s.keyX,s.keyY)){relocateKey(s);repair|=s.keyState.equals("pending");}
+        if(repair&&s.started&&!s.players.isEmpty()){
+            s.boardSaved=false;s.setupStage="building";s.setupId=UUID.randomUUID().toString();s.roomMaster=s.players.get(0).id;s.candidate="";s.setupDeadline=0;s.forcedRoomMaster=false;s.dossierRequired=false;s.freshSetup=false;
+            s.notices.add(new PortalNotice(UUID.randomUUID().toString(),"Portal-Umstellung: Bitte ergänzt den Aufbau und die Figurenplätze. Euer Fortschritt bleibt erhalten."));while(s.notices.size()>40)s.notices.remove(0);
+            s.preview.clear();s.previewActor="";
+        }
+    }
+
     /** Progress only host-clock presentation stages; the committed choice is never rerolled by polling. */
     public synchronized void tick() throws IOException {
         if((state.setupStage.equals("selecting")||state.setupStage.equals("launching")||state.setupStage.equals("voteResult"))&&clock.millis()>=state.setupDeadline){
@@ -559,15 +650,16 @@ public final class GameEngine {
                     case "setSpawn":
                         requireArgs(args,3);Player target=null;for(Player p:next.players)if(p.id.equals(args[0]))target=p;
                         int x=number(args[1]),y=number(args[2]);if(target==null&&args[0].startsWith("enemy:")&&next.enemies.contains(args[0].substring(6))){
-                            if(!next.board.exists(x,y))throw new IllegalArgumentException("Kein vorhandenes Feld.");
+                            if(!next.board.itemField(x,y))throw new IllegalArgumentException("Startfeld muss außerhalb des Portals liegen.");
                             for(Player other:next.players)if(other.x==x&&other.y==y)throw new IllegalArgumentException("Feld belegt.");
                             for(Map.Entry<String,int[]> other:next.enemyPositions.entrySet())if(!other.getKey().equals(args[0].substring(6))&&other.getValue()[0]==x&&other.getValue()[1]==y)throw new IllegalArgumentException("Feld belegt.");
                             next.enemyPositions.put(args[0].substring(6),new int[]{x,y});break;
                         }
-                        if(target==null||!next.board.exists(x,y))throw new IllegalArgumentException("Startfeld muss auf einer Kachel liegen.");
+                        if(target==null||!next.board.itemField(x,y))throw new IllegalArgumentException("Startfeld muss auf einer Kachel liegen.");
                         for(Player other:next.players)if(other!=target&&other.x==x&&other.y==y)throw new IllegalArgumentException("Dieses Startfeld ist bereits belegt.");
                         for(int[] at:next.enemyPositions.values())if(at[0]==x&&at[1]==y)throw new IllegalArgumentException("Feld belegt.");target.x=x;target.y=y;next.manualSpawns.add(target.id);break;
                     case "boardSave":
+                        if(next.objective>0&&next.board.tiles().stream().noneMatch(t->t.kind.equals("portal")))throw new IllegalArgumentException("Für dieses Spielziel wird ein Portal benötigt.");
                         if(next.board.cells()<next.players.size()+next.enemies.size())throw new IllegalArgumentException("Für jeden Spieler wird mindestens ein eigenes Startfeld benötigt.");
                         repairSpawns(next);
                         for(Player p:next.players)if(!next.board.exists(p.x,p.y))throw new IllegalArgumentException("Zuerst für alle Spieler ein Startfeld platzieren.");
@@ -584,9 +676,9 @@ public final class GameEngine {
         if(next.keyState.equals("owned")||next.keyState.equals("legacy"))return;
         Set<String> occupied=new HashSet<>();for(Player p:next.players)occupied.add(p.x+","+p.y);for(int[] at:next.enemyPositions.values())occupied.add(at[0]+","+at[1]);
         boolean[][] reached=new boolean[40][40];ArrayDeque<int[]> queue=new ArrayDeque<>();for(Player p:next.players)if(next.board.exists(p.x,p.y)){reached[p.y][p.x]=true;queue.add(new int[]{p.x,p.y});}
-        while(!queue.isEmpty()){int[] at=queue.remove();for(int[] d:new int[][]{{0,-1},{1,0},{0,1},{-1,0}}){int x=at[0]+d[0],y=at[1]+d[1];if(x>=0&&x<40&&y>=0&&y<40&&!reached[y][x]&&next.board.canStep(at[0],at[1],x,y)){reached[y][x]=true;queue.add(new int[]{x,y});}}}
-        if(next.keyState.equals("hidden")&&next.board.exists(next.keyX,next.keyY)&&reached[next.keyY][next.keyX]&&!occupied.contains(next.keyX+","+next.keyY))return;
-        List<int[]> candidates=new ArrayList<>();for(int y=0;y<40;y++)for(int x=0;x<40;x++)if(reached[y][x]&&!occupied.contains(x+","+y))candidates.add(new int[]{x,y});
+        while(!queue.isEmpty()){int[] at=queue.remove();for(int[] neighbour:next.board.neighbours(at[0],at[1])){int x=neighbour[0],y=neighbour[1];if(x>=0&&x<40&&y>=0&&y<40&&!reached[y][x]&&next.board.canStep(at[0],at[1],x,y)){reached[y][x]=true;queue.add(new int[]{x,y});}}}
+        if(next.keyState.equals("hidden")&&next.board.itemField(next.keyX,next.keyY)&&reached[next.keyY][next.keyX]&&!occupied.contains(next.keyX+","+next.keyY))return;
+        List<int[]> candidates=new ArrayList<>();for(int y=0;y<40;y++)for(int x=0;x<40;x++)if(reached[y][x]&&next.board.itemField(x,y)&&!occupied.contains(x+","+y))candidates.add(new int[]{x,y});
         if(candidates.isEmpty())throw new IllegalArgumentException("Für den Portalschlüssel wird ein freies, von den Spielern erreichbares Feld benötigt.");
         int[] at=candidates.get(random.nextInt(candidates.size()));next.keyState="hidden";next.keyX=at[0];next.keyY=at[1];next.keyOwner="";next.keyEvent="";next.keyPending=false;
     }
@@ -597,15 +689,15 @@ public final class GameEngine {
         Set<String> occupied=new HashSet<>();
         for(Player p:s.players){
             if(s.freshSetup&&!s.manualSpawns.contains(p.id)){p.x=-1;p.y=-1;}
-            if(!s.board.exists(p.x,p.y)||!occupied.add(p.x+","+p.y)){p.x=-1;p.y=-1;}
+            if(!s.board.itemField(p.x,p.y)||!occupied.add(p.x+","+p.y)){p.x=-1;p.y=-1;}
         }
-        for(Map.Entry<String,int[]> entry:s.enemyPositions.entrySet()){int[] a=entry.getValue();if(s.board.exists(a[0],a[1])&&occupied.add(a[0]+","+a[1]))continue;entry.setValue(new int[]{-1,-1});}
+        for(Map.Entry<String,int[]> entry:s.enemyPositions.entrySet()){int[] a=entry.getValue();if(s.board.itemField(a[0],a[1])&&occupied.add(a[0]+","+a[1]))continue;entry.setValue(new int[]{-1,-1});}
         List<int[]> fields=spawnCandidates(s.board);
         for(Player p:s.players)if(p.x<0){
             for(int[] at:fields)if(occupied.add(at[0]+","+at[1])){p.x=at[0];p.y=at[1];break;}
         }
         for(String enemy:s.enemies){int[] a=s.enemyPositions.get(enemy);if(a!=null&&a[0]>=0)continue;
-            outer:for(int y=0;y<20*s.board.scale();y++)for(int x=0;x<20*s.board.scale();x++)if(s.board.exists(x,y)&&occupied.add(x+","+y)){s.enemyPositions.put(enemy,new int[]{x,y});break outer;}
+            outer:for(int y=0;y<20*s.board.scale();y++)for(int x=0;x<20*s.board.scale();x++)if(s.board.itemField(x,y)&&occupied.add(x+","+y)){s.enemyPositions.put(enemy,new int[]{x,y});break outer;}
         }
         s.enemyPositions.entrySet().removeIf(e->e.getValue()[0]<0);
     }
@@ -616,19 +708,19 @@ public final class GameEngine {
         ArrayDeque<int[]> queue=new ArrayDeque<>();
         for(int y=0;y<size;y++)for(int x=0;x<size;x++){
             BoardPlan.Tile tile=board.at(x/board.scale(),y/board.scale());
-            if(tile!=null&&tile.kind.equals("portal")){distance[y][x]=0;queue.add(new int[]{x,y});}
+            if(tile!=null&&tile.kind.equals("portal")&&board.logical(x,y)){distance[y][x]=0;queue.add(new int[]{x,y});}
         }
         while(!queue.isEmpty()){
             int[] at=queue.remove();
-            for(int[] d:new int[][]{{0,-1},{1,0},{0,1},{-1,0}}){
-                int x=at[0]+d[0],y=at[1]+d[1];
+            for(int[] neighbour:board.neighbours(at[0],at[1])){
+                int x=neighbour[0],y=neighbour[1];
                 if(x>=0&&y>=0&&x<size&&y<size&&distance[y][x]<0&&board.canStep(at[0],at[1],x,y)){
                     distance[y][x]=distance[at[1]][at[0]]+1;queue.add(new int[]{x,y});
                 }
             }
         }
         List<int[]> fields=new ArrayList<>();
-        for(int y=0;y<size;y++)for(int x=0;x<size;x++)if(board.exists(x,y))fields.add(new int[]{x,y,distance[y][x]});
+        for(int y=0;y<size;y++)for(int x=0;x<size;x++)if(board.itemField(x,y))fields.add(new int[]{x,y,distance[y][x]});
         // Portal cells are the last resort; disconnected non-portal fields precede them.
         fields.sort((a,b)->Integer.compare(b[2]==0?-1:b[2]<0?0:b[2],a[2]==0?-1:a[2]<0?0:a[2]));
         return fields;
@@ -660,6 +752,7 @@ public final class GameEngine {
         }
     }
     private static void endPlayerTurn(State next) {
+        next.preview.clear();next.previewActor="";
         next.turnStage = "roll"; next.turnRoll = 0; next.remaining = 0; next.turnAccepted = false;
         next.current = (next.current + 1) % next.players.size();
         if (next.current == 0) {
@@ -680,7 +773,7 @@ public final class GameEngine {
         return result;
     }
     private void requireEnemyTurn() {
-        if (!playing() || !state.phase.equals("enemies")) throw new IllegalArgumentException("Gerade ist kein Gegner am Zug.");
+        if (!playing() || !state.winEvent.isEmpty() || !state.phase.equals("enemies")) throw new IllegalArgumentException("Gerade ist kein Gegner am Zug.");
     }
     public synchronized String requestEnemyMovement() throws IOException {
         requireEnemyTurn();
@@ -818,6 +911,8 @@ public final class GameEngine {
         out.writeLong(s.lastInteractionRevision);
         out.writeBoolean(s.rollPresented);out.writeInt(s.objective);out.writeBoolean(s.voteTied);
         out.writeInt(s.votes.size());for(Map.Entry<String,Integer> vote:s.votes.entrySet()){out.writeUTF(vote.getKey());out.writeInt(vote.getValue());}
+        out.writeUTF(s.portalOpenEvent);out.writeUTF(s.winnerId);out.writeUTF(s.winnerName);out.writeUTF(s.winnerCharacter);out.writeUTF(s.winnerField);out.writeUTF(s.winEvent);out.writeUTF(s.previewActor);
+        out.writeInt(s.preview.size());for(int[] at:s.preview){out.writeInt(at[0]);out.writeInt(at[1]);}
         out.flush();if(bytes.size()>8*1024*1024)throw new IOException("Spielstand zu groß. Bitte sichern und neue Partie beginnen.");return bytes.toByteArray();
     }
     private static State decode(byte[] bytes) throws IOException {
@@ -882,6 +977,8 @@ public final class GameEngine {
             for(Player p:s.players)if(p.x>=0)s.manualSpawns.add(p.id); // Preserve all old placements.
         }
         if(format>=11){s.rollPresented=in.readBoolean();s.objective=in.readInt();s.voteTied=in.readBoolean();int votes=count(in,4);for(int i=0;i<votes;i++)if(s.votes.put(in.readUTF(),in.readInt())!=null)throw new IOException("Doppelte Stimme.");}
+        if(format>=12){s.portalOpenEvent=in.readUTF();s.winnerId=in.readUTF();s.winnerName=in.readUTF();s.winnerCharacter=in.readUTF();s.winnerField=in.readUTF();s.winEvent=in.readUTF();s.previewActor=in.readUTF();int path=count(in,6);for(int i=0;i<path;i++)s.preview.add(new int[]{in.readInt(),in.readInt()});}
+        else migratePortal(s);
         Set<String> spots=new HashSet<>();for(Player p:s.players)if(p.x>=0)spots.add(p.x+","+p.y);for(int[] a:s.enemyPositions.values())if(!s.board.exists(a[0],a[1])||!spots.add(a[0]+","+a[1]))throw new IOException("Ungültige Figurenposition.");
         if((!s.turnAccepted&&!s.turnStage.equals("roll"))||(s.phase.equals("enemies")&&s.turnAccepted))throw new IOException("Ungültige Zugbestätigung.");
         boolean validTurn = s.turnStage.equals("roll") && s.turnRoll == 0 && s.remaining == 0 ||
@@ -896,7 +993,15 @@ public final class GameEngine {
         boolean placed=s.keyState.equals("hidden")||s.keyState.equals("owned"),owned=s.keyState.equals("owned");
         if(placed?(s.keyX<0||s.keyY<0||s.keyX>=40||s.keyY>=40):(s.keyX!=-1||s.keyY!=-1))throw new IOException("Ungültiges Schlüsselfeld.");
         if(owned?(!playerIds.contains(s.keyOwner)||!s.keyEvent.matches("[a-f0-9-]{36}")):(!s.keyOwner.isEmpty()||!s.keyEvent.isEmpty()||s.keyPending))throw new IOException("Ungültige Schlüsseltasche.");
-        if(s.keyState.equals("hidden")&&s.boardSaved&&!s.board.exists(s.keyX,s.keyY))throw new IOException("Schlüssel außerhalb des Aufbaus.");
+        if(s.keyState.equals("hidden")&&s.boardSaved&&!s.board.itemField(s.keyX,s.keyY))throw new IOException("Schlüssel außerhalb des Aufbaus.");
+        if(!s.portalOpenEvent.matches("([a-f0-9-]{36})?")||!s.winEvent.matches("([a-f0-9-]{36})?")||(!s.winEvent.isEmpty()&&(s.winnerId.isEmpty()||s.winnerName.isEmpty()||s.winnerName.length()>24||!s.winnerCharacter.matches("[a-z0-9-]{1,64}")||s.objective<1))||s.winEvent.isEmpty()&&!(s.winnerId+s.winnerName+s.winnerCharacter+s.winnerField).isEmpty())throw new IOException("Ungültiger Spielabschluss.");
+        if(!s.preview.isEmpty()){
+            boolean human=s.phase.equals("players")&&s.turnStage.equals("move")&&s.turnAccepted&&s.previewActor.equals(s.players.get(s.current).id);
+            boolean helper=s.phase.equals("enemies")&&s.previewActor.equals(s.helperId)&&!s.movementDone&&s.enemyIndex<s.enemies.size();
+            if(!s.winEvent.isEmpty()||!s.setupStage.equals("play")||!human&&!helper)throw new IOException("Ungültige Zugvorschau.");
+            Map<String,List<int[]>> paths=human?routes(s,s.players.get(s.current)):enemyRoutes(s,s.enemies.get(s.enemyIndex));int[] end=s.preview.get(s.preview.size()-1);List<int[]> legal=paths.get(MovementRoutes.key(end[0],end[1]));
+            if(legal==null||legal.size()!=s.preview.size())throw new IOException("Ungültige Vorschauweite.");for(int i=0;i<legal.size();i++)if(!Arrays.equals(legal.get(i),s.preview.get(i)))throw new IOException("Ungültiger Vorschauweg.");
+        }else if(!s.previewActor.isEmpty())throw new IOException("Vorschau ohne Weg.");
         validateSetup(s,playerIds);
         if (!(s.phase.equals("players") || s.phase.equals("enemies")) || s.enemyIndex < 0 ||
             (s.phase.equals("enemies") && (!s.started || s.enemyIndex >= s.enemies.size())) ||

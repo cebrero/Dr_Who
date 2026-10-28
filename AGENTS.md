@@ -205,3 +205,15 @@
     gelandete Wurf-ID nativ merken, Hintergrund pausieren. Protokoll 8/Format 11 bleiben gleich.
 62. Netzwerkbeobachtung 27.10.2026: beide im WLAN, einer lädt IP-Seite endlos, anderer kommt hinein;
     .local weiter unzuverlässig. /api/info-Gegentest noch offen. Nicht als mit UI-Ausbau behoben darstellen.
+
+63. Ab 0.15.0 neuester Wunsch: Portal über zwei Kacheln als EIN Zielfeld/eine Ankerkoordinate,
+    zwei kurze und eine lange Seite geschlossen, lange Front offen; Gegenstände auf ganzer Fläche
+    verboten. Normale Kacheln behalten vier Felder. Ziele jetzt automatisch werten/Partie stoppen.
+64. Bewegung nur auf Karte: Host markiert exakt erreichbare Endfelder, Vorschau korrigierbar und
+    am Portal sichtbar, erst Zug bestätigen verschiebt/sammelt/wertet atomar. Keine Richtungsbuttons;
+    Kartendrehung/Zoom/Pan erhalten. Gegnerhelfer ebenfalls Karte, weiterhin moderierter Einzel-Schritt.
+65. Vor Fund mittiges aktives Porträt, ab echtem Fund private MP4 dauerhaft mit einmal TARDIS-Sound.
+    Status während dieser offenen Phase nur auf unbeteiligten Clients; eigene Züge/Angriffe/Hilfe
+    haben Vorrang. Audio/Film/Retry dürfen keinen zweiten Spielzug auslösen. Details 8p.
+66. Format 12/Protokoll 9, Raumformat 1. Alte verbotene Portal-Verstecke/Teilpositionen migrieren,
+    keine Nutzerdateien veröffentlichen. Fähigkeiten-Vorschläge aus dem Gespräch unbestätigt lassen.

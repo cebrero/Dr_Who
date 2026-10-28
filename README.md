@@ -8,7 +8,12 @@ für bis zu vier weitere Handys bereit.
 Regelideen, offenen Fragen, der tatsächliche Entwicklungsstand und die nächsten Schritte.
 Sie dient ausdrücklich auch der Fortsetzung in einem neuen Chat.
 
-## Stand 0.14.0
+## Stand 0.15.0
+
+Neu in 0.15.0: Portal als ein dreiseitig ummauertes Zielfeld ohne Gegenstände, bestätigte
+Kartenbewegung mit erreichbaren Feldern und frei korrigierbarer Vorschau. Beide Portalziele
+beenden die Partie automatisch. Öffnungsfilm und einmal TARDIS-Sound ab Schlüsselfund;
+Status währenddessen auf unbeteiligten Spielerhandys. Details Abschnitt 8p.
 
 Neu in 0.14.0: Portal-Spielansicht als animierte Zeitreise-Bühne mit Energieringen,
 großer aktiver Figur, räumlichem Würfel nach Clientfreigabe, deutlicher Bewegung X→Y und
@@ -20,7 +25,7 @@ Gleichstand. Zufall ist eine zufällige eigene Stimme. Das Portal zeigt die bere
 Vollbildanimation und fehlende Stimmen. Der Portalwürfel deckt erst nach dem Spielerwürfel auf.
 Eckkachel-Wandprüfung folgt der sichtbaren Nord-/West-Grafik. Alle Dossiers erzählen aus der
 Spielwelt, ohne Quellen-/Bildhinweise. Details Abschnitt 8m/8n; API 8, Spielstandformat 11.
-Automatische Siegprüfung und die genaue Zielzelle vor dem Portal bleiben offen.
+Die damals offene Siegprüfung und Zielzelle sind seit 0.15.0 umgesetzt (Abschnitt 8p).
 
 Seit 0.12.0: Acht bestätigte Typen / elf einzelne Figuren mit neuen Bildern und Dossiers.
 Duplikate sind unabhängig auswählbar; undefinierte neue Aktionen bleiben gesperrt.
@@ -161,7 +166,7 @@ Seit 0.5.1 prüft der Client App-Version, Protokoll und Partie-ID. Nach einer ne
 statt einer blockierenden Fehlermeldung die Anmeldung zurück zur aktuellen Partie. Bei einer
 anderen App-Version bietet er Neuladen an; WLAN-Aussetzer behalten die Anmeldung.
 
-## Installationshinweis 0.14.0
+## Installationshinweis 0.15.0
 
 **Über Versionen ab 0.5.0 als normales Update installieren – die App vorher nicht deinstallieren.**
 Der Signierschlüssel ist identisch. Für den Wechsel von 0.4.0 gilt die folgende Ausnahme:
